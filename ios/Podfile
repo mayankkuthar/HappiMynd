@@ -1,0 +1,123 @@
+# require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+# require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
+# require File.join(File.dirname(`node --print "require.resolve('@react-native-community/cli-platform-ios/package.json')"`), "native_modules")
+
+# platform :ios, '12.0'
+
+# require 'json'
+# podfile_properties = JSON.parse(File.read('./Podfile.properties.json')) rescue {}
+
+# target 'HappiMynd' do
+#   use_expo_modules!
+#   config = use_native_modules!
+
+#   use_react_native!(
+#     :path => config[:reactNativePath],
+#     :hermes_enabled => podfile_properties['expo.jsEngine'] == 'hermes'
+#   )
+
+#   permissions_path = '../node_modules/react-native-permissions/ios'
+
+#   pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
+#   pod 'Permission-Microphone', :path => "#{permissions_path}/Microphone"
+
+#   pod 'RNIap', :path => '../node_modules/react-native-iap'
+#   pod 'react-native-twilio-video-webrtc', path: '../node_modules/react-native-twilio-video-webrtc'
+#   # Uncomment to opt-in to using Flipper
+#   #
+#   # if !ENV['CI']
+#   #   use_flipper!('Flipper' => '0.75.1', 'Flipper-Folly' => '2.5.3', 'Flipper-RSocket' => '1.3.1')
+#   # end
+
+#   pod 'lottie-react-native', :path => '../node_modules/lottie-react-native'
+
+#   pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
+
+#   pod 'react-native-network-info', :path => '../node_modules/react-native-network-info'
+
+#   # pod 'RNAudiotransition', :path => '../node_modules/react-native-audiotransition'
+
+#   pod 'RNAudioRecord', :path => '../node_modules/react-native-audio-record'
+
+#   post_install do |installer|
+#     react_native_post_install(installer)
+
+#     # Workaround `Cycle inside FBReactNativeSpec` error for react-native 0.64
+#     # Reference: https://github.com/software-mansion/react-native-screens/issues/842#issuecomment-812543933
+#     installer.pods_project.targets.each do |target|
+#       if (target.name&.eql?('FBReactNativeSpec'))
+#         target.build_phases.each do |build_phase|
+#           config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+#           # Set the minimum iOS deployment target to 15.0
+#           config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.4'
+          
+#           if (build_phase.respond_to?(:name) && build_phase.name.eql?('[CP-User] Generate Specs'))
+#             target.build_phases.move(build_phase, 0)
+#           end
+#         end
+#       end
+#     end
+#   end
+
+# end
+
+
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
+require File.join(File.dirname(`node --print "require.resolve('@react-native-community/cli-platform-ios/package.json')"`), "native_modules")
+
+platform :ios, '12.0'
+
+require 'json'
+podfile_properties = JSON.parse(File.read('./Podfile.properties.json')) rescue {}
+
+target 'HappiMynd' do
+  use_expo_modules!
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => podfile_properties['expo.jsEngine'] == 'hermes'
+  )
+
+  permissions_path = '../node_modules/react-native-permissions/ios'
+
+  pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
+  pod 'Permission-Microphone', :path => "#{permissions_path}/Microphone"
+
+  pod 'RNIap', :path => '../node_modules/react-native-iap'
+  pod 'react-native-twilio-video-webrtc', path: '../node_modules/react-native-twilio-video-webrtc'
+  # Uncomment to opt-in to using Flipper
+  #
+  # if !ENV['CI']
+  #   use_flipper!('Flipper' => '0.75.1', 'Flipper-Folly' => '2.5.3', 'Flipper-RSocket' => '1.3.1')
+  # end
+
+  pod 'lottie-react-native', :path => '../node_modules/lottie-react-native'
+
+  pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
+
+  pod 'react-native-network-info', :path => '../node_modules/react-native-network-info'
+
+  # pod 'RNAudiotransition', :path => '../node_modules/react-native-audiotransition'
+
+  pod 'RNAudioRecord', :path => '../node_modules/react-native-audio-record'
+
+  post_install do |installer|
+    react_native_post_install(installer)
+
+    # Workaround `Cycle inside FBReactNativeSpec` error for react-native 0.64
+    # Reference: https://github.com/software-mansion/react-native-screens/issues/842#issuecomment-812543933
+    installer.pods_project.targets.each do |target|
+      if (target.name&.eql?('FBReactNativeSpec'))
+        target.build_phases.each do |build_phase|
+          config = installer.pods_project.build_configuration_list
+          if (build_phase.respond_to?(:name) && build_phase.name.eql?('[CP-User] Generate Specs'))
+            target.build_phases.move(build_phase, 0)
+          end
+        end
+      end
+    end
+  end
+
+end

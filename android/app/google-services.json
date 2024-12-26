@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1017982237328",
+    "project_id": "happimynd-eef42",
+    "storage_bucket": "happimynd-eef42.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1017982237328:android:3bd3bfceaf7c1d53457615",
+        "android_client_info": {
+          "package_name": "com.happimynd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1017982237328-1qe0sb0evkma3c0vcin94iic7ga836ts.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.happimynd",
+            "certificate_hash": "7598acd79047dd7cf67d8dd3e607293c045499ef"
+          }
+        },
+        {
+          "client_id": "1017982237328-d7dmo3uqdog4gjln4ve1u67cnbu53ap2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.happimynd",
+            "certificate_hash": "e7c6d53a17f3aacf144d863cfd42ed5544d8b5c9"
+          }
+        },
+        {
+          "client_id": "1017982237328-n4m14mfmov8mbs15b38eq98mruvjr16j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKfjMt5pbUPjtYCbBJaF297bPSNLkeJe8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1017982237328-n4m14mfmov8mbs15b38eq98mruvjr16j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

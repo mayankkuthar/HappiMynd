@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "HappiMynd",
+    "slug": "HappiMynd",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/adaptive-icon.png",
+    "splash": {
+      "image": "./assets/happi-splash1.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "enabled": false
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app uses the device microphone to to capture user audio so the volunteering person can be more clear with the request, the recording audio feature is completely optional so user can skip it he doesnot want to put up the audio"
+      },
+      "bundleIdentifier": "com.happimynd",
+      "buildNumber": "1.0.6"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.happimynd",
+      "permissions": ["RECORD_AUDIO"],
+      "versionCode": 8,
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "config": {
+        "firebase": {
+          "apiKey": "AIzaSyB_gKJyiI8oSPeeJ9V3jL8pSqsGRK41smU",
+          "measurementId": "G-WMR2JZVGWZ"
+        }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ffc0ad61-cbe7-4be6-94e4-84ca99ddfe8f"
+      }
+    }
+  }
+}
