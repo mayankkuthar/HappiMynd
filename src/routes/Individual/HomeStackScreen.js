@@ -49,6 +49,7 @@ import BookingConfirm from "../../screens/Individual/BookingConfirm";
 import BookingList from "../../screens/HappiTALK/BookingList";
 import BookingFeedback from "../../screens/Individual/BookingFeedback";
 import AssessmentComplete from "../../screens/HappiLIFE/AssessmentComplete";
+import AllReports from "../../screens/HappiLIFE/AllReports";
 import ContactVerification from "../../screens/HappiLIFE/ContactVerification";
 import Notes from "../../screens/HappiSELF/Notes";
 import AddNote from "../../screens/HappiSELF/AddNote";
@@ -360,6 +361,11 @@ const HomeStackScreen = ({ navigation, route }) => {
         options={{ headerShown: false, gestureEnabled: false }}
         name="AssessmentComplete"
         component={AssessmentComplete}
+      />
+      <HomeStack.Screen
+        options={{ headerShown: false, gestureEnabled: false }}
+        name="AllReports"
+        component={AllReports}
       />
       <HomeStack.Screen
         options={{ headerShown: false, gestureEnabled: false }}

@@ -10,6 +10,7 @@ export const initialAuthState = {
   isOnBoarded: false,
   feedbackSubmitted: false,
   isScreeningComplete: false,
+  isAnyScreeningComplete: false,
   userType: "",
 };
 
@@ -50,6 +51,11 @@ export const authReducer = (state, action) => {
       return {
         ...state,
         isScreeningComplete: action.payload,
+      };
+    case "ANY_COMPLETE_SCREENING":
+      return {
+        ...state,
+        isAnyScreeningComplete: action.payload,
       };
     case "LOGOUT":
       return {

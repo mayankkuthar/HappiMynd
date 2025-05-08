@@ -121,9 +121,6 @@ const HappiLIFE = (props) => {
                   if (isSubscribed || props?.route?.params?.isSubscribed) {
                     navigation.navigate("HomeScreen");
                   } else navigation.goBack();
-                  // navigation.push("Pricing", {
-                  //   selectedPlan: "HappiLIFE Screening",
-                  // });
                 } else {
                   navigation.navigate("HappiLIFEScreening");
                 }

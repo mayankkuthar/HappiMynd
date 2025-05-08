@@ -64,6 +64,7 @@ const UserPane = (props) => {
     startAssessment,
     getSubscriptions,
     getUserProfile,
+    AnyAssessment,
   } = useContext(Hcontext);
 
   // Hits when focus hits
@@ -118,6 +119,15 @@ const UserPane = (props) => {
       } else {
         authDispatch({ type: "COMPLETE_SCREENING", payload: false });
       }
+
+      const checkassess = await AnyAssessment({token});
+
+      if (checkassess?.message?.includes("Yes")) {
+        authDispatch({ type: "ANY_COMPLETE_SCREENING", payload: true });
+      } else {
+        authDispatch({ type: "ANY_COMPLETE_SCREENING", payload: false });
+      }
+
     } catch (err) {
       console.log("Checking the assessment status - ", err);
     }
@@ -231,7 +241,7 @@ const UserPane = (props) => {
         </Text>
       </View>
       <View style={styles.userPaneButtons}>
-        {authState.user && authState.isScreeningComplete ? (
+        {authState.user && authState.isAnyScreeningComplete ? (
           loading ? (
             <View
               style={{
@@ -275,18 +285,18 @@ const UserPane = (props) => {
                     return navigation.push("Pricing");
                   }
 
-                  // return navigation.push("ContactVerification");
+                  return navigation.push("AllReports");
 
                   const reportRes = await getReport();
                   console.log("Cheking the report res - ", reportRes);
                   if (reportRes.status === "success") {
-                    // navigation.push("AssessmentComplete");
                     Linking.openURL(reportRes.url);
                     downloadReportAndroid(reportRes.url);
                   }
                 } else {
                   // if (isSubscribed || (isEmailVerified && isPhoneVerified)) {
                   if (isSubscribed) {
+                    return navigation.push("AllReports");
                     const reportRes = await getReport();
                     console.log("Cheking the report res - ", reportRes);
                     if (reportRes.status === "success") {

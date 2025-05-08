@@ -585,6 +585,27 @@ const [categoryId, setCategoryId] = useState("")
     }
   };
 
+  const AnyAssessment = async ({ token }) => {
+    try {
+      const axiosRes = await axios({
+        method: "post",
+        url: `${config.BASE_URL}/api/v1/checkifany`,
+        headers: { Authorization: "Bearer " + token },
+        data: { platform: Platform.OS },
+      });
+
+      return axiosRes.data;
+    } catch (err) {
+      if (err.response) {
+        // Request made and server responded
+        console.log(
+          "Some issue while starting assessment (Hcontext) - ",
+          // err.response.data
+        );
+      }
+    }
+  };
+
   const submitAnswer = async ({ optionId }) => {
     try {
       const axiosRes = await axios({
@@ -612,6 +633,25 @@ const [categoryId, setCategoryId] = useState("")
       const axiosRes = await axios({
         method: "get",
         url: `${config.BASE_URL}/api/v1/get-report`,
+        headers: { Authorization: "Bearer " + authState.user.access_token },
+      });
+
+      return axiosRes.data;
+    } catch (err) {
+      const axiosRes = JSON.parse(JSON.stringify(err));
+      console.log("Some issue while getting report (Hcontext) - ",
+      //  axiosRes
+       );
+      if (axiosRes.status === 500)
+        snackDispatch({ type: "SHOW_SNACK", payload: axiosRes.message });
+    }
+  };
+
+  const getAllReport = async () => {
+    try {
+      const axiosRes = await axios({
+        method: "get",
+        url: `${config.BASE_URL}/api/v1/get-all-report`,
         headers: { Authorization: "Bearer " + authState.user.access_token },
       });
 
@@ -2303,7 +2343,9 @@ const [categoryId, setCategoryId] = useState("")
         resetPassword,
         startAssessment,
         submitAnswer,
+        AnyAssessment,
         getReport,
+        getAllReport,
         getLanguages,
         assignPsychologist,
         changePsychologist,
