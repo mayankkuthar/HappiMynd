@@ -1,4 +1,5 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
+import useIsMounted from "../../hooks/useIsMounted";
 import {
   StyleSheet,
   Text,
@@ -41,34 +42,39 @@ const Moods = (props) => {
   const [loading, setLoading] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
 
+  // Mount guard — prevents setState on unmounted component
+  const isMounted = useIsMounted();
+
   // Mounting
   useEffect(() => {
     fetchMoodList();
   }, []);
 
   const fetchMoodList = async () => {
+    if (!isMounted.current) return;
     setLoading(true);
     try {
       const moodRes = await moodEmojiList();
+      if (!isMounted.current) return;
       console.log("Check the mod dres - ", moodRes);
       if (moodRes.status === "success") {
         setMoodList(moodRes.data);
         let happyItem = moodRes.data.filter((item) => item.name == "happy");
-        // console.log("happy", happyItem);
         setSelectedMood(happyItem[0]);
       }
     } catch (err) {
       console.log("Some issue while getting mood list - ", err);
     }
-    setLoading(false);
+    if (isMounted.current) setLoading(false);
   };
 
   const saveUserMode = async (id, name) => {
     console.log("name.....", name);
+    if (!isMounted.current) return;
     setButtonLoading(true);
     try {
       const moodRes = await userMood({ id, name });
-
+      if (!isMounted.current) return;
       if (moodRes.status === "success") {
         snackDispatch({ type: "SHOW_SNACK", payload: moodRes?.message });
         // authDispatch({ type: "FEEDBACK", paload: true });
@@ -78,7 +84,7 @@ const Moods = (props) => {
     } catch (err) {
       console.log("Some issue while submitting user mood (Moods.js) - ", err);
     }
-    setButtonLoading(false);
+    if (isMounted.current) setButtonLoading(false);
   };
 
   if (loading)
@@ -164,7 +170,7 @@ const Moods = (props) => {
                     {capitalize(mood?.name)}
                   </Text>
                 </TouchableOpacity>
-              )
+              ),
           )}
         </View>
 
@@ -212,7 +218,7 @@ const Moods = (props) => {
                     {capitalize(mood?.name)}
                   </Text>
                 </TouchableOpacity>
-              )
+              ),
           )}
         </View>
       </View>

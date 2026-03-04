@@ -12,7 +12,7 @@ import {
   Alert,
   AppState,
   Share,
-  Platform
+  Platform,
 } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import {
@@ -46,11 +46,11 @@ const UserPane = (props) => {
   const {
     navigation,
     isSubscribed = false,
-    setIsSubscribed = () => { },
+    setIsSubscribed = () => {},
     isEmailVerified = false,
-    setIsEmailVerified = () => { },
+    setIsEmailVerified = () => {},
     isPhoneVerified = false,
-    setIsPhoneVerified = () => { },
+    setIsPhoneVerified = () => {},
   } = props;
 
   // State Variables
@@ -73,8 +73,8 @@ const UserPane = (props) => {
       checkAssessmentStatus();
       checkSubscription();
       fetchUserProfile(authState?.user?.access_token);
-      return () => { };
-    }, [])
+      return () => {};
+    }, []),
   );
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const UserPane = (props) => {
 
       if (mySub?.status === "success") {
         const isSub = mySub.data.find(
-          (sub) => sub.name === "HappiLIFE Screening"
+          (sub) => sub.name === "HappiLIFE Screening",
         );
         if (isSub) setIsSubscribed(true);
       }
@@ -120,14 +120,13 @@ const UserPane = (props) => {
         authDispatch({ type: "COMPLETE_SCREENING", payload: false });
       }
 
-      const checkassess = await AnyAssessment({token});
+      const checkassess = await AnyAssessment({ token });
 
       if (checkassess?.message?.includes("Yes")) {
         authDispatch({ type: "ANY_COMPLETE_SCREENING", payload: true });
       } else {
         authDispatch({ type: "ANY_COMPLETE_SCREENING", payload: false });
       }
-
     } catch (err) {
       console.log("Checking the assessment status - ", err);
     }
@@ -184,7 +183,7 @@ const UserPane = (props) => {
   //********* download report for ios devices **********/
   const downloadReport = async (url) => {
     try {
-      const directory = FileSystem.documentDirectory + 'happimynd/';
+      const directory = FileSystem.documentDirectory + "happimynd/";
 
       // Ensure the directory exists
       const dirInfo = await FileSystem.getInfoAsync(directory);
@@ -192,18 +191,18 @@ const UserPane = (props) => {
         await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
       }
 
-      const fileUri = directory + 'report.pdf';
+      const fileUri = directory + "report.pdf";
 
       const { uri } = await FileSystem.downloadAsync(url, fileUri);
-      console.log('Finished downloading to ', uri);
-      createOneButtonAlert('Report Successfully Downloaded');
+      console.log("Finished downloading to ", uri);
+      createOneButtonAlert("Report Successfully Downloaded");
 
       // Share the downloaded file
-      const mimeType = 'application/pdf'; // Adjust according to your file type
+      const mimeType = "application/pdf"; // Adjust according to your file type
       shareFile(uri, mimeType);
     } catch (error) {
-      console.error('Some issue while downloading file - ', error);
-      createOneButtonAlert('Report Download Failed');
+      console.error("Some issue while downloading file - ", error);
+      createOneButtonAlert("Report Download Failed");
     }
   };
 
@@ -211,12 +210,12 @@ const UserPane = (props) => {
     try {
       const options = {
         mimeType: mimeType,
-        dialogTitle: 'Share file',
-        UTI: 'public.data',
+        dialogTitle: "Share file",
+        UTI: "public.data",
       };
       await Share.share({ url: fileUri }, options);
     } catch (error) {
-      console.error('Error sharing file:', error.message);
+      console.error("Error sharing file:", error.message);
     }
   };
 
@@ -261,7 +260,7 @@ const UserPane = (props) => {
               // }
               text={isSubscribed ? "Download" : "Get"}
               subText="Awareness Report"
-              isSubscribed = {isSubscribed}
+              isSubscribed={isSubscribed}
               width={42}
               icon={require("../../assets/images/waveicon_progress.png")}
               // pressHandler={async () => {
@@ -280,7 +279,7 @@ const UserPane = (props) => {
               //   }
               // }}
               pressHandler={async () => {
-                if (Platform.OS == 'android') {
+                if (Platform.OS == "android") {
                   if (!isSubscribed) {
                     return navigation.push("Pricing");
                   }
@@ -431,12 +430,12 @@ const ServiceSection = (props) => {
             iconSize={3.5}
             pressHandler={() => navigation.push("HappiTALK")}
           />
-          <CategoryButton
+          {/*<CategoryButton
             text="HappiVOICE"
             icon={require("../../assets/images/microphone2.png")}
             iconSize={4.5}
             pressHandler={() => navigation.push("HappiVoice")}
-          />
+          />*/}
 
           {/* <CategoryButton
             text="Join Community"
@@ -476,7 +475,7 @@ const BlogSection = (props) => {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [])
+    }, []),
   );
 
   const fetchData = async (search = "") => {
@@ -554,8 +553,10 @@ const Home = (props) => {
       fetchTotalPoints();
     });
 
-    // Record user mood at every app open
-    navigation.push("Moods");
+    // Record user mood at every app open (only for authenticated users)
+    if (authState?.user) {
+      navigation.push("Moods");
+    }
 
     screenTrafficAnalytics({ screenName: "Home" });
 
@@ -704,7 +705,7 @@ const styles = StyleSheet.create({
   },
   serviceIconContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
   },
   blogSection: {
     paddingTop: hp(6),

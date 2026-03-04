@@ -1,11 +1,5 @@
 import React, { useEffect, useContext, useState } from "react";
-import {
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  View,
-  Text
-} from "react-native";
+import { StyleSheet, TouchableOpacity, Image, View, Text } from "react-native";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Snack from "../components/common/Snack";
@@ -14,13 +8,14 @@ import DrawerNavigation from "../routes/DrawerNavigation";
 import Moods from "./shared/Moods";
 import { Hcontext } from "../context/Hcontext";
 import { FloatingAction } from "react-native-floating-action";
-import Draggable from 'react-native-draggable';
-
+import Draggable from "react-native-draggable";
 
 const Main = (props) => {
   const ref = React.useRef(null);
-  const { authState, authDispatch, snackState, botVisible, setBotVisible } = useContext(Hcontext);
-  const { getSubscriptions, getUserProfile, screenTrafficAnalytics } = useContext(Hcontext);
+  const { authState, authDispatch, snackState, botVisible, setBotVisible } =
+    useContext(Hcontext);
+  const { getSubscriptions, getUserProfile, screenTrafficAnalytics } =
+    useContext(Hcontext);
 
   const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -35,7 +30,7 @@ const Main = (props) => {
     userValidator();
   }, []);
 
-console.log("authsrar ------- ",authState);
+  console.log("authsrar ------- ", authState);
 
   const clearAsyncStoage = async () => {
     try {
@@ -50,7 +45,7 @@ console.log("authsrar ------- ",authState);
     try {
       const isOnBoarded = await AsyncStorage.getItem("IS_ONBOARDED");
 
-      isOnBoarded && setIsEnable(true)
+      isOnBoarded && setIsEnable(true);
       const languageAdded = await AsyncStorage.getItem("SELECTED_LANGUAGE");
       const userRes = await AsyncStorage.getItem("USER");
 
@@ -59,8 +54,6 @@ console.log("authsrar ------- ",authState);
         authDispatch({ type: "LANGUAGE_SELECTION", payload: languageAdded });
       if (userRes)
         authDispatch({ type: "LOGIN", payload: JSON.parse(userRes) });
-
-
     } catch (err) {
       console.log("Some issue while validating user - ", err);
     }
@@ -69,10 +62,9 @@ console.log("authsrar ------- ",authState);
 
   if (loading) return null;
 
-
   const handlePress = () => {
     // Add your logic here when the button is pressed
-    console.log('Button Pressed!');
+    console.log("Button Pressed!");
   };
 
   const handleTouchStart = (event) => {
@@ -97,9 +89,9 @@ console.log("authsrar ------- ",authState);
 
   const onPress = () => {
     console.log("pressed ");
-    botVisible ? setBotVisible(false) : setBotVisible(true)
-    ref.current && ref.current.navigate('ChatHome')
-  }
+    botVisible ? setBotVisible(false) : setBotVisible(true);
+    ref.current && ref.current.navigate("ChatHome");
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -132,24 +124,23 @@ console.log("authsrar ------- ",authState);
           }}
         /> */}
 
-
+        {/* LiveChat bot hidden — re-enable when needed
         {botVisible&&authState?.isLogged &&<Draggable
           x={270}
           y={590}
           renderSize={80}
           renderColor="transparent"
           isCircle={false}
-          touchableOpacityProps={{ activeOpacity: 1 }} // Set activeOpacity to 1
+          touchableOpacityProps={{ activeOpacity: 1 }}
         >
           <TouchableOpacity style={styles.imageBg} onPress={onPress}>
             <Image
               source={require('../assets/images/live_chat.jpeg')}
               style={{ height: 45, width:45,borderRadius:10 }}
             />
-            
           </TouchableOpacity>
         </Draggable>}
-
+        */}
       </NavigationContainer>
     </View>
   );
@@ -159,22 +150,22 @@ export default Main;
 
 const styles = StyleSheet.create({
   fabIcon: {
-    marginBottom: 100
+    marginBottom: 100,
   },
-  imageBg:{
-    backgroundColor:'white',
-    height:60,
-    width:60,
-    borderRadius:50,
-    alignItems:'center',
-    justifyContent:'center',
-    elevation:5,
-    borderWidth:1,
-    borderColor:'lightgrey',
-    zIndex:5,
-    shadowColor: '#000',
+  imageBg: {
+    backgroundColor: "white",
+    height: 60,
+    width: 60,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "lightgrey",
+    zIndex: 5,
+    shadowColor: "#000",
     shadowOffset: { width: 2, height: 5 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-  }
+  },
 });

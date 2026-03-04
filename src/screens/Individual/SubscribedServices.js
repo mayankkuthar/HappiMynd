@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import useIsMounted from "../../hooks/useIsMounted";
 import {
   StyleSheet,
   Text,
@@ -17,7 +18,7 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import { Feather } from "@expo/vector-icons";
 
 // Constants
-import { colors, happiVoice_constants, } from "../../assets/constants";
+import { colors, happiVoice_constants } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
@@ -114,6 +115,9 @@ const SubscribedServices = (props) => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Mount guard — prevents setState on unmounted component
+  const isMounted = useIsMounted();
+
   // Mounting
   useEffect(() => {
     fetchSubscriptions();
@@ -121,6 +125,7 @@ const SubscribedServices = (props) => {
   }, []);
 
   const fetchSubscriptions = async () => {
+    if (!isMounted.current) return;
     setLoading(true);
     try {
       const mySub = await getSubscriptions();
@@ -166,14 +171,14 @@ const SubscribedServices = (props) => {
           } else if (sub.name === "HappiVOICE (Month)") {
             return {
               ...sub,
-              description:happiVoice_constants?.happiVoice_desc,
+              description: happiVoice_constants?.happiVoice_desc,
               screen: "HappiVoice",
               subscribed: true,
             };
           } else if (sub.name === "HappiVOICE (Year)") {
             return {
               ...sub,
-              description:happiVoice_constants?.happiVoice_desc,
+              description: happiVoice_constants?.happiVoice_desc,
               screen: "HappiVoice",
               subscribed: true,
             };
@@ -197,13 +202,13 @@ const SubscribedServices = (props) => {
         //   return sub.name !== "HappiTALK";
         // });
 
+        if (!isMounted.current) return;
         setSubscriptions(removeGuideAndTalk);
-     
       }
     } catch (err) {
       console.log("Some issue while fetching subscription - ", err);
     }
-    setLoading(false);
+    if (isMounted.current) setLoading(false);
   };
 
   return (
@@ -220,16 +225,15 @@ const SubscribedServices = (props) => {
           <View style={styles.bodyContainer}>
             {subscriptions.length ? (
               subscriptions.map((subscription) => (
-                <>
+                <React.Fragment key={subscription.id}>
                   <SubscriptionCard
-                    key={subscription.id}
                     navigation={navigation}
                     subscription={subscription}
                   />
 
                   {/* Sized Box */}
                   <View style={{ height: hp(2) }} />
-                </>
+                </React.Fragment>
               ))
             ) : (
               <Text

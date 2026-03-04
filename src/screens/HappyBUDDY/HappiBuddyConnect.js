@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useContext, useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,7 +13,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { useFocusEffect } from "@react-navigation/native";
 
 // Constants
@@ -26,6 +26,9 @@ import WaveButton from "../../components/buttons/WaveButton";
 import ConfidentialModal from "../../components/Modals/ConfidentialModal";
 import LanguageModal from "../../components/Modals/LanguageModal";
 import ComingSoon from "../../components/Modals/ComingSoon";
+
+// Languages we support in HappiBUDDY
+const SUPPORTED_LANGUAGES = ["english", "hindi"];
 
 const bulletPoints = [
   {
@@ -43,79 +46,120 @@ const bulletPoints = [
 ];
 
 const HappiBuddyConnect = (props) => {
-  // Context Variables
-  const { currentlyAssignedPsycologist, assignPsychologist, snackDispatch } =
-    useContext(Hcontext);
+  // ─── Context ────────────────────────────────────────────────────────────────
+  const {
+    currentlyAssignedPsycologist,
+    assignPsychologist,
+    snackDispatch,
+    getLanguages,
+  } = useContext(Hcontext);
 
-  // Prop Destructuring
+  // ─── Props ──────────────────────────────────────────────────────────────────
   const { navigation } = props;
 
-  console.log("checking my subs ct - ", props);
-
-  // State Variables
+  // ─── Modal visibility ────────────────────────────────────────────────────────
   const [showConfidentialModal, setShowConfidentialModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [receiverPsy, setReceiverPsy] = useState(""); // The Assigned Psycologist
-  const [groupId, setGroupId] = useState(null);
   const [comingSoon, setComingSoon] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  // // Mounting
-  // useEffect(() => {
-  //   checkCurrentPsycologist();
-  // }, []);
+  // ─── Psychologist state (single object = single re-render per update) ────────
+  const [psyState, setPsyState] = useState({
+    loading: false,
+    groupId: null,
+    receiverPsy: "",
+  });
+  const { loading, groupId, receiverPsy } = psyState;
 
-  // Hits when focus hits
-  useFocusEffect(
-    useCallback(() => {
-      checkCurrentPsycologist();
-      return () => {};
-    }, [])
-  );
+  // ─── Languages pre-fetched while user reads the screen ───────────────────────
+  const [fetchedLanguages, setFetchedLanguages] = useState([]);
 
-  // CHeck the previously assigned psycologist to continue with
-  const checkCurrentPsycologist = async () => {
-    setLoading(true);
+  // ─── Stable refs — always hold the latest context / nav values ───────────────
+  // This pattern lets us write useCallback with [] deps (stable identity)
+  // while still always calling the freshest function from context.
+  const currentlyAssignedPsycologistRef = useRef(currentlyAssignedPsycologist);
+  const assignPsychologistRef = useRef(assignPsychologist);
+  const snackDispatchRef = useRef(snackDispatch);
+  const navigationRef = useRef(navigation);
+  const getLanguagesRef = useRef(getLanguages);
+
+  // Sync refs on every render (cheap, no side-effects)
+  currentlyAssignedPsycologistRef.current = currentlyAssignedPsycologist;
+  assignPsychologistRef.current = assignPsychologist;
+  snackDispatchRef.current = snackDispatch;
+  navigationRef.current = navigation;
+  getLanguagesRef.current = getLanguages;
+
+  // ─── Check previously assigned psychologist ──────────────────────────────────
+  const checkCurrentPsycologist = useCallback(async () => {
+    setPsyState((prev) => ({ ...prev, loading: true }));
     try {
-      const currentPsy = await currentlyAssignedPsycologist();
-      console.log("The current psycoligist - ", 
-      // currentPsy
-      );
+      const currentPsy = await currentlyAssignedPsycologistRef.current();
       if (currentPsy.status === "success") {
-        setGroupId(currentPsy.group_id);
-        setReceiverPsy(currentPsy.psychologist_detail.id + "_p");
+        // Single setState call = single re-render (was 3 separate calls before)
+        setPsyState({
+          loading: false,
+          groupId: currentPsy.group_id,
+          receiverPsy: currentPsy.psychologist_detail.id + "_p",
+        });
+      } else {
+        setPsyState((prev) => ({ ...prev, loading: false }));
       }
     } catch (err) {
-      console.log("Some issue while checking current psycologist - ", err);
+      console.log("Error checking current psychologist:", err);
+      setPsyState((prev) => ({ ...prev, loading: false }));
     }
-    setLoading(false);
-  };
+  }, []); // stable — reads context via ref
 
-  // Assigning a Psycologist
-  const fetchPsycologist = async (language) => {
-    console.log("here is inisde duncion");
+  // ─── Pre-fetch languages in the background ───────────────────────────────────
+  // By the time the user taps through to LanguageModal the data is already
+  // ready, so the dropdown renders instantly with no spinner at all.
+  const prefetchLanguages = useCallback(async () => {
     try {
-      const psycologist = await assignPsychologist({ language });
+      const res = await getLanguagesRef.current();
+      if (res?.status === "success" && res?.data?.length > 0) {
+        const filtered = res.data.filter((l) =>
+          SUPPORTED_LANGUAGES.includes(l.name),
+        );
+        if (filtered.length > 0) setFetchedLanguages(filtered);
+      }
+    } catch (err) {
+      // Silent — LanguageModal carries its own FALLBACK_LANGUAGES safety net
+    }
+  }, []); // stable — reads context via ref
 
-      console.log("The fetched selected psycologist - ", psycologist);
-
+  // ─── Assign psychologist after language is selected ──────────────────────────
+  // useCallback with [] makes this reference-stable so LanguageModal never
+  // re-renders just because HappiBuddyConnect re-renders.
+  const fetchPsycologist = useCallback(async (language) => {
+    try {
+      const psycologist = await assignPsychologistRef.current({ language });
       if (psycologist.status === "success") {
-        snackDispatch({
+        snackDispatchRef.current({
           type: "SHOW_SNACK",
           payload: "Your Buddy is waiting for you.",
         });
-
-        setReceiverPsy(psycologist.psychologist_detail.id + "_p");
-        navigation.push("HappiBUDDYChat", {
-          assignedPsy: psycologist.psychologist_detail.id + "_p",
+        const psyId = psycologist.psychologist_detail.id + "_p";
+        setPsyState((prev) => ({ ...prev, receiverPsy: psyId }));
+        navigationRef.current.push("HappiBUDDYChat", {
+          assignedPsy: psyId,
           group: psycologist.group_id,
         });
       }
     } catch (err) {
-      console.log("Some issue while asigning psycologist - ", err);
+      console.log("Error assigning psychologist:", err);
     }
-  };
+  }, []); // stable — reads context via ref
 
+  // ─── Run on every screen focus ───────────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      checkCurrentPsycologist();
+      prefetchLanguages(); // fire-and-forget background fetch
+      return () => {};
+    }, [checkCurrentPsycologist, prefetchLanguages]), // both stable → callback never changes
+  );
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <ImageBackground
       source={require("../../assets/images/language_background.png")}
@@ -155,6 +199,10 @@ const HappiBuddyConnect = (props) => {
           showModal={showLanguageModal}
           setShowModal={setShowLanguageModal}
           fetchPsycologist={fetchPsycologist}
+          // Pass pre-fetched languages so the modal renders instantly.
+          // If pre-fetch hasn't finished yet (edge case), LanguageModal
+          // will fall back to its own API call + FALLBACK_LANGUAGES.
+          preloadedLanguages={fetchedLanguages}
         />
       ) : null}
 
@@ -168,14 +216,16 @@ const HappiBuddyConnect = (props) => {
         <View style={styles.heroContainer}>
           {/* Sized Box */}
           <View style={{ height: hp(2) }} />
+
           <Image
-            // source={require("../../assets/images/happiBUDDY_girl.png")}
             source={require("../../assets/images/happiBUDDY.png")}
             resizeMode="contain"
             style={styles.heroImage}
           />
+
           {/* Sized Box */}
           <View style={{ height: hp(2) }} />
+
           <View style={styles.heroContentContainer}>
             <Text
               style={{ fontSize: RFValue(16), fontFamily: "PoppinsMedium" }}
@@ -208,15 +258,7 @@ const HappiBuddyConnect = (props) => {
 
             <TouchableOpacity
               activeOpacity={0.7}
-              // onPress={() => navigation.push("HappiBUDDYChat")}
-              onPress={() => {
-                if (!props?.route?.params?.isSubscribed) {
-                  // navigation.navigate("Payments");
-                  setShowConfidentialModal(true);
-                } else {
-                  setShowConfidentialModal(true);
-                }
-              }}
+              onPress={() => setShowConfidentialModal(true)}
               style={styles.connectButton}
               disabled={loading}
             >
@@ -252,6 +294,7 @@ const HappiBuddyConnect = (props) => {
     </ImageBackground>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
@@ -273,7 +316,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   heroImage: {
-    // backgroundColor: "green",
     width: hp(30),
     height: hp(30),
   },

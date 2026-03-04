@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
   container: {
     // backgroundColor: "red",
     alignItems: "center",
+    marginRight: wp(3),
   },
   backImage: {
     // backgroundColor: "yellow",

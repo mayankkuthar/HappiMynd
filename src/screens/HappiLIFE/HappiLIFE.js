@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import useIsMounted from "../../hooks/useIsMounted";
 import {
   StyleSheet,
   Text,
@@ -33,6 +34,9 @@ const HappiLIFE = (props) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Mount guard — prevents setState on unmounted component
+  const isMounted = useIsMounted();
+
   // Mounting
   useEffect(() => {
     checkSubscription();
@@ -40,20 +44,21 @@ const HappiLIFE = (props) => {
   }, []);
 
   const checkSubscription = async () => {
+    if (!isMounted.current) return;
     setLoading(true);
     try {
       const mySub = await getSubscriptions();
-
+      if (!isMounted.current) return;
       if (mySub.status === "success") {
         const isSub = mySub.data.find(
-          (sub) => sub.name === "HappiLIFE Screening"
+          (sub) => sub.name === "HappiLIFE Screening",
         );
         if (isSub) setIsSubscribed(true);
       }
     } catch (err) {
       console.log("Some issue while checking subscription - ", err);
     }
-    setLoading(false);
+    if (isMounted.current) setLoading(false);
   };
 
   return (

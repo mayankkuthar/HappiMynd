@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
+import useIsMounted from "../../hooks/useIsMounted";
 import {
   StyleSheet,
   Text,
@@ -40,6 +41,9 @@ const RegisterWithCode = (props) => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Mount guard — prevents setState on unmounted component
+  const isMounted = useIsMounted();
+
   // Mounting
   useEffect(() => {
     gettingSponsorList();
@@ -48,6 +52,7 @@ const RegisterWithCode = (props) => {
   const gettingSponsorList = async () => {
     try {
       const sponsors = await getSponsorList();
+      if (!isMounted.current) return;
       // const filteredData = sponsors.data.map((user) => user.name);
       setSponsorList(sponsors.data);
     } catch (err) {
@@ -56,6 +61,7 @@ const RegisterWithCode = (props) => {
   };
 
   const handleSubmit = async () => {
+    if (!isMounted.current) return;
     setLoading(true);
     try {
       if (!selectedSponsor || !code) {
@@ -91,7 +97,7 @@ const RegisterWithCode = (props) => {
     } catch (err) {
       console.log(
         "Some issue while register with code (RegisterWithCode.js) - ",
-        err
+        err,
       );
     }
     setLoading(false);
@@ -165,17 +171,19 @@ const RegisterWithCode = (props) => {
                   <Text style={{ textDecorationLine: "underline" }}>
                     Terms & Conditions
                   </Text>
-                </TouchableOpacity>
-                {" "}and acknowledge that Happimynd's{" "}
+                </TouchableOpacity>{" "}
+                and acknowledge that Happimynd's{" "}
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => Linking.openURL("https://happimynd.com/privacy")}
+                  onPress={() =>
+                    Linking.openURL("https://happimynd.com/privacy")
+                  }
                 >
                   <Text style={{ textDecorationLine: "underline" }}>
                     Privacy Policy
                   </Text>
-                </TouchableOpacity>
-                {" "}applies to you.
+                </TouchableOpacity>{" "}
+                applies to you.
               </Text>
             </View>
           </View>

@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, getFirestore } from "firebase/firestore";
 
 // Optionally import the services that you want to use
 // import * as firebase from "firebase";
@@ -32,9 +32,20 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 console.log("The app res - ", app);
-// initializeApp(firebaseConfig);
 
 // Creating database instance
-const db = getFirestore();
+// experimentalForceLongPolling fixes the "Could not reach Cloud Firestore backend"
+// error in React Native, where the Firebase Web SDK's default WebSocket/gRPC
+// transport is not reliably supported. Long polling uses standard HTTP requests instead.
+let db;
+try {
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
+} catch (e) {
+  // initializeFirestore throws if already initialized (e.g. hot reload),
+  // so fall back to the existing instance.
+  db = getFirestore(app);
+}
 
 export { db };

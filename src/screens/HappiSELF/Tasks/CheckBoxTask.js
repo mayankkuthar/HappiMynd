@@ -68,7 +68,10 @@ const CheckBoxTask = (props) => {
         {/* Question Options */}
         <View style={styles.optionContainer}>
           {option.map(({ id, option }) => (
-            <View style={{ flexDirection: "row", marginBottom: hp(2) }}>
+            <View
+              key={id}
+              style={{ flexDirection: "row", marginBottom: hp(2) }}
+            >
               <MultiCheckbox
                 id={id}
                 title={option}

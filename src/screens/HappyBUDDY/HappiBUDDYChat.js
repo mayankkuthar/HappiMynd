@@ -251,33 +251,32 @@ const HappiBUDDYChat = (props) => {
     const q = query(
       collectionRef,
       where("groupId", "==", groupId),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      // Mapping through messages
-      const messageList = snapshot.docs.map((doc) => {
-        // console.log("The received snapshot - ", doc.data());
-        // const senderUser = authState.user.user.id + "_u";
-        // if (
-        //   (senderUser == doc.data().senderId &&
-        //     receiverPsy == doc.data().receiverId) ||
-        //   (receiverPsy == doc.data().senderId &&
-        //     senderUser == doc.data().receiverId)
-        // )
-        return {
-          _id: doc.id,
-          createdAt: doc.data().createdAt.toDate(),
-          text: doc.data().text,
-          user: doc.data().user,
-        };
-        // else return null;
-      });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        // Mapping through messages
+        const messageList = snapshot.docs.map((doc) => {
+          return {
+            _id: doc.id,
+            createdAt: doc.data().createdAt.toDate(),
+            text: doc.data().text,
+            user: doc.data().user,
+          };
+        });
 
-      // Setting message state
-      setMessages(messageList.filter((message) => message));
-      setLoading(false);
-    });
+        // Setting message state
+        setMessages(messageList.filter((message) => message));
+        setLoading(false);
+      },
+      (error) => {
+        // Firestore backend connectivity error — log and fail gracefully
+        console.error("Firestore onSnapshot error:", error.message);
+        setLoading(false);
+      },
+    );
 
     console.log("Chekc the receicer psy - ", receiverPsy);
 
@@ -448,7 +447,7 @@ const HappiBUDDYChat = (props) => {
   const onSend = async (messages = []) => {
     try {
       setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages)
+        GiftedChat.append(previousMessages, messages),
       );
       const { _id, createdAt, text, user } = messages[0];
 
@@ -572,7 +571,6 @@ const HappiBUDDYChat = (props) => {
                   color={colors.borderLight}
                 />
               </View>
-              <View style={{ height: hp(1) }} />
             </Send>
           </View>
         )}

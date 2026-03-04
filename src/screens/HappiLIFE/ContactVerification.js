@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Linking,
   BackHandler,
-  Image
+  Image,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -30,12 +30,9 @@ import PhoneInputField from "../../components/input/PhoneInputField";
 import { CountryPicker } from "react-native-country-codes-picker";
 import Checkbox from "../../components/input/Checkbox";
 
-
-
 const BulletPoint = (props) => {
   // Prop Destructuring
   const { name = "" } = props;
-
 
   return (
     <View style={{ flexDirection: "row" }}>
@@ -55,8 +52,6 @@ const ContactVerification = (props) => {
   // Prop Destructuring
   const { navigation } = props;
   const { params } = props?.route;
-
-
 
   // Context Variables
   const {
@@ -78,27 +73,25 @@ const ContactVerification = (props) => {
   const [validPhone, setValidPhone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(false);
-  const [countryCode, setCountryCode] = useState('+91');
+  const [countryCode, setCountryCode] = useState("+91");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
-    if (emailOtp) {
-      validateEmailOTP(emailOtp);
-    }
+    // Email OTP verification hidden — email is now optional
     if (phoneOtp) {
       validatePhoneOTP(phoneOtp);
     }
     screenTrafficAnalytics({
       screenName: "HappiLIFE Assesment Verification Screen",
     });
-  }, [emailOtp, phoneOtp]);
+  }, [phoneOtp]);
 
   useEffect(() => {
     BackHandler.addEventListener("hardwareBackPress", handleBackButtonClick);
     return () => {
       BackHandler.removeEventListener(
         "hardwareBackPress",
-        handleBackButtonClick
+        handleBackButtonClick,
       );
     };
   }, []);
@@ -125,12 +118,12 @@ const ContactVerification = (props) => {
           text: "OK",
           onPress: () => console.log("Ok Pressed"),
         },
-      ]
+      ],
     );
 
   const otpHandler = async (type = "", email = null, mobile = null) => {
     let joincode = countryCode.replace("+", "");
-    let sendMobile = mobile
+    let sendMobile = mobile;
     console.log("checkdata________ ", joincode, type, email, mobile);
 
     try {
@@ -139,7 +132,12 @@ const ContactVerification = (props) => {
       } else {
         setPhoneLoader(true);
       }
-      const otpRes = await sendOTP({ type, email, mobile: sendMobile, country_code: joincode });
+      const otpRes = await sendOTP({
+        type,
+        email,
+        mobile: sendMobile,
+        country_code: joincode,
+      });
       console.log("The OTP Res - ", otpRes);
       if (otpRes.status === "success") {
         snackDispatch({ type: "SHOW_SNACK", payload: otpRes.message });
@@ -150,8 +148,6 @@ const ContactVerification = (props) => {
     setEmailLoader(false);
     setPhoneLoader(false);
   };
-
-
 
   const validateEmailOTP = async (otp) => {
     try {
@@ -169,7 +165,7 @@ const ContactVerification = (props) => {
   const validatePhoneOTP = async (otp) => {
     try {
       let joincode = countryCode.replace("+", "");
-      let sendMobile = phone
+      let sendMobile = phone;
       const otpRes = await verifyOtp({ email: "", mobile: sendMobile, otp });
       console.log("chec the email otp or the res - ", otpRes);
       if (otpRes.status === "success") {
@@ -182,15 +178,15 @@ const ContactVerification = (props) => {
     }
   };
 
-
   const reportHandler = async () => {
     setLoading(true);
     try {
-      if (!validEmail || !validPhone) {
+      // Email is optional — only phone verification is required
+      if (!validPhone) {
         setLoading(false);
         return snackDispatch({
           type: "SHOW_SNACK",
-          payload: "Please update your email and contact number.",
+          payload: "Please verify your contact number.",
         });
       }
 
@@ -204,9 +200,7 @@ const ContactVerification = (props) => {
 
       if (params?.isFrom == "Talk") {
         navigation.push("HappiTALKBook");
-      }
-
-      else if (params?.isFrom == "Guide") {
+      } else if (params?.isFrom == "Guide") {
         navigation.push("MakeBooking", {
           module: "guide",
           type: "add",
@@ -215,19 +209,18 @@ const ContactVerification = (props) => {
           amount: "539",
           // session: 1,
         });
-      }
-
-      else if (params?.isFrom == "Voice") {
+      } else if (params?.isFrom == "Voice") {
         navigation.push("Pricing", {
           selectedPlan: "HappiVOICE (Year)",
-          isFrom: "Voice"
+          isFrom: "Voice",
         });
-      }
-
-      else if (params?.isFrom == "HappiBot") {
-        navigation.push("ResultScreen", { isFrom: "contact", cat_id: params?.category_Id, profile_id: params?.profile_id })
-      }
-      else {
+      } else if (params?.isFrom == "HappiBot") {
+        navigation.push("ResultScreen", {
+          isFrom: "contact",
+          cat_id: params?.category_Id,
+          profile_id: params?.profile_id,
+        });
+      } else {
         //navigation.push("Pricing", {selectedPlan: "HappiLIFE Screening",});
         navigation.navigate("HomeScreen");
       }
@@ -242,8 +235,7 @@ const ContactVerification = (props) => {
       //   navigation.navigate("HomeScreen");
       //   // downloadReport(reportRes.url);
       // }
-    }
-    catch (err) {
+    } catch (err) {
       console.log("Some issue while fetching report - ", err);
     }
     setLoading(false);
@@ -272,63 +264,20 @@ const ContactVerification = (props) => {
 
         {/* Form Section */}
         <View>
-          <Text style={styles.label}>Enter email</Text>
+          {/* Email is optional — OTP verification hidden */}
+          <Text style={styles.label}>Enter email (optional)</Text>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <TextInput
               keyboardType="email-address"
-              style={styles.input}
-              placeholder="Enter email address"
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Enter email address (optional)"
               value={email}
               onChangeText={(text) => setEmail(text)}
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.otpButton}
-              onPress={() => otpHandler("email", email, null)}
-              disabled={emailLoader}
-            >
-              {emailLoader ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.otpButtonText}>Send OTP</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
-          <Text style={styles.label}>Enter email OTP</Text>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <TextInput
-              keyboardType="number-pad"
-              style={styles.input}
-              placeholder="Enter email OTP"
-              value={emailOtp}
-              onChangeText={(text) => setEmailOtp(text)}
-            />
-            <View style={{ width: wp(2) }} />
-            {email ? (
-              validEmail ? (
-                <FontAwesome name="check-circle" size={hp(2.5)} color="green" />
-              ) : (
-                <MaterialIcons
-                  name="report-problem"
-                  size={hp(2.5)}
-                  color="red"
-                />
-              )
-            ) : null}
           </View>
 
           {/* Sized Box */}
@@ -364,24 +313,33 @@ const ContactVerification = (props) => {
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: 5,
-                    backgroundColor: 'lightgrey'
+                    backgroundColor: "lightgrey",
                   }}
                 >
-
-                  <Text style={{ fontSize: RFValue(10), fontFamily: "Poppins", color: 'black' }}>
+                  <Text
+                    style={{
+                      fontSize: RFValue(10),
+                      fontFamily: "Poppins",
+                      color: "black",
+                    }}
+                  >
                     {countryCode}
                   </Text>
                   <Image
-                    source={require('../../assets/images/downArrow.png')}
-                    style={{ height: 15, width: 15, marginLeft: 5, tintColor: 'grey' }}
+                    source={require("../../assets/images/downArrow.png")}
+                    style={{
+                      height: 15,
+                      width: 15,
+                      marginLeft: 5,
+                      tintColor: "grey",
+                    }}
                   />
                 </TouchableOpacity>
               </View>
 
-
               <CountryPicker
                 show={show}
-                initialState={'+91'}
+                initialState={"+91"}
                 pickerButtonOnPress={(item) => {
                   setCountryCode(item.dial_code);
                   setShow(false);
@@ -393,7 +351,6 @@ const ContactVerification = (props) => {
                   },
                 }}
               />
-
 
               {/* Sized Box */}
               <View style={{ width: wp(2) }} />
@@ -501,8 +458,8 @@ const ContactVerification = (props) => {
                 <Text style={{ textDecorationLine: "underline" }}>
                   Terms & Conditions
                 </Text>
-              </TouchableOpacity>
-              {" "}and acknowledge that Happimynd's{" "}
+              </TouchableOpacity>{" "}
+              and acknowledge that Happimynd's{" "}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => Linking.openURL("https://happimynd.com/privacy")}
@@ -510,8 +467,8 @@ const ContactVerification = (props) => {
                 <Text style={{ textDecorationLine: "underline" }}>
                   Privacy Policy
                 </Text>
-              </TouchableOpacity>
-              {" "}applies to you.
+              </TouchableOpacity>{" "}
+              applies to you.
             </Text>
           </View>
         </View>
@@ -560,7 +517,7 @@ const ContactVerification = (props) => {
           params?.isFrom !== "Talk" &&
           params?.isFrom !== "Guide" &&
           params?.isFrom !== "Voice" && (
-            <Text>Skip</Text>
+            <Text style={{ marginTop: wp(2) }}>Skip</Text>
           )}
       </TouchableOpacity>
     </View>

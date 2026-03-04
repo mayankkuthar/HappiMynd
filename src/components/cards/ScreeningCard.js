@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, memo } from "react";
+import useIsMounted from "../../hooks/useIsMounted";
 import {
   StyleSheet,
   Text,
@@ -37,13 +38,18 @@ const ScreeningCard = (props) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Mount guard — prevents setState on unmounted component
+  const isMounted = useIsMounted();
+
   const answerHandler = async (optionId) => {
+    if (!isMounted.current) return;
     setLoading(true);
     try {
       console.log("check teh oprion id - ", optionId);
       setSelectedAnswer(optionId);
 
       const answerRes = await submitAnswer({ optionId });
+      if (!isMounted.current) return;
       console.log("Chekc the anser response - ", answerRes);
 
       if (answerRes?.message == "completed") {
@@ -52,9 +58,11 @@ const ScreeningCard = (props) => {
           payload: "Awareness tool completed !",
         });
         props.navigation.push("AssessmentComplete");
-      }
-
-      if (data.length - 1 === index) {
+      } else if (data.length - 1 === index) {
+        // Only re-fetch questions if the assessment is NOT yet complete.
+        // Using else-if prevents startAssessment from being called after the
+        // final answer is submitted, which was creating a second incomplete
+        // submission entry in the backend.
         getAssessment(authState.user.access_token);
       }
 
@@ -64,7 +72,7 @@ const ScreeningCard = (props) => {
       //   activeIndex = newData.length - 1;
       // }
       console.log("chekcing the new data - ", newData);
-      console.log("Chekcing teh selected index - ", selectedIndex);
+      console.log("Chekcing the selected index - ", selectedIndex);
       if (newData[selectedIndex]) {
         newData[selectedIndex].disabled = false;
         let selectedItem = { ...item, disabled: true };
@@ -80,19 +88,12 @@ const ScreeningCard = (props) => {
         });
         setData(newData);
         setSelectedIndex((prevState) => prevState + 1);
-        // setSelectedIndex(activeIndex);
-
-        // Auto Scrolling feature
-        listRef.current.scrollToIndex({
-          animated: true,
-          index: selectedIndex + 1,
-          viewPosition: -0.1,
-        });
+        // scrolling is handled by the parent via useEffect on selectedIndex
       }
     } catch (err) {
       console.log("Some issue while answer handler - ", err);
     }
-    setLoading(false);
+    if (isMounted.current) setLoading(false);
   };
 
   // Mounting
@@ -112,13 +113,10 @@ const ScreeningCard = (props) => {
       ) : (
         item?.options?.map(({ option, id }, index) => {
           return (
-            <>
+            <React.Fragment key={id}>
               <Pressable
                 activeOpacity={0.7}
                 onPress={() => answerHandler(id)}
-                // style={
-                //   index % 2 ? styles.cardButtonFalse : styles.cardButtonTrue
-                // }
                 style={({ pressed }) =>
                   selectedAnswer === id || pressed
                     ? styles.cardButtonTrue
@@ -130,7 +128,7 @@ const ScreeningCard = (props) => {
               </Pressable>
               {/* Sized Box */}
               <View style={{ height: hp(1) }} />
-            </>
+            </React.Fragment>
           );
         })
       )}

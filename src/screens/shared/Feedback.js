@@ -182,6 +182,7 @@ const Feedback = (props) => {
               {emojiList.length
                 ? emojiList.map((emoji) => (
                     <TouchableOpacity
+                      key={emoji.id}
                       activeOpacity={1}
                       onPress={() => setSelectedMood(emoji.id)}
                       style={styles.feedbackButton}

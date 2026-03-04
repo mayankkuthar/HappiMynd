@@ -103,6 +103,7 @@ const TimeSlot = (props) => {
           <View style={styles.timeSection}>
             {timeSlotList.map((data) => (
               <TouchableOpacity
+                key={data?.id}
                 activeOpacity={0.7}
                 style={{
                   ...styles.timeContainer,

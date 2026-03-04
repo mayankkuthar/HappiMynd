@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useContext, memo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  memo,
+  useCallback,
+} from "react";
 import {
   StyleSheet,
   Text,
@@ -47,7 +54,7 @@ const HappiLIFEScreening = (props) => {
   // Prop Destructuring
   const { navigation } = props;
 
-  // COntext Variables
+  // Context Variables
   const {
     authState,
     authDispatch,
@@ -56,7 +63,7 @@ const HappiLIFEScreening = (props) => {
     screenTrafficAnalytics,
   } = useContext(Hcontext);
 
-  // State Varaibles
+  // State Variables
   const [showExitModal, setShowExitModal] = useState(false);
   const [screeningData, setScreeningData] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -64,22 +71,42 @@ const HappiLIFEScreening = (props) => {
 
   // Ref Variables
   const listRef = useRef();
+  const itemRefs = useRef([]); // refs to each item View
 
   // Mounting
   useEffect(() => {
     initialMount();
   }, []);
 
+  // Auto-scroll to the newly active question whenever selectedIndex advances
+  useEffect(() => {
+    if (selectedIndex <= 0) return;
+
+    const timer = setTimeout(() => {
+      const itemRef = itemRefs.current[selectedIndex];
+      if (!itemRef || !listRef.current) return;
+
+      itemRef.measureLayout(
+        listRef.current.getScrollableNode?.() ?? listRef.current,
+        (x, y) => {
+          listRef.current?.scrollTo({ y, animated: true });
+        },
+        () => console.log("measureLayout failed"),
+      );
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [selectedIndex]);
+
   const initialMount = async () => {
     try {
       console.log("Screening mount log - ", props);
-
       getAssessment(authState.user.access_token);
       screenTrafficAnalytics({ screenName: "HappiLIFE Screening Assessment" });
     } catch (err) {
       console.log(
         "Some issue while initial mount (HappiLIFEScreening.js) - ",
-        err
+        err,
       );
     }
   };
@@ -143,9 +170,12 @@ const HappiLIFEScreening = (props) => {
         <View style={{ flex: 1 }}>
           <ScrollView ref={listRef}>
             {screeningData.map((item, index) => (
-              <View style={{ paddingHorizontal: wp(10) }}>
+              <View
+                key={item.id}
+                ref={(el) => (itemRefs.current[index] = el)}
+                style={{ paddingHorizontal: wp(10) }}
+              >
                 <ScreeningCard
-                  key={item.id}
                   listRef={listRef}
                   data={screeningData}
                   setData={setScreeningData}
@@ -159,63 +189,34 @@ const HappiLIFEScreening = (props) => {
                 <View style={{ height: hp(2) }} />
               </View>
             ))}
-            <>
-              <View style={{ height: hp(44) }} />
-            </>
+            <View style={{ height: hp(44) }} />
           </ScrollView>
-          {/* <FlatList
-            // ref={listRef}
-            data={screeningData}
-            // scrollEnabled={false}
-            renderItem={({ item, index }) => (
-              <View style={{ paddingHorizontal: wp(10) }}>
-                <ScreeningCard
-                  listRef={listRef}
-                  data={screeningData}
-                  setData={setScreeningData}
-                  item={item}
-                  index={index}
-                  selectedIndex={selectedIndex}
-                  setSelectedIndex={setSelectedIndex}
-                  getAssessment={getAssessment}
-                  {...props}
-                />
-                <View style={{ height: hp(2) }} />
-              </View>
-            )}
-            keyExtractor={(item) => item.id}
-            ListFooterComponent={() => (
-              <>
-                <View style={{ height: hp(44) }} />
-              </>
-            )}
-          /> */}
         </View>
       </View>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
-    // flex: 1,
-    height: hp(90),
+    height: hp(96),
   },
   headerContainer: {
-    // backgroundColor: "red",
     width: wp(100),
-    height: hp(14),
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-  },
-  headerBox: {
-    // backgroundColor: "yellow",
-    width: wp(100),
+    paddingTop: hp(10),
+    paddingBottom: hp(1),
     paddingHorizontal: wp(4),
+  },
+  skipButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+  },
+  skipText: {
+    fontSize: RFValue(14),
+    fontFamily: "Poppins",
+    color: colors.primaryText,
+    marginLeft: wp(1),
   },
   pageTitle: {
     fontSize: RFValue(22),

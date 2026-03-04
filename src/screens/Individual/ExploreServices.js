@@ -17,7 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 
 // Constants
-import { colors, happiVoice_constants} from "../../assets/constants";
+import { colors, happiVoice_constants } from "../../assets/constants";
 
 // Components
 import SubscriptionCard from "../../components/cards/SubscriptionCard";
@@ -78,14 +78,14 @@ const subscriptions = [
     screen: "HappiTALK",
     subscribed: false,
   },
-  {
-    id: 8,
-    name: "HappiVOICE",
-    description:happiVoice_constants?.happiVoice_desc,
-    // screen: "HappiTALKBook",
-    screen: "HappiVoice",
-    subscribed: false,
-  },
+  // HappiVOICE hidden — re-enable when needed
+  // {
+  //   id: 8,
+  //   name: "HappiVOICE",
+  //   description: happiVoice_constants?.happiVoice_desc,
+  //   screen: "HappiVoice",
+  //   subscribed: false,
+  // },
 ];
 
 const Header = (props) => {
@@ -138,7 +138,7 @@ const ExploreServices = (props) => {
     React.useCallback(() => {
       fetchSubscriptions();
       return () => {};
-    }, [])
+    }, []),
   );
 
   const fetchSubscriptions = async () => {
@@ -170,16 +170,17 @@ const ExploreServices = (props) => {
               };
             } else if (sub.name.includes("HappiLIFE")) {
               return { ...sub, screen: "HappiLIFE", subscribed: true };
-            } else if (sub.name.includes("HappiVOICE")) {
-              return { ...sub, screen: "HappiVoice", subscribed: true };
+              // HappiVOICE hidden — re-enable when needed
+              // } else if (sub.name.includes("HappiVOICE")) {
+              //   return { ...sub, screen: "HappiVoice", subscribed: true };
             } else if (sub.name === "HappiBUDDY") {
               return { ...sub, screen: "HappiBuddyConnect", subscribed: true };
             } else if (sub.name === "HappiSELF") {
               return { ...sub, screen: "HappiSELFTab", subscribed: true };
-            } else if(sub.name === 'HappiTALK'){
-              return { ...sub}
-            } else if(sub.name === 'HappiGUIDE'){
-              return { ...sub}
+            } else if (sub.name === "HappiTALK") {
+              return { ...sub };
+            } else if (sub.name === "HappiGUIDE") {
+              return { ...sub };
             } else {
               return { ...sub, screen: "" };
             }
@@ -217,7 +218,7 @@ const ExploreServices = (props) => {
         <View style={styles.bodyContainer}>
           {subscribed.length
             ? subscribed.map((subscription, index) => (
-                <View>
+                <View key={subscription?.id ?? index}>
                   <SubscriptionCard
                     navigation={navigation}
                     subscription={subscription}

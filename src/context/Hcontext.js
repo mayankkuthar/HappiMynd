@@ -2,8 +2,7 @@ import React, { useState, useEffect, useReducer, useRef } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import Constants from "expo-constants";
-import * as Notifications from "expo-notifications";
+import messaging from "@react-native-firebase/messaging";
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
 
 // Config
@@ -23,28 +22,20 @@ import {
 
 export const Hcontext = React.createContext();
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
 export const Hprovider = (props) => {
   // Reducer Variables
   const [authState, authDispatch] = useReducer(authReducer, initialAuthState);
   const [whiteLabelState, whiteLabelDispatch] = useReducer(
     whiteLabelReducer,
-    initialLabelState
+    initialLabelState,
   );
   const [happiSelfState, happiSelfDispatch] = useReducer(
     happiSelfReducer,
-    initialSelfState
+    initialSelfState,
   );
   const [snackState, snackDispatch] = useReducer(
     snackReducer,
-    initialSnackState
+    initialSnackState,
   );
 
   // Stste Vaiables
@@ -52,18 +43,15 @@ export const Hprovider = (props) => {
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(false);
   const [selectedMood, setSelectedMood] = useState();
-const [signedUrlAudio, setsignedUrlAudio] = useState();
-const [tokenSonde, setTokenSonde] = useState();
-const [sondeJobId, setSondeJobId] = useState();
-const [sondeUserId, setSondeUserId] = useState();
-const [voiceReport, setVoiceReport] = useState("");
-const [botVisible, setBotVisible] = useState(true);
-const [gotoVideo, setGotoVideo] = useState(false)
-const [gotoAssessment, setGotoAssessment] = useState(false)
-const [categoryId, setCategoryId] = useState("")
-
-
-
+  const [signedUrlAudio, setsignedUrlAudio] = useState();
+  const [tokenSonde, setTokenSonde] = useState();
+  const [sondeJobId, setSondeJobId] = useState();
+  const [sondeUserId, setSondeUserId] = useState();
+  const [voiceReport, setVoiceReport] = useState("");
+  const [botVisible, setBotVisible] = useState(true);
+  const [gotoVideo, setGotoVideo] = useState(false);
+  const [gotoAssessment, setGotoAssessment] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
 
   // Filter Variables
   const [selectedCategory, setSelectedCategory] = useState(0);
@@ -82,88 +70,87 @@ const [categoryId, setCategoryId] = useState("")
     notificationsHandler();
 
     return () => {
-      Notifications.removeNotificationSubscription(
-        notificationListener.current
-      );
-      Notifications.removeNotificationSubscription(responseListener.current);
+      // Unsubscribe FCM listeners when the provider unmounts.
+      if (notificationListener.current) notificationListener.current();
+      if (responseListener.current) responseListener.current();
     };
   }, []);
 
   const notificationsHandler = async () => {
     try {
-      registerForPushNotificationsAsync().then((token) =>
-        setExpoPushToken(token)
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        setDeviceToken(token);
+        setExpoPushToken(token); // keep in sync for backward compat
+      }
+
+      // Foreground handler — fires when a notification arrives while the app
+      // is open. Android won't auto-display a heads-up in this state, so we
+      // store the data in state so the app can react (e.g. show an in-app banner).
+      notificationListener.current = messaging().onMessage(
+        async (remoteMessage) => {
+          console.log("FCM foreground message:", remoteMessage.messageId);
+          if (remoteMessage?.data) {
+            setNotification(remoteMessage.data);
+          }
+        },
       );
 
-      notificationListener.current =
-        Notifications.addNotificationReceivedListener((notification) => {
-          console.log("notification", 
-          // notification
+      // Background tap handler — fires when the user taps a notification
+      // while the app is in the background (but not killed).
+      responseListener.current = messaging().onNotificationOpenedApp(
+        (remoteMessage) => {
+          console.log(
+            "Notification tapped (background):",
+            remoteMessage.messageId,
           );
-          // setNotification(notification);
-        });
+          if (remoteMessage?.data) {
+            setNotification(remoteMessage.data);
+          }
+        },
+      );
 
-      responseListener.current =
-        Notifications.addNotificationResponseReceivedListener((response) => {
-          console.log("notification receiver res - ",
-          //  response
-           );
-          setNotification(response.notification.request.content.data);
+      // Quit-state tap handler — fires once when the app is cold-started by
+      // tapping a notification.
+      messaging()
+        .getInitialNotification()
+        .then((remoteMessage) => {
+          if (remoteMessage?.data) {
+            console.log(
+              "Notification tapped (quit state):",
+              remoteMessage.messageId,
+            );
+            setNotification(remoteMessage.data);
+          }
         });
     } catch (err) {
-      console.log("Some issue while useing notifications (Main.js) - ", 
-      // err
-      );
+      console.log("Some issue while setting up notifications - ", err);
     }
   };
 
   const registerForPushNotificationsAsync = async () => {
-    let token;
-    if (Constants.isDevice) {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
+    try {
+      // Request notification permission.
+      // On Android 13+ this triggers the POST_NOTIFICATIONS runtime prompt.
+      // On iOS it requests alert / badge / sound permissions.
+      const authStatus = await messaging().requestPermission();
+      const granted =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (!granted) {
+        console.log("Notification permission not granted, status:", authStatus);
+        return null;
       }
-      console.log("cheking the final status -- ", 
-      // finalStatus
-      );
-      // if (finalStatus !== "granted") {
-      //   alert("Failed to get push token for push notification!");
-      //   return;
-      // }
-      token = (
-        await Notifications.getExpoPushTokenAsync({
-          experienceId: "@ashish-seraphic/HappiMynd",
-        })
-      ).data;
-      // const token = (await Notifications.getDevicePushTokenAsync()).data;
-      console.log("The device token is - ", 
-      // token
-      );
 
-      // Setting device token in state
-      setDeviceToken(token);
-    } else {
-      alert("Must use physical device for Push Notifications");
+      // Retrieve the FCM registration token for this device.
+      const token = await messaging().getToken();
+      console.log("FCM device token:", token);
+      return token;
+    } catch (err) {
+      console.log("Error registering for push notifications:", err);
+      return null;
     }
-
-    if (Platform.OS === "android") {
-      Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#FF231F7C",
-      });
-    }
-
-    console.log("check the expo token - ",
-    //  token
-    );
-
-    return token;
   };
 
   const userLogin = async ({ username, password }) => {
@@ -181,8 +168,9 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while login (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while login (Hcontext) - ",
+        // axiosRes
       );
       snackDispatch({
         type: "SHOW_SNACK",
@@ -202,8 +190,9 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while login with code (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while login with code (Hcontext) - ",
+        // axiosRes
       );
       snackDispatch({
         type: "SHOW_SNACK",
@@ -219,15 +208,17 @@ const [categoryId, setCategoryId] = useState("")
         url: `${config.BASE_URL}/api/v1/logout`,
         headers: { Authorization: "Bearer " + token },
       });
-      console.log("USer logout res - ", 
-      // axiosRes
+      console.log(
+        "USer logout res - ",
+        // axiosRes
       );
 
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while logout (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while logout (Hcontext) - ",
+        // axiosRes
       );
     }
   };
@@ -366,21 +357,24 @@ const [categoryId, setCategoryId] = useState("")
         },
       });
 
-      console.log("The signup response - ", 
-      // axiosRes
+      console.log(
+        "The signup response - ",
+        // axiosRes
       );
 
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while user signup (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while user signup (Hcontext) - ",
+        // axiosRes
       );
 
       if (err.response) {
         // Request made and server responded
-        console.log("Signup error response (Hcontext) - ", 
-        // err.response.data
+        console.log(
+          "Signup error response (Hcontext) - ",
+          // err.response.data
         );
         if (err.response.data.message === "Username is alraedy taken") {
           snackDispatch({
@@ -422,8 +416,9 @@ const [categoryId, setCategoryId] = useState("")
         },
       });
 
-      console.log("The profile edit response - ", 
-      // axiosRes
+      console.log(
+        "The profile edit response - ",
+        // axiosRes
       );
 
       return axiosRes.data;
@@ -447,11 +442,14 @@ const [categoryId, setCategoryId] = useState("")
         url: `${config.BASE_URL}/api/v1/get-profile`,
         headers: { Authorization: "Bearer " + token },
       });
-      console.log("USer profile received res - ",axiosRes.data);
+      console.log("USer profile received res - ", axiosRes.data);
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while getting user profile (Hcontext) - ",axiosRes);
+      console.log(
+        "Some issue while getting user profile (Hcontext) - ",
+        axiosRes,
+      );
     }
   };
 
@@ -475,8 +473,9 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while password change (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while password change (Hcontext) - ",
+        // axiosRes
       );
 
       snackDispatch({
@@ -501,8 +500,9 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while forgot password (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while forgot password (Hcontext) - ",
+        // axiosRes
       );
       snackDispatch({
         type: "SHOW_SNACK",
@@ -519,15 +519,16 @@ const [categoryId, setCategoryId] = useState("")
         data: {
           email,
           mobile,
-          otp
+          otp,
         },
       });
 
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while verifying otp (Hcontext) - ", 
-      // axiosRes
+      console.log(
+        "Some issue while verifying otp (Hcontext) - ",
+        // axiosRes
       );
       snackDispatch({
         type: "SHOW_SNACK",
@@ -617,8 +618,9 @@ const [categoryId, setCategoryId] = useState("")
         },
       });
 
-      console.log("context check answer res = ", 
-      // axiosRes
+      console.log(
+        "context check answer res = ",
+        // axiosRes
       );
 
       return axiosRes.data;
@@ -639,9 +641,10 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while getting report (Hcontext) - ",
-      //  axiosRes
-       );
+      console.log(
+        "Some issue while getting report (Hcontext) - ",
+        //  axiosRes
+      );
       if (axiosRes.status === 500)
         snackDispatch({ type: "SHOW_SNACK", payload: axiosRes.message });
     }
@@ -658,9 +661,10 @@ const [categoryId, setCategoryId] = useState("")
       return axiosRes.data;
     } catch (err) {
       const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while getting report (Hcontext) - ",
-      //  axiosRes
-       );
+      console.log(
+        "Some issue while getting report (Hcontext) - ",
+        //  axiosRes
+      );
       if (axiosRes.status === 500)
         snackDispatch({ type: "SHOW_SNACK", payload: axiosRes.message });
     }
@@ -676,15 +680,26 @@ const [categoryId, setCategoryId] = useState("")
 
       return axiosRes.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
       if (err.response) {
-        // Request made and server responded
+        // Request made and server responded with an error status
         console.log(
-          "Some issue while getting languages (Hcontext) - ",
-          // err.response
+          "getLanguages – server error | status:",
+          err.response.status,
+          "| data:",
+          JSON.stringify(err.response.data),
         );
+      } else if (err.request) {
+        // Request was made but no response received (network / SSL / timeout)
+        console.log(
+          "getLanguages – no response received (network/SSL/timeout) | message:",
+          err.message,
+        );
+      } else {
+        // Something else went wrong while setting up the request
+        console.log("getLanguages – request setup error:", err.message);
       }
+      // Re-throw so the calling component can show an error state
+      throw err;
     }
   };
 
@@ -882,8 +897,9 @@ const [categoryId, setCategoryId] = useState("")
 
       if (err.response) {
         // Request made and server responded
-        console.log("Some issue while liking post (Hcontext) - ", 
-        // err.response
+        console.log(
+          "Some issue while liking post (Hcontext) - ",
+          // err.response
         );
       }
     }
@@ -926,8 +942,9 @@ const [categoryId, setCategoryId] = useState("")
       const axiosRes = JSON.parse(JSON.stringify(err));
       if (err.response) {
         // Request made and server responded
-        console.log("Some issue getting bundles (Hcontext) - ", 
-        // err.response
+        console.log(
+          "Some issue getting bundles (Hcontext) - ",
+          // err.response
         );
       }
     }
@@ -941,9 +958,11 @@ const [categoryId, setCategoryId] = useState("")
     } else {
       endpoint = `${config.BASE_URL}/api/v1/avail-free-services`;
     }
-    console.log( `check on the amount - ${amount} and also the endpoint - ${endpoint}`);
+    console.log(
+      `check on the amount - ${amount} and also the endpoint - ${endpoint}`,
+    );
 
-    console.log("sending payload ---- ",id,amount);
+    console.log("sending payload ---- ", id, amount);
     try {
       const axiosRes = await axios({
         method: "post",
@@ -964,7 +983,10 @@ const [categoryId, setCategoryId] = useState("")
 
       if (err.response) {
         // Request made and server responded
-        console.log("Some issue while making payments (Hcontext) - ",err.response);
+        console.log(
+          "Some issue while making payments (Hcontext) - ",
+          err.response,
+        );
       }
     }
   };
@@ -976,7 +998,7 @@ const [categoryId, setCategoryId] = useState("")
         url: `${config.BASE_URL}/api/v1/my-subscribed-services`,
         headers: { Authorization: "Bearer " + authState.user.access_token },
       });
- console.log("getsubscription>>", axiosRes?.data)
+      console.log("getsubscription>>", axiosRes?.data);
       return axiosRes.data;
     } catch (err) {
       console.log("Some issue while getting subscriptions - ", err);
@@ -984,7 +1006,7 @@ const [categoryId, setCategoryId] = useState("")
   };
 
   const applyCoupon = async ({ plan, coupon }) => {
-   console.log("send payload ----",plan,coupon);
+    console.log("send payload ----", plan, coupon);
     try {
       const axiosRes = await axios({
         method: "post",
@@ -1004,7 +1026,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while applying coupon (Hcontext) - ",
-          err.response
+          err.response,
         );
 
         snackDispatch({
@@ -1015,22 +1037,25 @@ const [categoryId, setCategoryId] = useState("")
     }
   };
 
-  const sendOTP = async ({ type, email, mobile,country_code }) => {
+  const sendOTP = async ({ type, email, mobile, country_code }) => {
     let dataToSend;
     if (type === "email") {
       dataToSend = {
         type,
         email,
       };
-    }
-   else if (type === "mobile") {
+    } else if (type === "mobile") {
       dataToSend = {
         type,
         mobile,
-        country_code
+        country_code,
       };
     }
-    console.log("check data to send - ", dataToSend, "Bearer " + authState.user.access_token);
+    console.log(
+      "check data to send - ",
+      dataToSend,
+      "Bearer " + authState.user.access_token,
+    );
     try {
       const axiosRes = await axios({
         method: "post",
@@ -1039,7 +1064,7 @@ const [categoryId, setCategoryId] = useState("")
         data: dataToSend,
       });
 
-      console.log("response ----",axiosRes);
+      console.log("response ----", axiosRes);
 
       return axiosRes.data;
     } catch (err) {
@@ -1085,7 +1110,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting emoji list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1108,7 +1133,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while submitting rating (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1131,7 +1156,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while raising query (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1153,7 +1178,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while submitting feedback (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1189,7 +1214,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while submitting feedback (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1211,7 +1236,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting notifications (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1238,7 +1263,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while sending notifications (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1261,7 +1286,7 @@ const [categoryId, setCategoryId] = useState("")
     } catch (err) {
       console.log(
         "Some issue while sending notification (Hcontext.js) - ",
-        err
+        err,
       );
     }
   };
@@ -1306,7 +1331,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting white label (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1327,7 +1352,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting FAQ list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1349,7 +1374,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting Course list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1372,7 +1397,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting Sub Course list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1395,7 +1420,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting Sub Course Content (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1418,7 +1443,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while liking course (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1440,7 +1465,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while unliking course (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1462,7 +1487,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while starting course (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1484,7 +1509,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while completing course (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1506,7 +1531,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting notes (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1548,7 +1573,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while updating note (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1570,7 +1595,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while deleting note (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1591,7 +1616,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting library list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1613,7 +1638,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting library Content list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1634,7 +1659,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while account deletion (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1657,7 +1682,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while saving happi-self content answer (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1692,7 +1717,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while payment for ios (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1717,7 +1742,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue grantng room access token (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1741,7 +1766,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue grantng room access token for guide (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1764,7 +1789,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting psycologist listing (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1787,7 +1812,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting my booked users list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1810,7 +1835,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting psycologist slots (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1851,7 +1876,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting paymentForHappiTalk (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1874,7 +1899,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while cancelling user booking (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1896,7 +1921,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while credit listing (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1924,7 +1949,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while booking another session (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1946,7 +1971,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while rescheduling booking (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -1968,7 +1993,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while rescheduling guide booking (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2004,7 +2029,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while psycologist payment (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2026,7 +2051,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while HappiGUIDE payment (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2047,7 +2072,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting HappiGUIDE session (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2068,7 +2093,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting Mood-O-Meter emoji list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2090,7 +2115,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while saving Mood-O-Meter response (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2111,7 +2136,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while fetching reward points (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2132,7 +2157,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while fetching refferal code (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2178,7 +2203,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting reward list (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2199,7 +2224,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting offer screen content (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2221,7 +2246,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting user report (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2243,7 +2268,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting avail happiguide user (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2265,7 +2290,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while saving email (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2286,7 +2311,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting panelity clause for user (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2307,7 +2332,7 @@ const [categoryId, setCategoryId] = useState("")
         // Request made and server responded
         console.log(
           "Some issue while getting on-off status (Hcontext) - ",
-          err.response
+          err.response,
         );
       }
     }
@@ -2434,9 +2459,9 @@ const [categoryId, setCategoryId] = useState("")
         setsignedUrlAudio,
         tokenSonde,
         setTokenSonde,
-        sondeJobId, 
+        sondeJobId,
         setSondeJobId,
-        sondeUserId, 
+        sondeUserId,
         setSondeUserId,
         voiceReport,
         setVoiceReport,
@@ -2445,11 +2470,10 @@ const [categoryId, setCategoryId] = useState("")
         setBotVisible,
         gotoVideo,
         setGotoVideo,
-        gotoAssessment, 
+        gotoAssessment,
         setGotoAssessment,
-        categoryId, 
-        setCategoryId
-
+        categoryId,
+        setCategoryId,
       }}
     >
       {props.children}
