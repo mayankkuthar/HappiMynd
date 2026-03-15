@@ -1,19 +1,26 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   StyleSheet,
   Text,
   View,
   ImageBackground,
-  Image,
   TouchableOpacity,
   ScrollView,
   Linking,
+  Animated,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
 import ImageView from "react-native-image-viewing";
 
@@ -26,131 +33,275 @@ import BlogCard from "../../components/cards/BlogCard";
 import Button from "../../components/buttons/Button";
 import Capsule from "../../components/common/Capsule";
 
-const Blog = (props) => {
-  // Prop Destructuring
-  const { navigation } = props;
-  const {
-    id = null,
-    thumbnail = "",
-    link = "",
-    // title = "",
-    // type = "",
-    // summary = "",
-    // keywords = "",
-    // profile = "",
-    // credit = "",
-  } = props.route.params.data;
+// ─── Skeleton Block ───────────────────────────────────────────────────────────
 
-  // Context Variables
+const SkeletonBlock = ({ width = "100%", height = 14, style }) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#ddd",
+          borderRadius: 6,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+// ─── Skeleton Body ────────────────────────────────────────────────────────────
+
+const SkeletonBody = () => (
+  <View style={{ paddingHorizontal: wp(10) }}>
+    {/* Description */}
+    <SkeletonBlock height={14} width="40%" style={{ marginBottom: hp(1) }} />
+    <SkeletonBlock height={12} style={{ marginBottom: hp(0.6) }} />
+    <SkeletonBlock height={12} style={{ marginBottom: hp(0.6) }} />
+    <SkeletonBlock height={12} width="75%" style={{ marginBottom: hp(3) }} />
+
+    {/* Profile */}
+    <SkeletonBlock height={14} width="25%" style={{ marginBottom: hp(1) }} />
+    <View style={{ flexDirection: "row", gap: wp(2), marginBottom: hp(3) }}>
+      <SkeletonBlock height={30} width={wp(22)} style={{ borderRadius: 20 }} />
+      <SkeletonBlock height={30} width={wp(28)} style={{ borderRadius: 20 }} />
+      <SkeletonBlock height={30} width={wp(18)} style={{ borderRadius: 20 }} />
+    </View>
+
+    {/* Keywords */}
+    <SkeletonBlock height={14} width="30%" style={{ marginBottom: hp(1) }} />
+    <View style={{ flexDirection: "row", gap: wp(2), marginBottom: hp(3) }}>
+      <SkeletonBlock height={30} width={wp(20)} style={{ borderRadius: 20 }} />
+      <SkeletonBlock height={30} width={wp(25)} style={{ borderRadius: 20 }} />
+      <SkeletonBlock height={30} width={wp(15)} style={{ borderRadius: 20 }} />
+    </View>
+
+    {/* Credit */}
+    <SkeletonBlock height={14} width="20%" style={{ marginBottom: hp(1) }} />
+    <SkeletonBlock height={12} width="60%" />
+  </View>
+);
+
+// ─── Extracted static sub-components ─────────────────────────────────────────
+
+const CapsuleRow = React.memo(({ rawString }) => {
+  const items = useMemo(
+    () =>
+      typeof rawString === "string" && rawString.trim()
+        ? rawString
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    [rawString],
+  );
+
+  if (!items.length) return null;
+
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {items.map((element, index) => (
+        <View key={`${element}-${index}`} style={{ flexDirection: "row" }}>
+          <Capsule title={element} />
+          <View style={{ width: wp(2) }} />
+        </View>
+      ))}
+    </ScrollView>
+  );
+});
+
+const RelatedArticles = React.memo(({ articles, navigation }) => {
+  if (!articles?.length) return null;
+
+  return (
+    <View>
+      <View style={{ paddingHorizontal: wp(10) }}>
+        <Text
+          style={[styles.bodyContentText, { fontFamily: "PoppinsSemiBold" }]}
+        >
+          Related Articles
+        </Text>
+      </View>
+      <ScrollView horizontal style={styles.relatedContainer}>
+        <View style={{ width: wp(10) }} />
+        {articles.map((article, index) => (
+          <View key={article.id ?? index} style={{ flexDirection: "row" }}>
+            <BlogCard navigation={navigation} data={article} />
+            <View style={{ width: wp(4) }} />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const Blog = (props) => {
+  const { navigation } = props;
+  const routeParams = props.route?.params ?? {};
+  const {
+    data = {},
+    readBlog,
+    infographics,
+    video,
+    image: showImage,
+  } = routeParams;
+  const { id = null, thumbnail = "", link = "" } = data;
+
   const { happiLearnContent, snackDispatch, likePost, unlikePost } =
     useContext(Hcontext);
 
-  // State Variables
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("");
-  const [summary, setSummary] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [profile, setProfile] = useState("");
-  const [credit, setCredit] = useState("");
+  const [content, setContent] = useState({
+    title: "",
+    type: "",
+    summary: "",
+    keywords: "",
+    profile: "",
+    credit: "",
+  });
   const [liked, setLiked] = useState(false);
-  const [relatedArticles, setRelatedArticles] = useState([]);
   const [likesCount, setLikesCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [relatedArticles, setRelatedArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [openImage, setOpenImage] = useState(false);
 
-  // Mounting
+  // Fetch on mount — cleanup flag prevents setState on unmounted component
   useEffect(() => {
-    fetchContent(id);
-  }, []);
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
-  // Fetching the content by id
-  const fetchContent = async (id) => {
-    setLoading(true);
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await happiLearnContent({ id });
+        if (cancelled) return;
+        if (res?.status === "success") {
+          const {
+            title,
+            type,
+            summary,
+            keywords,
+            profile,
+            credit,
+            is_likes,
+            likes_count,
+          } = res.data;
+          setContent({ title, type, summary, keywords, profile, credit });
+          setLiked(is_likes === "yes");
+          setLikesCount(likes_count ?? 0);
+          setRelatedArticles(res.suggested_content ?? []);
+        }
+      } catch (err) {
+        console.error("fetchContent error:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]); // happiLearnContent is a stable context fn — intentionally omitted
+
+  const likeHandler = useCallback(async () => {
+    if (loading) return;
+    setLiked(true);
+    setLikesCount((c) => c + 1);
     try {
-      const fetchedContent = await happiLearnContent({ id });
-      console.log("cgehcking the happi content - ", fetchedContent);
-      if (fetchedContent.status === "success") {
-        const {
-          title,
-          type,
-          summary,
-          keywords,
-          profile,
-          credit,
-          is_likes,
-          likes_count,
-        } = fetchedContent.data;
-        setTitle(title);
-        setType(type);
-        setSummary(summary);
-        setKeywords(keywords);
-        setProfile(profile);
-        setCredit(credit);
-        setLiked(is_likes === "yes");
-        setLikesCount(likes_count);
-        setRelatedArticles(fetchedContent.suggested_content);
+      const res = await likePost({ id });
+      if (res?.status !== "success") {
+        setLiked(false);
+        setLikesCount((c) => c - 1);
       }
     } catch (err) {
-      console.log("Some issue while fetching content - ", err);
+      setLiked(false);
+      setLikesCount((c) => c - 1);
+      console.error("likePost error:", err);
     }
-    setLoading(false);
-  };
+  }, [id, loading, likePost]);
 
-  const likeHandler = async (id) => {
-    setLoading(true);
+  const unlikeHandler = useCallback(async () => {
+    if (loading) return;
+    setLiked(false);
+    setLikesCount((c) => c - 1);
     try {
-      const likeRes = await likePost({ id });
-      if (likeRes.status === "success") {
-        setLiked((prevState) => !prevState);
-        setLikesCount((prevState) => prevState + 1);
+      const res = await unlikePost({ id });
+      if (res?.status !== "success") {
+        setLiked(true);
+        setLikesCount((c) => c + 1);
       }
     } catch (err) {
-      console.log("Some issue while liking post - ", err);
+      setLiked(true);
+      setLikesCount((c) => c + 1);
+      console.error("unlikePost error:", err);
     }
-    setLoading(false);
-  };
+  }, [id, loading, unlikePost]);
 
-  const unlikeHandler = async (id) => {
-    setLoading(true);
-    try {
-      const unlikeRes = await unlikePost({ id });
-      if (unlikeRes.status === "success") {
-        setLiked((prevState) => !prevState);
-        setLikesCount((prevState) => prevState - 1);
-      }
-    } catch (err) {
-      console.log("Some issue while un-liking post - ", err);
+  const handleLikeToggle = useCallback(() => {
+    liked ? unlikeHandler() : likeHandler();
+  }, [liked, likeHandler, unlikeHandler]);
+
+  const handleReadBlog = useCallback(() => {
+    if (link) {
+      Linking.openURL(link);
+    } else {
+      snackDispatch({ type: "SHOW_SNACK", payload: "No link attached" });
     }
-    setLoading(false);
-  };
+  }, [link, snackDispatch]);
+
+  // Uses route data.title immediately as fallback — no empty flash on hero
+  const displayTitle = useMemo(() => {
+    const title = content.title || data?.title || "";
+    return title.length > 48 ? title.substring(0, 48) + " ..." : title;
+  }, [content.title, data?.title]);
 
   return (
     <View style={styles.container}>
       {/* Hero Section */}
       <View style={styles.heroSection}>
         <ImageBackground
-          // source={require("../../assets/images/blog1.png")}
           source={{ uri: thumbnail }}
           style={styles.heroBackground}
           resizeMode="cover"
         >
-          {/* <View style={{ backgroundColor: "rgba(0, 0, 0, 0.4)", flex: 1 }}> */}
           <ImageBackground
             source={require("../../assets/images/gradient.png")}
             style={{ flex: 1 }}
             resizeMode="cover"
           >
-            {/* Sized Box */}
             <View style={{ height: hp(6) }} />
 
-            {/* Back Icon */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+            {/* Back + Like row */}
+            <View style={styles.heroNav}>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => navigation.pop()}
@@ -158,13 +309,12 @@ const Blog = (props) => {
               >
                 <Ionicons name="ios-chevron-back" size={hp(4)} color="white" />
               </TouchableOpacity>
-              {props.route &&
-              props.route.params &&
-              props.route.params.readBlog ? (
+
+              {readBlog ? (
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ paddingRight: hp(2), alignItems: "center" }}
-                  onPress={() => (liked ? unlikeHandler(id) : likeHandler(id))}
+                  onPress={handleLikeToggle}
                 >
                   <Ionicons
                     name={liked ? "heart-sharp" : "heart-outline"}
@@ -176,171 +326,116 @@ const Blog = (props) => {
               ) : null}
             </View>
 
-            {/* Sized Box */}
             <View style={{ height: hp(2) }} />
 
-            {/* Hero Title */}
+            {/* Hero title + type badge */}
             <View style={{ width: wp(80), paddingHorizontal: hp(3) }}>
-              <Text style={styles.heroTitle}>
-                {title?.length > 48 ? title.substring(0, 48) + " ..." : title}
-              </Text>
-
-              {/* Sized Box */}
+              {displayTitle ? (
+                <Text style={styles.heroTitle}>{displayTitle}</Text>
+              ) : (
+                // Skeleton for title in case route data has no title either
+                <SkeletonBlock
+                  height={22}
+                  width="90%"
+                  style={{ marginBottom: hp(1), backgroundColor: "#ffffff55" }}
+                />
+              )}
               <View style={{ height: hp(1) }} />
-
-              <View style={styles.blogButton}>
-                <Text style={styles.blogButtonText}>{type}</Text>
-              </View>
+              {content.type ? (
+                <View style={styles.blogButton}>
+                  <Text style={styles.blogButtonText}>{content.type}</Text>
+                </View>
+              ) : (
+                <SkeletonBlock
+                  height={hp(3)}
+                  width={wp(18)}
+                  style={{
+                    borderRadius: hp(100),
+                    backgroundColor: "#ffffff55",
+                  }}
+                />
+              )}
             </View>
           </ImageBackground>
         </ImageBackground>
       </View>
 
       {/* Body Section */}
-      <ScrollView style={styles.bodySection}>
-        {/* Sized Box */}
+      <ScrollView style={styles.bodySection} removeClippedSubviews>
         <View style={{ height: hp(3) }} />
 
-        {/* Body Content */}
-        <View style={styles.bodyContent}>
-          <Text
-            style={{
-              ...styles.bodyContentText,
-              fontFamily: "PoppinsSemiBold",
-            }}
-          >
-            Description:
-          </Text>
-          <Text style={styles.bodyContentText}>{summary}</Text>
-          {/* Sized Box */}
-          <View style={{ height: hp(3) }} />
-          <Text
-            style={{
-              ...styles.bodyContentText,
-              fontFamily: "PoppinsSemiBold",
-            }}
-          >
-            Profile:
-          </Text>
-          {/* Sized Box */}
-          {console.log("profile =======",profile)}
-          <View style={{ height: hp(1) }} />
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-            {profile.split(",").map((element, index) => (
-              <>
-                <Capsule title={element} />
+        {loading ? (
+          <SkeletonBody />
+        ) : (
+          <View style={styles.bodyContent}>
+            <Text
+              style={[
+                styles.bodyContentText,
+                { fontFamily: "PoppinsSemiBold" },
+              ]}
+            >
+              Description:
+            </Text>
+            <Text style={styles.bodyContentText}>{content.summary}</Text>
 
-                {/* Sized Box */}
-                <View style={{ width: wp(2) }} />
-              </>
-            ))}
-          </ScrollView>
-          {/* Sized Box */}
-          <View style={{ height: hp(3) }} />
-          <Text
-            style={{
-              ...styles.bodyContentText,
-              fontFamily: "PoppinsSemiBold",
-            }}
-          >
-            Keywords:
-          </Text>
-          {/* Sized Box */}
-          <View style={{ height: hp(1) }} />
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-            {keywords.split(",").map((element, index) => (
-              <>
-                <Capsule title={element} />
-                {/* Sized Box */}
-                <View style={{ width: wp(2) }} />
-              </>
-            ))}
-          </ScrollView>
-          {/* Sized Box */}
-          <View style={{ height: hp(3) }} />
-          <Text
-            style={{
-              ...styles.bodyContentText,
-              fontFamily: "PoppinsSemiBold",
-            }}
-          >
-            Credit:
-          </Text>
-          {/* Sized Box */}
-          <View style={{ height: hp(1) }} />
-          <Text style={styles.bodyContentText}>{credit}</Text>
-        </View>
+            <View style={{ height: hp(3) }} />
+            <Text
+              style={[
+                styles.bodyContentText,
+                { fontFamily: "PoppinsSemiBold" },
+              ]}
+            >
+              Profile:
+            </Text>
+            <View style={{ height: hp(1) }} />
+            <CapsuleRow rawString={content.profile} />
 
-        {/* Sized Box */}
-        <View style={{ height: hp(2.5) }} />
+            <View style={{ height: hp(3) }} />
+            <Text
+              style={[
+                styles.bodyContentText,
+                { fontFamily: "PoppinsSemiBold" },
+              ]}
+            >
+              Keywords:
+            </Text>
+            <View style={{ height: hp(1) }} />
+            <CapsuleRow rawString={content.keywords} />
 
-        {/* Related Section */}
-        {relatedArticles?.length ? (
-          <View>
-            <View style={{ paddingHorizontal: wp(10) }}>
-              <Text
-                style={{
-                  ...styles.bodyContentText,
-                  fontFamily: "PoppinsSemiBold",
-                }}
-              >
-                Related Articles
-              </Text>
-            </View>
-            <ScrollView horizontal={true} style={styles.relatedContainer}>
-              {/* Sized Box */}
-              <View style={{ width: wp(10) }} />
-
-              {relatedArticles.map((article, index) => (
-                <>
-                  <BlogCard
-                    key={index}
-                    navigation={navigation}
-                    data={article}
-                  />
-                  {/* Sized Box */}
-                  <View style={{ width: wp(4) }} />
-                </>
-              ))}
-            </ScrollView>
+            <View style={{ height: hp(3) }} />
+            <Text
+              style={[
+                styles.bodyContentText,
+                { fontFamily: "PoppinsSemiBold" },
+              ]}
+            >
+              Credit:
+            </Text>
+            <View style={{ height: hp(1) }} />
+            <Text style={styles.bodyContentText}>{content.credit}</Text>
           </View>
-        ) : null}
+        )}
+
+        <View style={{ height: hp(2.5) }} />
+        <RelatedArticles articles={relatedArticles} navigation={navigation} />
       </ScrollView>
-      {props.route && props.route.params && props.route.params.readBlog ? (
+
+      {/* CTA Buttons */}
+      {readBlog && (
         <>
-          {/* Sized Box */}
           <View style={{ height: wp(5) }} />
           <View style={{ paddingHorizontal: wp(6) }}>
-            <Button
-              text="Read Blog"
-              // pressHandler={() =>
-              //   navigation.push("BlogRead", { ...props.route.params.data })
-              // }
-              pressHandler={() => {
-                if (props?.route?.params?.data?.link) {
-                  Linking.openURL(props?.route?.params?.data?.link);
-                } else
-                  snackDispatch({
-                    type: "SHOW_SNACK",
-                    payload: "No link attached",
-                  });
-              }}
-            />
+            <Button text="Read Blog" pressHandler={handleReadBlog} />
           </View>
         </>
-      ) : null}
-      {props.route && props.route.params && props.route.params.infographics ? (
+      )}
+
+      {infographics && (
         <>
-          {/* Sized Box */}
           <View style={{ height: wp(5) }} />
           <View style={{ paddingHorizontal: wp(6) }}>
             <Button
               text="View Infographics"
-              // pressHandler={() =>
-              //   navigation.push("BlogInfoGraphics", {
-              //     ...props.route.params.data,
-              //   })
-              // }
               pressHandler={() => setOpenImage(true)}
             />
           </View>
@@ -353,56 +448,51 @@ const Blog = (props) => {
             doubleTapToZoomEnabled
           />
         </>
-      ) : null}
-      {props.route && props.route.params && props.route.params.video ? (
+      )}
+
+      {video && (
         <>
-          {/* Sized Box */}
           <View style={{ height: wp(5) }} />
           <View style={{ paddingHorizontal: wp(6) }}>
             <Button
               text="View Video"
-              pressHandler={() =>
-                navigation.push("BlogVideo", {
-                  ...props.route.params.data,
-                })
-              }
+              pressHandler={() => navigation.push("BlogVideo", { ...data })}
             />
           </View>
         </>
-      ) : null}
-      {props.route && props.route.params && props.route.params.image ? (
+      )}
+
+      {showImage && (
         <>
-          {/* Sized Box */}
           <View style={{ height: wp(5) }} />
           <View style={{ paddingHorizontal: wp(6) }}>
             <Button
               text="View Image"
-              pressHandler={() =>
-                navigation.push("BlogImage", {
-                  ...props.route.params.data,
-                })
-              }
+              pressHandler={() => navigation.push("BlogImage", { ...data })}
             />
           </View>
         </>
-      ) : null}
-      {/* Sized Box */}
+      )}
+
       <View style={{ height: wp(22) }} />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     height: hp(100),
     backgroundColor: colors.background,
   },
-  heroSection: {
-    // backgroundColor: "red",
-  },
+  heroSection: {},
   heroBackground: {
     width: wp(100),
     height: hp(35),
-    // paddingHorizontal: hp(3),
+  },
+  heroNav: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   heroTitle: {
     fontSize: RFValue(22),
@@ -413,7 +503,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     height: hp(3),
     width: wp(18),
-    // paddingHorizontal: hp(2),
     borderRadius: hp(100),
     alignItems: "center",
     justifyContent: "center",
@@ -426,16 +515,10 @@ const styles = StyleSheet.create({
   },
   bodySection: {
     backgroundColor: colors.background,
-    // flex: 1,
     width: wp(100),
     height: hp(66),
-    // borderTopLeftRadius: 60,
-    // borderTopRightRadius: 60,
-    // position: "absolute",
-    // bottom: 0,
   },
   bodyContent: {
-    // backgroundColor: "yellow",
     paddingHorizontal: wp(10),
   },
   bodyContentText: {
@@ -443,14 +526,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
   },
   relatedContainer: {
-    // backgroundColor: "green",
     paddingVertical: hp(2),
-  },
-  relatedAritcles: {
-    height: hp(22),
-    width: wp(80),
-    borderRadius: 16,
-    overflow: "hidden",
   },
   blogLikeText: {
     fontSize: RFValue(10),

@@ -152,7 +152,7 @@ const HappiGUIDE = (props) => {
     } catch (err) {
       console.log(
         "Some issue while fetching HappiGUIDE session (GuideBooking.js) - ",
-        err
+        err,
       );
     }
     setLoading(false);
@@ -236,7 +236,8 @@ const HappiGUIDE = (props) => {
               loading={loadingButton}
               pressHandler={() => {
                 if (authState.user) {
-                  if (isEmailVerified && isPhoneVerified) {
+                  if (isPhoneVerified) {
+                    //only checking if phone is verified
                     navigation.push("MakeBooking", {
                       module: "guide",
                       type: "add",

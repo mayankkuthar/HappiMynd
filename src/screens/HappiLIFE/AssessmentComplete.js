@@ -15,11 +15,9 @@ import {
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import { useFocusEffect } from "@react-navigation/core";
 import { Ionicons } from "@expo/vector-icons";
-
-// Contants
+// Constants
 import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
-
 // Components
 import Button from "../../components/buttons/Button";
 import Header from "../../components/common/Header";
@@ -27,26 +25,49 @@ import ReportGenConfirmModal from "../../components/Modals/ReportGenConfirmModal
 
 const AssessmentComplete = (props) => {
   // Context Variables
-  const { authState, screenTrafficAnalytics } = useContext(Hcontext);
-
+  const { authState, screenTrafficAnalytics, getUserProfile } =
+    useContext(Hcontext);
   // Prop Destructuring
   const { navigation } = props;
-
   // State Variables
   const [showModal, setShowModal] = useState(true);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [loadingButton, setLoadingButton] = useState(false);
 
   useEffect(() => {
     BackHandler.addEventListener("hardwareBackPress", handleBackButtonClick);
     screenTrafficAnalytics({
       screenName: "HappiLIFE Assesment Completion Screen",
     });
+    fetchUserProfile(authState?.user?.access_token);
     return () => {
       BackHandler.removeEventListener(
         "hardwareBackPress",
-        handleBackButtonClick
+        handleBackButtonClick,
       );
     };
   }, []);
+
+  const fetchUserProfile = async (token) => {
+    try {
+      setLoadingButton(true);
+      const userProfile = await getUserProfile({ token });
+
+      console.log("checking in the user profile - ", userProfile);
+
+      if (userProfile.status === "success") {
+        if (userProfile.data.verify_user) {
+          if (userProfile.data.verify_user.mobile_verify) {
+            setIsPhoneVerified(true);
+          }
+        }
+      }
+      setLoadingButton(false);
+    } catch (err) {
+      setLoadingButton(false);
+      console.log("Some issue while fetching user profile - ", err);
+    }
+  };
 
   const handleBackButtonClick = () => {
     navigation.navigate("HomeScreen");
@@ -82,22 +103,16 @@ const AssessmentComplete = (props) => {
           Access your HappiLIFE Awareness Tool from App Home Page.
         </Text>
       </View>
-
       <View style={{ alignSelf: "flex-end", width: wp(80) }}>
         <Button
           text="Continue"
+          loading={loadingButton}
           pressHandler={() => {
-            navigation.navigate("ContactVerification");
-            //navigation.navigate("HomeScreen");
-
-            //  console.log("usertoken", "90=", authState.user.user);
-            // console.log("usertoken", "90=", authState.user.user.user_token);
-
-            // if (authState.user.user.user_token) {
-            // navigation.navigate("HomeScreen");
-            // } else {
-            // navigation.navigate("ContactVerification");
-            // }
+            if (isPhoneVerified) {
+              navigation.navigate("HomeScreen");
+            } else {
+              navigation.navigate("ContactVerification");
+            }
           }}
         />
         {/* Sized Box */}
@@ -119,10 +134,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: wp(6),
     top: hp(8),
-    // backgroundColor: "red",
   },
   heroImage: {
-    // backgroundColor: "red",
     width: wp(70),
     height: hp(40),
     alignSelf: "center",

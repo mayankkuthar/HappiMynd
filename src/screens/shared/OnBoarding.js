@@ -130,13 +130,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundContainer: {
-    height: hp(60),
+    height: hp(66),
     width: wp(100),
     backgroundColor: "#ACE9E6",
   },
   backgroundMask: {
     // backgroundColor: "red",
-    height: hp(60),
+    height: hp(63),
     width: wp(100),
     alignItems: "center",
     justifyContent: "flex-end",

@@ -28,19 +28,14 @@ import Header from "../../components/common/Header";
 import Button from "../../components/buttons/Button";
 import PhoneInputField from "../../components/input/PhoneInputField";
 import { CountryPicker } from "react-native-country-codes-picker";
-import Checkbox from "../../components/input/Checkbox";
 
 const BulletPoint = (props) => {
-  // Prop Destructuring
   const { name = "" } = props;
 
   return (
     <View style={{ flexDirection: "row" }}>
       <FontAwesome name="check-circle" size={hp(2)} color="green" />
-
-      {/* Sized Box */}
       <View style={{ width: wp(2) }} />
-
       <View style={{ width: wp(66) }}>
         <Text style={styles.pointText}>{name}</Text>
       </View>
@@ -75,9 +70,9 @@ const ContactVerification = (props) => {
   const [show, setShow] = useState(false);
   const [countryCode, setCountryCode] = useState("+91");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
 
   useEffect(() => {
-    // Email OTP verification hidden — email is now optional
     if (phoneOtp) {
       validatePhoneOTP(phoneOtp);
     }
@@ -124,7 +119,6 @@ const ContactVerification = (props) => {
   const otpHandler = async (type = "", email = null, mobile = null) => {
     let joincode = countryCode.replace("+", "");
     let sendMobile = mobile;
-    console.log("checkdata________ ", joincode, type, email, mobile);
 
     try {
       if (type === "email") {
@@ -138,7 +132,6 @@ const ContactVerification = (props) => {
         mobile: sendMobile,
         country_code: joincode,
       });
-      console.log("The OTP Res - ", otpRes);
       if (otpRes.status === "success") {
         snackDispatch({ type: "SHOW_SNACK", payload: otpRes.message });
       }
@@ -167,7 +160,6 @@ const ContactVerification = (props) => {
       let joincode = countryCode.replace("+", "");
       let sendMobile = phone;
       const otpRes = await verifyOtp({ email: "", mobile: sendMobile, otp });
-      console.log("chec the email otp or the res - ", otpRes);
       if (otpRes.status === "success") {
         setValidPhone(true);
       } else {
@@ -181,7 +173,6 @@ const ContactVerification = (props) => {
   const reportHandler = async () => {
     setLoading(true);
     try {
-      // Email is optional — only phone verification is required
       if (!validPhone) {
         setLoading(false);
         return snackDispatch({
@@ -192,11 +183,14 @@ const ContactVerification = (props) => {
 
       if (!agreeTerms) {
         setLoading(false);
+        setTermsError(true);
         return snackDispatch({
           type: "SHOW_SNACK",
           payload: "Please agree to terms and conditions !",
         });
       }
+
+      setTermsError(false);
 
       if (params?.isFrom == "Talk") {
         navigation.push("HappiTALKBook");
@@ -204,10 +198,8 @@ const ContactVerification = (props) => {
         navigation.push("MakeBooking", {
           module: "guide",
           type: "add",
-          // psyId: 10,
           planId: "22",
           amount: "539",
-          // session: 1,
         });
       } else if (params?.isFrom == "Voice") {
         navigation.push("Pricing", {
@@ -221,50 +213,37 @@ const ContactVerification = (props) => {
           profile_id: params?.profile_id,
         });
       } else {
-        //navigation.push("Pricing", {selectedPlan: "HappiLIFE Screening",});
         navigation.navigate("HomeScreen");
       }
-
-      // return navigation.navigate("HomeScreen");
-
-      // const reportRes = await getReport();
-      // console.log("Cheking the report res - ", reportRes);
-      // if (reportRes.status === "success") {
-      //   setLoading(false);
-      //   Linking.openURL(reportRes.url);
-      //   navigation.navigate("HomeScreen");
-      //   // downloadReport(reportRes.url);
-      // }
     } catch (err) {
       console.log("Some issue while fetching report - ", err);
     }
     setLoading(false);
   };
 
+  const handleToggleTerms = () => {
+    setAgreeTerms(!agreeTerms);
+    if (termsError) setTermsError(false);
+  };
+
   return (
     <View style={styles.container}>
-      {/* <Header showBack={true} navigation={navigation} showLogo={false} /> */}
-
       <View style={{ height: hp(14) }} />
 
       <ScrollView style={{ paddingHorizontal: wp(10) }}>
         <View>
-          <Text style={styles.title}>HappiLIFE Awareness Tool</Text>
-
-          {/* Sized Box */}
+          <Text style={styles.title}>HappiMynd Verification</Text>
           <View style={{ height: hp(1) }} />
-
           <Text style={styles.subTitle}>
             Summary will be shared on your email-id
           </Text>
         </View>
 
-        {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
         {/* Form Section */}
         <View>
-          {/* Email is optional — OTP verification hidden */}
+          {/* Email (optional) */}
           <Text style={styles.label}>Enter email (optional)</Text>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
@@ -280,9 +259,9 @@ const ContactVerification = (props) => {
             />
           </View>
 
-          {/* Sized Box */}
           <View style={{ height: hp(2) }} />
 
+          {/* Phone */}
           <Text style={styles.label}>Enter phone number</Text>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
@@ -294,15 +273,7 @@ const ContactVerification = (props) => {
                 alignItems: "center",
               }}
             >
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {/* <Text style={{ fontSize: RFValue(10), fontFamily: "Poppins" }}>
-                  +91
-                </Text> */}
+              <View style={{ alignItems: "center", justifyContent: "center" }}>
                 <TouchableOpacity
                   onPress={() => setShow(true)}
                   style={{
@@ -345,14 +316,9 @@ const ContactVerification = (props) => {
                   setShow(false);
                 }}
                 onBackdropPress={() => setShow(false)}
-                style={{
-                  modal: {
-                    height: 400,
-                  },
-                }}
+                style={{ modal: { height: 400 } }}
               />
 
-              {/* Sized Box */}
               <View style={{ width: wp(2) }} />
               <TextInput
                 keyboardType="number-pad"
@@ -375,9 +341,9 @@ const ContactVerification = (props) => {
             </TouchableOpacity>
           </View>
 
-          {/* Sized Box */}
           <View style={{ height: hp(2) }} />
 
+          {/* Phone OTP */}
           <Text style={styles.label}>Enter phone number OTP</Text>
           <View
             style={{
@@ -408,7 +374,6 @@ const ContactVerification = (props) => {
           </View>
         </View>
 
-        {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
         {/* Bullet Points */}
@@ -423,57 +388,61 @@ const ContactVerification = (props) => {
             reasons:
           </Text>
           <View style={{ height: hp(1) }} />
-          {/* <BulletPoint name="Use email in case I forget my password." /> */}
           <BulletPoint name="Use email, in case you forget password." />
-          {/* Sized Box */}
           <View style={{ height: hp(1) }} />
-          {/* <BulletPoint name="Subscribe to blogs/articles/newsletter or any other subscription from HappiMynd for my updation." /> */}
           <BulletPoint name="Use contact for fulfilling your service requests & updates." />
-          {/* Sized Box */}
           <View style={{ height: hp(1) }} />
-          {/* <BulletPoint name="Send HappiMynd gift voucher/discount coupons on my mail-id." /> */}
           <BulletPoint name="For sending you vouchers/ offers & informative content." />
-          {/* Sized Box */}
-          {/* <View style={{ height: hp(1) }} />
-          <BulletPoint name="Report will be provided for FREE if you verify both email and phone number." /> */}
         </View>
 
         <View style={{ height: hp(1.5) }} />
 
-        <View style={{ flexDirection: "row" }}>
-          <View>
-            <Checkbox
-              // title="By creating an account, you agree to our terms & conditions"
-              checked={agreeTerms}
-              setChecked={setAgreeTerms}
-            />
+        {/* ── Improved Terms & Conditions ── */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[styles.termsCard, termsError && styles.termsCardError]}
+          onPress={handleToggleTerms}
+        >
+          {/* Custom Checkbox */}
+          <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
+            {agreeTerms && (
+              <FontAwesome name="check" size={RFValue(10)} color="#fff" />
+            )}
           </View>
-          <View>
-            <Text>
-              By creating an account, you agree to our{" "}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => Linking.openURL("https://happimynd.com/terms")}
-              >
-                <Text style={{ textDecorationLine: "underline" }}>
-                  Terms & Conditions
-                </Text>
-              </TouchableOpacity>{" "}
-              and acknowledge that Happimynd's{" "}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => Linking.openURL("https://happimynd.com/privacy")}
-              >
-                <Text style={{ textDecorationLine: "underline" }}>
-                  Privacy Policy
-                </Text>
-              </TouchableOpacity>{" "}
-              applies to you.
-            </Text>
-          </View>
-        </View>
 
-        {/* Sized Box */}
+          {/* Terms Text */}
+          <Text style={styles.termsText}>
+            By creating an account, you agree to our{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                Linking.openURL("https://happimynd.com/terms");
+              }}
+            >
+              Terms & Conditions
+            </Text>{" "}
+            and acknowledge that Happimynd's{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                Linking.openURL("https://happimynd.com/privacy");
+              }}
+            >
+              Privacy Policy
+            </Text>{" "}
+            applies to you.
+          </Text>
+        </TouchableOpacity>
+
+        {/* Inline error message */}
+        {termsError && (
+          <Text style={styles.termsErrorText}>
+            Please agree to the terms to continue.
+          </Text>
+        )}
+
         <View style={{ height: hp(2) }} />
 
         {/* Button Section */}
@@ -483,20 +452,8 @@ const ContactVerification = (props) => {
             loading={loading}
             pressHandler={reportHandler}
           />
-
-          {/* Sized Box */}
-          <View style={{ height: hp(1) }} />
-
-          {/* <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.laterButton}
-            onPress={promptBox}
-          >
-            <Text style={styles.laterButtonText}>Maybe Later</Text>
-          </TouchableOpacity> */}
         </View>
 
-        {/* Sized Box */}
         <View style={{ height: hp(8) }} />
       </ScrollView>
 
@@ -530,7 +487,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: RFValue(24),
+    fontSize: RFValue(20),
+    textAlign: "center",
     fontFamily: "PoppinsSemiBold",
     color: colors.primaryText,
   },
@@ -539,10 +497,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: wp(6),
     top: hp(8),
-    // backgroundColor: "red",
   },
   subTitle: {
     fontSize: RFValue(12),
+    textAlign: "center",
     fontFamily: "Poppins",
     color: colors.borderLight,
   },
@@ -586,15 +544,57 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     textAlign: "justify",
   },
-  laterButton: {
-    // backgroundColor: "red",
+
+  // ── Improved Terms Styles ──
+  termsCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#fff",
+    borderRadius: hp(1.2),
+    borderWidth: 0.5,
+    borderColor: colors.borderDim,
+    paddingHorizontal: hp(1.5),
     paddingVertical: hp(1.5),
   },
-  laterButtonText: {
+  termsCardError: {
+    borderColor: "#e24b4a",
+    borderWidth: 1,
+  },
+  checkbox: {
+    width: hp(2.6),
+    height: hp(2.6),
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: hp(0.2),
+    flexShrink: 0,
+    backgroundColor: "#fff",
+  },
+  checkboxChecked: {
+    backgroundColor: "#1a9e7e",
+    borderColor: "#1a9e7e",
+  },
+  termsText: {
+    flex: 1,
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: colors.borderLight,
+    lineHeight: RFValue(20),
+    marginLeft: wp(3),
+  },
+  termsLink: {
     color: colors.primaryText,
-    textAlign: "center",
+    fontFamily: "PoppinsSemiBold",
+    textDecorationLine: "underline",
+  },
+  termsErrorText: {
+    fontSize: RFValue(11),
+    fontFamily: "Poppins",
+    color: "#e24b4a",
+    marginTop: hp(0.5),
+    marginLeft: hp(0.5),
   },
 });
 

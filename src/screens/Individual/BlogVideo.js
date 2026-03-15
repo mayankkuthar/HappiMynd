@@ -1,22 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
-  Image,
-  ImageBackground,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
-import { FontAwesome5 } from "@expo/vector-icons";
-import { Video, AVPlaybackStatus } from "expo-av";
 import YoutubePlayer from "react-native-youtube-iframe";
 
 // Constants
@@ -25,26 +28,42 @@ import { colors } from "../../assets/constants";
 // Components
 import Capsule from "../../components/common/Capsule";
 
-const Header = (props) => {
-  // Prop Destructuring
-  const { navigation, likesCount } = props;
+// ─── Utility ────────────────────────────────────────────────────────────────
 
-  // State Variables
+const extractYoutubeId = (url) => {
+  if (!url) return null;
+  try {
+    // Handles: youtu.be/ID, ?v=ID, &v=ID
+    const match = url.match(
+      /(?:youtu\.be\/|[?&]v=|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/,
+    );
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+};
+
+// ─── Sub-components (defined outside to avoid re-creation on parent render) ──
+
+const Header = React.memo(({ navigation, likesCount }) => {
   const [liked, setLiked] = useState(false);
+
+  const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
 
   return (
     <View style={styles.headerContainer}>
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => navigation.pop()}
-        style={{ paddingLeft: hp(1.5) }}
+        style={styles.backButton}
       >
         <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
       </TouchableOpacity>
+
       <TouchableOpacity
         activeOpacity={0.7}
-        style={{ paddingRight: hp(2), alignItems: "center" }}
-        onPress={() => setLiked((prevState) => !prevState)}
+        style={styles.likeButton}
+        onPress={toggleLike}
       >
         <Ionicons
           name={liked ? "heart-sharp" : "heart-outline"}
@@ -55,11 +74,42 @@ const Header = (props) => {
       </TouchableOpacity>
     </View>
   );
-};
+});
 
-const BlogVideo = (props) => {
-  // Prop Destructuring
-  const { navigation } = props;
+// Stable renderItem for profile/keyword capsule FlatLists
+const renderCapsule = ({ item }) => (
+  <View style={styles.capsuleWrapper}>
+    <Capsule title={item} />
+  </View>
+);
+
+const TagRow = React.memo(({ label, raw }) => {
+  // Split once, memoised
+  const items = useMemo(() => raw?.split(" ").filter(Boolean) ?? [], [raw]);
+
+  return (
+    <>
+      <Text style={styles.sectionLabel}>{label}:</Text>
+      <View style={{ height: hp(1) }} />
+      <FlatList
+        data={items}
+        renderItem={renderCapsule}
+        keyExtractor={(item, index) => `${label}-${index}`}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={3}
+        removeClippedSubviews
+      />
+      <View style={{ height: hp(3) }} />
+    </>
+  );
+});
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
+
+const BlogVideo = ({ navigation, route }) => {
   const {
     title = "",
     summary = "",
@@ -69,204 +119,107 @@ const BlogVideo = (props) => {
     profile = "",
     keywords = "",
     link = "",
-  } = props.route.params;
+  } = route.params;
 
-  // State Variabels
-  const [status, setStatus] = useState({});
-  const [videoLink, setVideoLink] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Derive video ID once — no useEffect needed
+  const videoId = useMemo(
+    () => (link.includes("youtu") ? extractYoutubeId(link) : null),
+    [link],
+  );
 
-  // Ref Variables
-  const video = useRef(null);
-
-  console.log("check the vido props - ", props);
-
-  // Mounting
-  useEffect(() => {
-    if (link.includes("youtu")) getVideoId(link);
-  }, []);
-
-  const getVideoId = (link) => {
-    let videoId = link.split("=")[1];
-    if (!videoId) {
-      videoId = link.split("/")[3];
-    }
-    if (videoId.includes("&")) {
-      const container = videoId.split("&")[0];
-      videoId = container;
-    }
-    console.log("chec video link if - ", videoId);
-    setVideoLink(videoId);
-  };
+  const [videoReady, setVideoReady] = useState(false);
+  const onReady = useCallback(() => setVideoReady(true), []);
 
   return (
     <View style={styles.container}>
       <Header navigation={navigation} likesCount={likes_count} />
 
-      <View style={{ paddingHorizontal: wp(10) }}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+      >
+        {/* Title */}
         <Text style={styles.heroTitle}>{title}</Text>
-        {/* Sized Box */}
         <View style={{ height: hp(1) }} />
 
+        {/* Type badge */}
         <View style={styles.blogButton}>
           <Text style={styles.blogButtonText}>{type}</Text>
         </View>
-
-        {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* <ImageBackground
-            source={require("../../assets/images/blog1.png")}
-            style={styles.heroBackground}
-            resizeMode="cover"
-          >
-            <FontAwesome5 name="play" size={hp(4)} color="white" />
-          </ImageBackground> */}
-
-          {/* Sized Box */}
-          {/* <View style={{ height: hp(2) }} /> */}
-
-          {/* Expo Video Player */}
-          {/* <Video
-            ref={video}
-            style={styles.video}
-            source={{
-              uri: "https://www.youtube.com/watch?v=MiDhosleZA4",
-            }}
-            useNativeControls
-            resizeMode="contain"
-            isLooping
-            onPlaybackStatusUpdate={(status) => setStatus(() => status)}
-          /> */}
-
-          {/* Sized Box */}
-          {/* <View style={{ height: hp(2) }} /> */}
-
-          {videoLink ? (
+        {/* YouTube player */}
+        {videoId ? (
+          <View style={styles.playerWrapper}>
             <YoutubePlayer
-              webViewStyle={{ opacity: 0.99 }}
-              webViewProps={{
-                renderToHardwareTextureAndroid: true,
-              }}
+              webViewStyle={styles.webView}
+              webViewProps={{ renderToHardwareTextureAndroid: true }}
               height={hp(22)}
-              // width={wp(80)}
-              videoId={videoLink}
-              play={true}
-              onReady={() => setLoading(false)}
+              videoId={videoId}
+              play={false} // don't autoplay — saves bandwidth & feels faster
+              onReady={onReady}
             />
-          ) : null}
-
-          {loading ? (
-            <View
-              style={{
-                position: "absolute",
-                alignSelf: "center",
-                height: hp(20),
-                top: hp(10),
-              }}
-            >
-              <ActivityIndicator size="small" color={colors.loaderColor} />
-            </View>
-          ) : null}
-
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
-          <View>
-            <Text
-              style={{
-                ...styles.bodyContentText,
-                fontFamily: "PoppinsSemiBold",
-              }}
-            >
-              Description:
-            </Text>
-            <Text style={styles.bodyContentText}>{summary}</Text>
-            {/* Sized Box */}
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={{
-                ...styles.bodyContentText,
-                fontFamily: "PoppinsSemiBold",
-              }}
-            >
-              Profile:
-            </Text>
-            {/* Sized Box */}
-            <View style={{ height: hp(1) }} />
-            <ScrollView
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-            >
-              {profile.split(" ").map((element) => (
-                <>
-                  <Capsule title={element} />
-
-                  {/* Sized Box */}
-                  <View style={{ width: wp(2) }} />
-                </>
-              ))}
-            </ScrollView>
-            {/* Sized Box */}
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={{
-                ...styles.bodyContentText,
-                fontFamily: "PoppinsSemiBold",
-              }}
-            >
-              Keywords:
-            </Text>
-            {/* Sized Box */}
-            <View style={{ height: hp(1) }} />
-            <ScrollView
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-            >
-              {keywords.split(" ").map((element) => (
-                <>
-                  <Capsule title={element} />
-
-                  {/* Sized Box */}
-                  <View style={{ width: wp(2) }} />
-                </>
-              ))}
-            </ScrollView>
-            {/* Sized Box */}
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={{
-                ...styles.bodyContentText,
-                fontFamily: "PoppinsSemiBold",
-              }}
-            >
-              Credit:
-            </Text>
-            {/* Sized Box */}
-            <View style={{ height: hp(1) }} />
-            <Text style={styles.bodyContentText}>{credit}</Text>
+            {!videoReady && (
+              <View style={styles.loaderOverlay}>
+                <ActivityIndicator size="small" color={colors.loaderColor} />
+              </View>
+            )}
           </View>
-          {/* Sized Box */}
-          <View style={{ height: hp(40) }} />
-        </ScrollView>
-      </View>
+        ) : null}
+
+        <View style={{ height: hp(2) }} />
+
+        {/* Description */}
+        <Text style={styles.sectionLabel}>Description:</Text>
+        <Text style={styles.bodyContentText}>{summary}</Text>
+        <View style={{ height: hp(3) }} />
+
+        {/* Profile tags */}
+        <TagRow label="Profile" raw={profile} />
+
+        {/* Keyword tags */}
+        <TagRow label="Keywords" raw={keywords} />
+
+        {/* Credit */}
+        <Text style={styles.sectionLabel}>Credit:</Text>
+        <View style={{ height: hp(1) }} />
+        <Text style={styles.bodyContentText}>{credit}</Text>
+
+        <View style={{ height: hp(10) }} />
+      </ScrollView>
     </View>
   );
 };
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     flex: 1,
   },
+  scrollContent: {
+    paddingHorizontal: wp(10),
+  },
   headerContainer: {
-    // backgroundColor: "yellow",
     width: wp(100),
     height: hp(12),
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
     paddingBottom: hp(2),
+  },
+  backButton: {
+    paddingLeft: hp(1.5),
+  },
+  likeButton: {
+    paddingRight: hp(2),
+    alignItems: "center",
+  },
+  blogLikeText: {
+    fontSize: RFValue(10),
+    fontFamily: "Poppins",
   },
   heroTitle: {
     fontSize: RFValue(22),
@@ -277,7 +230,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     height: hp(3),
     width: wp(14),
-    // paddingHorizontal: hp(2),
     borderRadius: hp(100),
     alignItems: "center",
     justifyContent: "center",
@@ -288,22 +240,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.primaryText,
   },
-  heroBackground: {
+  playerWrapper: {
     width: wp(80),
-    height: hp(30),
-    borderRadius: 10,
-    overflow: "hidden",
+    height: hp(22),
+  },
+  webView: {
+    opacity: 0.99,
+  },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  sectionLabel: {
+    fontSize: RFValue(12),
+    fontFamily: "PoppinsSemiBold",
   },
   bodyContentText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
   },
-  video: {
-    alignSelf: "center",
-    width: wp(80),
-    height: hp(22),
+  capsuleWrapper: {
+    marginRight: wp(2),
   },
 });
 

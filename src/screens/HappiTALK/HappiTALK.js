@@ -143,7 +143,8 @@ const HappiTALK = (props) => {
 
                 console.log("isEmailVerified", isEmailVerified);
                 console.log("isPhoneVerified", isPhoneVerified);
-                if (isEmailVerified && isPhoneVerified) {
+                if (isPhoneVerified) {
+                  //only checking if phone is verified
                   navigation.push("HappiTALKBook");
                 } else {
                   navigation.navigate("ContactVerification", {

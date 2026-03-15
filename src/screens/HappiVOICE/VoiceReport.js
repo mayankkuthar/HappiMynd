@@ -1,6 +1,15 @@
-import React, { useEffect, useContext, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, ImageBackground, TouchableOpacity, Image, BackHandler } from 'react-native'
-import Button from "../../components/buttons/Button"
+import React, { useEffect, useContext, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ImageBackground,
+  TouchableOpacity,
+  Image,
+  BackHandler,
+} from "react-native";
+import Button from "../../components/buttons/Button";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -13,17 +22,21 @@ import Header from "../../components/common/Header";
 import { Ionicons } from "@expo/vector-icons";
 import { Hcontext } from "../../context/Hcontext";
 
-import { getReport, saveReport } from './VoiceAPIService';
-
+import { getReport, saveReport } from "./VoiceAPIService";
 
 const VoiceReport = (props) => {
   const { navigation } = props;
 
-
   // Context Variables
 
-  const { authState, getSubscriptions, getUserProfile, screenTrafficAnalytics } = useContext(Hcontext);
-  const { sondeJobId, tokenSonde, setVoiceReport, voiceReport } = useContext(Hcontext);
+  const {
+    authState,
+    getSubscriptions,
+    getUserProfile,
+    screenTrafficAnalytics,
+  } = useContext(Hcontext);
+  const { sondeJobId, tokenSonde, setVoiceReport, voiceReport } =
+    useContext(Hcontext);
 
   // STate variables
 
@@ -34,13 +47,10 @@ const VoiceReport = (props) => {
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [loadingButton, setLoadingButton] = useState(false);
 
-
-  const [userData, setUserData] = useState({})
-
+  const [userData, setUserData] = useState({});
 
   const { whiteLabelState } = useContext(Hcontext);
   // Prop Destructuring
-
 
   useEffect(() => {
     checkSubscription();
@@ -55,7 +65,7 @@ const VoiceReport = (props) => {
     return () => {
       BackHandler.removeEventListener(
         "hardwareBackPress",
-        handleBackButtonClick
+        handleBackButtonClick,
       );
     };
   }, []);
@@ -65,21 +75,20 @@ const VoiceReport = (props) => {
     return true;
   };
 
-
   const checkSubscription = async () => {
     setLoading(true);
     try {
       const mySub = await getSubscriptions();
-console.log("my subscription>>", mySub)
+      console.log("my subscription>>", mySub);
       if (mySub.status === "success") {
-        const isSub = mySub?.data?.find((sub) =>
-          sub?.name === "HappiVOICE (Year)" ||
-          sub?.name === "HappiVOICE (Month)");
+        const isSub = mySub?.data?.find(
+          (sub) =>
+            sub?.name === "HappiVOICE (Year)" ||
+            sub?.name === "HappiVOICE (Month)",
+        );
         if (isSub) setIsSubscribed(true);
       }
-    } catch (err) {
-
-    }
+    } catch (err) {}
     setLoading(false);
   };
 
@@ -87,9 +96,7 @@ console.log("my subscription>>", mySub)
     try {
       setLoadingButton(true);
       const userProfile = await getUserProfile({ token });
-      setUserData(userProfile)
-
-
+      setUserData(userProfile);
 
       if (userProfile.status === "success") {
         if (userProfile?.data?.verify_user) {
@@ -104,36 +111,31 @@ console.log("my subscription>>", mySub)
       setLoadingButton(false);
     } catch (err) {
       setLoadingButton(false);
-
     }
   };
 
   const audioReport = async () => {
-
     setLoadingButton(true);
     var voiceScore = await getReport(tokenSonde, sondeJobId);
-    console.log("data from sonde ------",voiceScore);
+    console.log("data from sonde ------", voiceScore);
     if (voiceScore?.status == "DONE") {
-
-      setVoiceReport(voiceScore) 
-      await saveReport(userData, voiceScore)
+      setVoiceReport(voiceScore);
+      await saveReport(userData, voiceScore);
       if (authState?.user) {
-        if (isEmailVerified && isPhoneVerified) {            
-
+        if (isPhoneVerified) {
+          //only checking if phone is verified
           if (voiceScore) {
             if (isSubscribed) {
               setLoadingButton(false);
               navigation.navigate("ReportsCheck");
             } else {
-
               setLoadingButton(false);
               navigation.push("Pricing", {
                 selectedPlan: "HappiVOICE (Year)",
               });
             }
-          }
-          else{
-            setLoadingButton(false)
+          } else {
+            setLoadingButton(false);
           }
         } else {
           setLoadingButton(false);
@@ -145,13 +147,12 @@ console.log("my subscription>>", mySub)
         setLoadingButton(false);
         navigation.push("HomeScreen");
       }
-    }else{
-      console.log("error generate ---- ",voiceScore.status)
+    } else {
+      console.log("error generate ---- ", voiceScore.status);
       alert("Fail to load report");
       setLoadingButton(false);
-    } 
-  }
-
+    }
+  };
 
   return (
     <ImageBackground
@@ -184,9 +185,7 @@ console.log("my subscription>>", mySub)
           resizeMode="contain"
         />
         <View style={{ height: hp(8) }} />
-        <Text style={styles.heroText}>
-          {happiVoice_constants?.voice_rep}
-        </Text>
+        <Text style={styles.heroText}>{happiVoice_constants?.voice_rep}</Text>
       </View>
       <View style={{ alignSelf: "flex-end", width: wp(80) }}>
         <Button
@@ -199,16 +198,14 @@ console.log("my subscription>>", mySub)
       </View>
     </ImageBackground>
   );
-
-}
+};
 const styles = StyleSheet.create({
-
   containerhere: {
     backgroundColor: colors.background,
     flex: 1,
   },
   headerLogo: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: wp(28),
     height: hp(7),
   },
@@ -241,8 +238,8 @@ const styles = StyleSheet.create({
   heroText: {
     fontSize: RFValue(20),
     fontFamily: "PoppinsSemiBold",
-    textAlign: 'center'
+    textAlign: "center",
   },
 });
 
-export default VoiceReport
+export default VoiceReport;
