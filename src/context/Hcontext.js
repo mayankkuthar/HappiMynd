@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import messaging from "@react-native-firebase/messaging";
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import apiClient from "./apiClient";
 
 // Config
 import { config } from "../config";
@@ -38,7 +39,7 @@ export const Hprovider = (props) => {
     initialSnackState,
   );
 
-  // Stste Vaiables
+  // State Variables
   const [deviceToken, setDeviceToken] = useState(null);
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(false);
@@ -77,56 +78,28 @@ export const Hprovider = (props) => {
   }, []);
 
   const notificationsHandler = async () => {
-    try {
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        setDeviceToken(token);
-        setExpoPushToken(token); // keep in sync for backward compat
-      }
-
-      // Foreground handler — fires when a notification arrives while the app
-      // is open. Android won't auto-display a heads-up in this state, so we
-      // store the data in state so the app can react (e.g. show an in-app banner).
-      notificationListener.current = messaging().onMessage(
-        async (remoteMessage) => {
-          console.log("FCM foreground message:", remoteMessage.messageId);
-          if (remoteMessage?.data) {
-            setNotification(remoteMessage.data);
-          }
-        },
-      );
-
-      // Background tap handler — fires when the user taps a notification
-      // while the app is in the background (but not killed).
-      responseListener.current = messaging().onNotificationOpenedApp(
-        (remoteMessage) => {
-          console.log(
-            "Notification tapped (background):",
-            remoteMessage.messageId,
-          );
-          if (remoteMessage?.data) {
-            setNotification(remoteMessage.data);
-          }
-        },
-      );
-
-      // Quit-state tap handler — fires once when the app is cold-started by
-      // tapping a notification.
-      messaging()
-        .getInitialNotification()
-        .then((remoteMessage) => {
-          if (remoteMessage?.data) {
-            console.log(
-              "Notification tapped (quit state):",
-              remoteMessage.messageId,
-            );
-            setNotification(remoteMessage.data);
-          }
-        });
-    } catch (err) {
-      console.log("Some issue while setting up notifications - ", err);
+  try {
+    const token = await registerForPushNotificationsAsync();
+    if (token) {
+      setDeviceToken(token);
+      setExpoPushToken(token);
     }
-  };
+
+    notificationListener.current = messaging().onMessage(async (msg) => {
+      if (msg?.data) setNotification(msg.data);
+    });
+
+    responseListener.current = messaging().onNotificationOpenedApp((msg) => {
+      if (msg?.data) setNotification(msg.data);
+    });
+
+    const initial = await messaging().getInitialNotification();
+    if (initial?.data) setNotification(initial.data);
+
+  } catch (err) {
+    console.log("Notification setup error:", err);
+  }
+};
 
   const registerForPushNotificationsAsync = async () => {
     try {
@@ -154,242 +127,141 @@ export const Hprovider = (props) => {
   };
 
   const userLogin = async ({ username, password }) => {
-    try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/login`,
-        data: {
-          username,
-          password,
-          device_token: deviceToken ? deviceToken : "TestDeviceToken",
-        },
-      });
+  try {
+    const res = await apiClient.post("/api/v1/login", {
+      username,
+      password,
+      device_token: deviceToken || "TestDeviceToken",
+    });
 
-      return axiosRes.data;
-    } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while login (Hcontext) - ",
-        // axiosRes
-      );
-      snackDispatch({
-        type: "SHOW_SNACK",
-        payload: "Invalid username or password.",
-      });
-    }
-  };
+    return res.data;
+  } catch (err) {
+    snackDispatch({
+      type: "SHOW_SNACK",
+      payload: err.message || "Login failed",
+    });
+    throw err;
+  }
+};
 
   const userCodeLogin = async ({ code }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/login-with-code`,
-        data: { happimynd_code: code, device_token: deviceToken },
+      const res = await apiClient.post("/api/v1/login-with-code", {
+        happimynd_code: code,
+        device_token: deviceToken,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while login with code (Hcontext) - ",
-        // axiosRes
-      );
       snackDispatch({
         type: "SHOW_SNACK",
         payload: "Invalid code. Please check again.",
       });
+      throw err;
     }
   };
 
   const userLogout = async ({ token }) => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/logout`,
-        headers: { Authorization: "Bearer " + token },
-      });
-      console.log(
-        "USer logout res - ",
-        // axiosRes
-      );
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/logout");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while logout (Hcontext) - ",
-        // axiosRes
-      );
+      console.log("Logout error:", err);
+      throw err;
     }
   };
 
   const guardianVerification = async ({ type, uniqueId, mobile, email }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/guardian-verification`,
-        data: {
-          type,
-          random_unique_id: uniqueId,
-          email,
-          mobile,
-        },
+      const res = await apiClient.post("/api/v1/guardian-verification", {
+        type,
+        random_unique_id: uniqueId,
+        email,
+        mobile,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      if (err.response)
-        console.log(
-          "Some issue while sending guardian otp (Hcontext) - ",
-          // err.response
-        );
+      console.log("Guardian verification error:", err);
+      throw err;
     }
   };
 
   const verifyGuardianOtp = async ({ otp, uniqueId }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/verify-guardian-otp`,
-        data: {
-          otp,
-          unique_id: uniqueId,
-        },
+      const res = await apiClient.post("/api/v1/verify-guardian-otp", {
+        otp,
+        unique_id: uniqueId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      if (err.response)
-        console.log(
-          "Some issue while verifying guardian (Hcontext) - ",
-          // err.response
-        );
+      console.log("Verify guardian OTP error:", err);
+      throw err;
     }
   };
 
   const getSponsorList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/organizer-list`,
-      });
-
-      return axiosRes.data;
+      const res = await axios.get(`${config.BASE_URL}/api/v1/organizer-list`);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while getting sponsored list (Hcontext) - ",
-        // axiosRes
-      );
+      console.log("Get sponsor list error:", err);
+      throw err;
     }
   };
 
   const checkSponsorCode = async ({ id, code }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/entry-via-org`,
-        data: { organization_id: id, happimynd_code: code },
+      const res = await axios.post(`${config.BASE_URL}/api/v1/entry-via-org`, {
+        organization_id: id,
+        happimynd_code: code,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while checking sponsor code (Hcontext) - ",
-        // axiosRes
-      );
+      console.log("Check sponsor code error:", err);
       snackDispatch({ type: "SHOW_SNACK", payload: "Please check your code." });
+      throw err;
     }
   };
 
   const getProfileList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/user-profile`,
-      });
-
-      return axiosRes.data;
+      const res = await axios.get(`${config.BASE_URL}/api/v1/user-profile`);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while getting profile list (Hcontext) - ",
-        // axiosRes
-      );
+      console.log("Get profile list error:", err);
+      throw err;
     }
   };
 
-  const userSignup = async ({
-    nickName,
-    selectedProfileType,
-    age,
-    gender,
-    userName,
-    password,
-    confirmPassword,
-    signup_type,
-    happimyndCode,
-    signupType,
-    language,
-    refferalCode,
-  }) => {
-    try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/signup`,
-        data: {
-          nickname: nickName,
-          user_profile_id: selectedProfileType,
-          age,
-          gender,
-          username: userName,
-          password,
-          confirm_password: confirmPassword,
-          signup_type,
-          happimyndCode,
-          signup_type: signupType,
-          language,
-          device_token: deviceToken,
-          referral_code: refferalCode,
-        },
-      });
+  const userSignup = async (data) => {
+  try {
+    const res = await apiClient.post("/api/v1/signup", {
+      nickname: data.nickName,
+      user_profile_id: data.selectedProfileType,
+      age: data.age,
+      gender: data.gender,
+      username: data.userName,
+      password: data.password,
+      confirm_password: data.confirmPassword,
+      signup_type: data.signupType, // FIXED
+      happimyndCode: data.happimyndCode,
+      language: data.language,
+      device_token: deviceToken,
+      referral_code: data.refferalCode,
+    });
 
-      console.log(
-        "The signup response - ",
-        // axiosRes
-      );
-
-      return axiosRes.data;
-    } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while user signup (Hcontext) - ",
-        // axiosRes
-      );
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Signup error response (Hcontext) - ",
-          // err.response.data
-        );
-        if (err.response.data.message === "Username is alraedy taken") {
-          snackDispatch({
-            type: "SHOW_SNACK",
-            payload: "Username is already taken",
-          });
-        } else {
-          snackDispatch({
-            type: "SHOW_SNACK",
-            payload: err.response.data.message,
-          });
-        }
-      }
-    }
-  };
+    return res.data;
+  } catch (err) {
+    snackDispatch({
+      type: "SHOW_SNACK",
+      payload: err.message,
+    });
+    throw err;
+  }
+};
 
   const userProfileEdit = async ({
     nickName,
@@ -401,55 +273,30 @@ export const Hprovider = (props) => {
     phone,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/edit-profile`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          nickname: nickName,
-          user_profile_id: 2,
-          age,
-          gender,
-          username: userName,
-          email,
-          mobile: phone,
-        },
+      const res = await apiClient.post("/api/v1/edit-profile", {
+        nickname: nickName,
+        user_profile_id: userProfileId,
+        age,
+        gender,
+        username: userName,
+        email,
+        mobile: phone,
       });
 
-      console.log(
-        "The profile edit response - ",
-        // axiosRes
-      );
-
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while user profile edit (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Profile edit error:", err);
+      throw err;
     }
   };
 
   const getUserProfile = async ({ token }) => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/get-profile`,
-        headers: { Authorization: "Bearer " + token },
-      });
-      console.log("USer profile received res - ", axiosRes.data);
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/get-profile");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while getting user profile (Hcontext) - ",
-        axiosRes,
-      );
+      console.log("Get user profile error:", err);
+      throw err;
     }
   };
 
@@ -459,81 +306,55 @@ export const Hprovider = (props) => {
     confirmPassword,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/change-password`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          old_password: oldPassword,
-          new_password: newPassword,
-          confirm_password: confirmPassword,
-        },
+      const res = await apiClient.post("/api/v1/change-password", {
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while password change (Hcontext) - ",
-        // axiosRes
-      );
-
       snackDispatch({
         type: "SHOW_SNACK",
-        payload: "Old password incorrect !",
+        payload: err.message || "Old password incorrect!",
       });
+      throw err;
     }
   };
 
   const forgotPassword = async ({ email, mobile }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/forgot-password`,
-        data: {
-          email,
-          type: email ? "email" : "mobile",
-          mobile,
-        },
+      const res = await axios.post(`${config.BASE_URL}/api/v1/forgot-password`, {
+        email,
+        type: email ? "email" : "mobile",
+        mobile,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while forgot password (Hcontext) - ",
-        // axiosRes
-      );
       snackDispatch({
         type: "SHOW_SNACK",
-        payload: `You have not registered these details with us yet. Please create a new account`,
+        payload: "You have not registered these details with us yet. Please create a new account.",
       });
+      throw err;
     }
   };
 
   const verifyOtp = async ({ email, mobile, otp }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/verify-otp`,
-        data: {
-          email,
-          mobile,
-          otp,
-        },
+      const res = await axios.post(`${config.BASE_URL}/api/v1/verify-otp`, {
+        email,
+        mobile,
+        otp,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while verifying otp (Hcontext) - ",
-        // axiosRes
-      );
       snackDispatch({
         type: "SHOW_SNACK",
-        payload: "OTP incorrect !",
+        payload: "OTP incorrect!",
       });
+      throw err;
     }
   };
 
@@ -544,129 +365,88 @@ export const Hprovider = (props) => {
     mobile,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/reset-password`,
-        data: {
-          password,
-          confirm_password: confirmPassword,
-          email,
-          mobile,
-        },
+      const res = await axios.post(`${config.BASE_URL}/api/v1/reset-password`, {
+        password,
+        confirm_password: confirmPassword,
+        email,
+        mobile,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while resetting password (Hcontext) - ",
-        // axiosRes
-      );
+      console.log("Reset password error:", err);
+      throw err;
     }
   };
 
   const startAssessment = async ({ token }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/start-assessment`,
-        headers: { Authorization: "Bearer " + token },
-        data: { platform: Platform.OS },
+      console.log("Calling start-assessment endpoint...");
+      const res = await apiClient.post("/api/v1/start-assessment", {
+        platform: Platform.OS,
       });
 
-      return axiosRes.data;
+      console.log("Assessment response:", res.data);
+      return res.data;
     } catch (err) {
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while starting assessment (Hcontext) - ",
-          // err.response.data
-        );
-      }
+      console.log("Start assessment error:", err);
+      console.log("Error response:", err.response?.data || err.message);
+      console.log("Error status:", err.response?.status);
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: err.response?.data?.message || "Failed to start assessment. Please try again.",
+      });
+      throw err;
     }
   };
 
   const AnyAssessment = async ({ token }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/checkifany`,
-        headers: { Authorization: "Bearer " + token },
-        data: { platform: Platform.OS },
+      const res = await apiClient.post("/api/v1/checkifany", {
+        platform: Platform.OS,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while starting assessment (Hcontext) - ",
-          // err.response.data
-        );
-      }
+      console.log("Check assessment error:", err);
+      throw err;
     }
   };
 
   const submitAnswer = async ({ optionId }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/save-option`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          option_question_id: optionId,
-        },
+      const res = await apiClient.post("/api/v1/save-option", {
+        option_question_id: optionId,
       });
 
-      console.log(
-        "context check answer res = ",
-        // axiosRes
-      );
-
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log("Some issue while submitting option (Hcontext) - ", axiosRes);
+      console.log("Submit answer error:", err);
+      throw err;
     }
   };
 
   const getReport = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/get-report`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/get-report");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while getting report (Hcontext) - ",
-        //  axiosRes
-      );
-      if (axiosRes.status === 500)
-        snackDispatch({ type: "SHOW_SNACK", payload: axiosRes.message });
+      if (err.status === 500) {
+        snackDispatch({ type: "SHOW_SNACK", payload: err.message });
+      }
+      throw err;
     }
   };
 
   const getAllReport = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/get-all-report`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/get-all-report");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      console.log(
-        "Some issue while getting report (Hcontext) - ",
-        //  axiosRes
-      );
-      if (axiosRes.status === 500)
-        snackDispatch({ type: "SHOW_SNACK", payload: axiosRes.message });
+      if (err.status === 500) {
+        snackDispatch({ type: "SHOW_SNACK", payload: err.message });
+      }
+      throw err;
     }
   };
 
@@ -675,7 +455,7 @@ export const Hprovider = (props) => {
       const axiosRes = await axios({
         method: "get",
         url: `${config.BASE_URL}/api/v1/language-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
+        headers: { Authorization: "Bearer " + authState?.user?.access_token },
       });
 
       return axiosRes.data;
@@ -705,122 +485,62 @@ export const Hprovider = (props) => {
 
   const assignPsychologist = async ({ language }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/assign-psychologist`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          language,
-        },
+      const res = await apiClient.post("/api/v1/assign-psychologist", {
+        language,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while asigning psycologist (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Assign psychologist error:", err);
+      throw err;
     }
   };
 
   const changePsychologist = async ({ language }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/switch-language-while-chat`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          language,
-        },
+      const res = await apiClient.post("/api/v1/switch-language-while-chat", {
+        language,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while changing psycologist (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Change psychologist error:", err);
+      throw err;
     }
   };
 
-  const currentlyAssignedPsycologist = async () => {
+  const currentlyAssignedPsychologist = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/psy-whom-user-currently-chatting`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/psy-whom-user-currently-chatting");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting currently assigned psycologist (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Get assigned psychologist error:", err);
+      throw err;
     }
   };
 
   const sendMsgToPsy = async ({ groupId, psyId, message }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/send-message-by-user-to-psy`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          group_id: groupId,
-          psychologist_id: psyId,
-          message,
-        },
+      const res = await apiClient.post("/api/v1/send-message-by-user-to-psy", {
+        group_id: groupId,
+        psychologist_id: psyId,
+        message,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue sending message to psycologist (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Send message to psychologist error:", err);
+      throw err;
     }
   };
 
   const clearMessageBatch = async () => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/clear-message-batch-of-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/clear-message-batch-of-user");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue clearing message batch (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Clear message batch error:", err);
+      throw err;
     }
   };
 
@@ -832,355 +552,199 @@ export const Hprovider = (props) => {
     language = "",
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happi-learn-content`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          search,
-          content_type: contentType,
-          parameters,
-          profile,
-          language,
-        },
+      const res = await apiClient.post("/api/v1/happi-learn-content", {
+        search,
+        content_type: contentType,
+        parameters,
+        profile,
+        language,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while happi-learn listing (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("HappiLearn list error:", err);
+      throw err;
     }
   };
 
   const happiLearnContent = async ({ id }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happi-learn-content-by-id`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { content_id: id },
+      const res = await apiClient.post("/api/v1/happi-learn-content-by-id", {
+        content_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while happi-learn content view (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("HappiLearn content error:", err);
+      throw err;
     }
   };
 
   const likePost = async ({ id = null }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/like-happi-learn-post`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happi_learn_content_id: id },
+      const res = await apiClient.post("/api/v1/like-happi-learn-post", {
+        happi_learn_content_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while liking post (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Like post error:", err);
+      throw err;
     }
   };
 
   const unlikePost = async ({ id = null }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/unlike-happi-learn-post`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happi_learn_content_id: id },
+      const res = await apiClient.post("/api/v1/unlike-happi-learn-post", {
+        happi_learn_content_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while un-liking post (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Unlike post error:", err);
+      throw err;
     }
   };
 
   const getBundles = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/buy-plan`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      // console.log("subcribe user:",axiosRes.data);
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/buy-plan");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue getting bundles (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Get bundles error:", err);
+      throw err;
     }
   };
 
   const payments = async ({ id, amount, couponId = 0 }) => {
-    console.log("coupenId========>", couponId);
-    let endpoint;
-    if (amount > 0) {
-      endpoint = `${config.BASE_URL}/api/v1/payment`;
-    } else {
-      endpoint = `${config.BASE_URL}/api/v1/avail-free-services`;
-    }
-    console.log(
-      `check on the amount - ${amount} and also the endpoint - ${endpoint}`,
-    );
+  try {
+    const endpoint =
+      amount && Number(amount) > 0
+        ? "/api/v1/payment"
+        : "/api/v1/avail-free-services";
 
-    console.log("sending payload ---- ", id, amount);
-    try {
-      const axiosRes = await axios({
-        method: "post",
-        url: endpoint,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          plan_id: id,
-          amount,
-          coupen_id: couponId,
-        },
-      });
+    const res = await apiClient.post(endpoint, {
+      plan_id: id,
+      amount,
+      coupon_id: couponId,
+    });
 
-      console.log("payment -------- ", axiosRes?.data);
-
-      return axiosRes?.data;
-    } catch (err) {
-      // const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while making payments (Hcontext) - ",
-          err.response,
-        );
-      }
-    }
-  };
+    return res.data;
+  } catch (err) {
+    console.log("Payment error:", err);
+    throw err;
+  }
+};
 
   const getSubscriptions = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/my-subscribed-services`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-      console.log("getsubscription>>", axiosRes?.data);
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/my-subscribed-services");
+      return res.data;
     } catch (err) {
-      console.log("Some issue while getting subscriptions - ", err);
+      console.log("Get subscriptions error:", err);
+      throw err;
     }
   };
 
   const applyCoupon = async ({ plan, coupon }) => {
-    console.log("send payload ----", plan, coupon);
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/apply-coupon`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          plan_id: plan,
-          coupon,
-        },
+      const res = await apiClient.post("/api/v1/apply-coupon", {
+        plan_id: plan,
+        coupon,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while applying coupon (Hcontext) - ",
-          err.response,
-        );
-
-        snackDispatch({
-          type: "SHOW_SNACK",
-          payload: err.response.data.message,
-        });
-      }
+      console.log("Apply coupon error:", err);
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: err.message || "Failed to apply coupon",
+      });
+      throw err;
     }
   };
 
   const sendOTP = async ({ type, email, mobile, country_code }) => {
     let dataToSend;
     if (type === "email") {
-      dataToSend = {
-        type,
-        email,
-      };
+      dataToSend = { type, email };
     } else if (type === "mobile") {
-      dataToSend = {
-        type,
-        mobile,
-        country_code,
-      };
+      dataToSend = { type, mobile, country_code };
     }
-    console.log(
-      "check data to send - ",
-      dataToSend,
-      "Bearer " + authState.user.access_token,
-    );
+    
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/send-verification-otp`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: dataToSend,
-      });
-
-      console.log("response ----", axiosRes);
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/send-verification-otp", dataToSend);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-      if (err.response) {
-        // Request made and server responded
-        console.log("Some issue while sending OTP (Hcontext) - ", err.response);
-
-        if (err.response.data.message === "Email address is already exist.") {
-          return snackDispatch({
-            type: "SHOW_SNACK",
-            payload: "This Email ID is already registered.",
-          });
-        }
-        if (err.response.data.message === "Mobile number is already exist.") {
-          return snackDispatch({
-            type: "SHOW_SNACK",
-            payload: "This mobile number is already registered.",
-          });
-        }
-
+      const message = err.message || "";
+      if (message.includes("Email address is already exist")) {
         snackDispatch({
           type: "SHOW_SNACK",
-          payload: err.response.data.message,
+          payload: "This Email ID is already registered.",
+        });
+      } else if (message.includes("Mobile number is already exist")) {
+        snackDispatch({
+          type: "SHOW_SNACK",
+          payload: "This mobile number is already registered.",
+        });
+      } else {
+        snackDispatch({
+          type: "SHOW_SNACK",
+          payload: message,
         });
       }
+      throw err;
     }
   };
 
   const getEmojiList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/emoji-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/emoji-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting emoji list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get emoji list error:", err);
+      throw err;
     }
   };
 
   const submitRating = async ({ id, review }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/submit-rating`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { application_rate_emoji_id: id, review },
+      const res = await apiClient.post("/api/v1/submit-rating", {
+        application_rate_emoji_id: id,
+        review,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while submitting rating (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Submit rating error:", err);
+      throw err;
     }
   };
 
   const raiseQuery = async ({ category, description }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/raise-query-app`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { category, description },
+      const res = await apiClient.post("/api/v1/raise-query-app", {
+        category,
+        description,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while raising query (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Raise query error:", err);
+      throw err;
     }
   };
   const submitFeedback = async ({ id, review }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/feedback`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { application_rate_emoji_id: id, feedback_message: review },
+      const res = await apiClient.post("/api/v1/feedback", {
+        application_rate_emoji_id: id,
+        feedback_message: review,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while submitting feedback (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Submit feedback error:", err);
+      throw err;
     }
   };
   const submitOpinionAfterSession = async ({
@@ -1191,54 +755,32 @@ export const Hprovider = (props) => {
     module,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url:
-          module === "talk"
-            ? `${config.BASE_URL}/api/v1/submit-opinion-after-session-user`
-            : `${config.BASE_URL}/api/v1/submit-opinion-after-guide-session-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          session_id: sessionId,
-          emoji_id: emojiId,
-          reason,
-          additional_comment: comments,
-        },
+      const endpoint =
+        module === "talk"
+          ? "/api/v1/submit-opinion-after-session-user"
+          : "/api/v1/submit-opinion-after-guide-session-user";
+
+      const res = await apiClient.post(endpoint, {
+        session_id: sessionId,
+        emoji_id: emojiId,
+        reason,
+        additional_comment: comments,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while submitting feedback (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Submit opinion error:", err);
+      throw err;
     }
   };
 
   const getNotifications = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/notification-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/notification-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting notifications (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get notifications error:", err);
+      throw err;
     }
   };
 
@@ -1247,7 +789,7 @@ export const Hprovider = (props) => {
       const axiosRes = await axios({
         method: "post",
         url: `https://exp.host/--/api/v2/push/send`,
-        // headers: { Authorization: "Bearer " + authState.user.access_token },
+        // headers: { Authorization: "Bearer " + authState?.user?.access_token },
         data: {
           to: deviceToken,
           sound: "default",
@@ -1274,7 +816,7 @@ export const Hprovider = (props) => {
       const axiosRes = await axios({
         method: "post",
         url: `https://exp.host/--/api/v2/push/send`,
-        // headers: { Authorization: "Bearer " + authState.user.access_token },
+        // headers: { Authorization: "Bearer " + authState?.user?.access_token },
         data: {
           to: deviceToken,
           sound: "default",
@@ -1292,552 +834,309 @@ export const Hprovider = (props) => {
   };
 
   const fileUploadFirebase = async (source) => {
-    console.log("Firebase source check or not - ", source);
-    try {
-      // Creating a blob for the document
-      const response = await fetch(source);
-      const blob = await response.blob();
+  try {
+    const response = await fetch(source);
+    const blob = await response.blob();
 
-      // Extracting file-name
-      const fileName = source.substring(source.lastIndexOf("/") + 1);
+    const fileName = source.substring(source.lastIndexOf("/") + 1);
 
-      // Firrebase Storage reference
-      const storage = getStorage();
-      const storageRef = ref(storage, fileName);
+    const storage = getStorage();
+    const storageRef = ref(storage, fileName);
 
-      // Uploading the bytes to Firebase
-      uploadBytes(storageRef, blob).then((snapshot) => {
-        console.log("Uploaded a blob or file!", snapshot);
-        return snapshot;
-      });
-    } catch (err) {
-      console.log("Some issue while uploading file to firebase - ", err);
-    }
-  };
+    // Upload
+    const snapshot = await uploadBytes(storageRef, blob);
+
+    // Get URL (IMPORTANT)
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    return downloadURL;
+  } catch (err) {
+    console.log("Firebase upload error:", err);
+    throw err;
+  }
+};
 
   const getWhiteLabel = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/white-labelling-status`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/white-labelling-status");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting white label (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get white label error:", err);
+      throw err;
     }
   };
 
   const getFAQ = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/general-faqs`,
-      });
-
-      return axiosRes.data;
+      const res = await axios.get(`${config.BASE_URL}/api/v1/general-faqs`);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting FAQ list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get FAQ error:", err);
+      throw err;
     }
   };
 
   const courseList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/course-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/course-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting Course list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Course list error:", err);
+      throw err;
     }
   };
 
   const subCourseList = async (courseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/sub-course-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_course_id: courseId },
+      const res = await apiClient.post("/api/v1/sub-course-list", {
+        happiself_course_id: courseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting Sub Course list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Sub course list error:", err);
+      throw err;
     }
   };
 
   const subCourseContent = async (subCourseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/get-sub-course-content`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_sub_course_id: subCourseId },
+      const res = await apiClient.post("/api/v1/get-sub-course-content", {
+        happiself_sub_course_id: subCourseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting Sub Course Content (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Sub course content error:", err);
+      throw err;
     }
   };
 
   const likeCourse = async (courseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/like-happiself-course`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_course_id: courseId },
+      const res = await apiClient.post("/api/v1/like-happiself-course", {
+        happiself_course_id: courseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while liking course (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Like course error:", err);
+      throw err;
     }
   };
   const unLikeCourse = async (courseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/unlike-happiself-course`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_course_id: courseId },
+      const res = await apiClient.post("/api/v1/unlike-happiself-course", {
+        happiself_course_id: courseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while unliking course (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Unlike course error:", err);
+      throw err;
     }
   };
   const startCourse = async (courseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/start-sub-course`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_sub_course_id: courseId },
+      const res = await apiClient.post("/api/v1/start-sub-course", {
+        happiself_sub_course_id: courseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while starting course (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Start course error:", err);
+      throw err;
     }
   };
   const completeCourse = async (courseId) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/end-sub-course`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_sub_course_id: courseId },
+      const res = await apiClient.post("/api/v1/end-sub-course", {
+        happiself_sub_course_id: courseId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while completing course (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Complete course error:", err);
+      throw err;
     }
   };
 
   const getNotes = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/happiself-get-notes-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/happiself-get-notes-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting notes (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get notes error:", err);
+      throw err;
     }
   };
 
   const addNote = async ({ note }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiself-add-notes`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { notes: note },
+      const res = await apiClient.post("/api/v1/happiself-add-notes", {
+        notes: note,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log("Some issue while adding note (Hcontext) - ", err.response);
-      }
+      console.log("Add note error:", err);
+      throw err;
     }
   };
   const updateNote = async ({ id, note }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiself-update-notes`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { notes_id: id, notes: note },
+      const res = await apiClient.post("/api/v1/happiself-update-notes", {
+        notes_id: id,
+        notes: note,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while updating note (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Update note error:", err);
+      throw err;
     }
   };
   const deleteNote = async ({ id }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiself-delete-notes-by-id`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { notes_id: id },
+      const res = await apiClient.post("/api/v1/happiself-delete-notes-by-id", {
+        notes_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while deleting note (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Delete note error:", err);
+      throw err;
     }
   };
   const libraryList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/happiself-library-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/happiself-library-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting library list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Library list error:", err);
+      throw err;
     }
   };
   const libraryContent = async ({ id }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiself-library-content`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { happiself_library_id: id },
+      const res = await apiClient.post("/api/v1/happiself-library-content", {
+        happiself_library_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting library Content list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Library content error:", err);
+      throw err;
     }
   };
   const deleteAccount = async ({ id, answer }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/delete-account`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/delete-account");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while account deletion (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Delete account error:", err);
+      throw err;
     }
   };
 
   const saveHappiSelfContentAnswer = async ({ id, answer }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/save-happiself-content-answer`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { content_id: id, answer },
+      const res = await apiClient.post("/api/v1/save-happiself-content-answer", {
+        content_id: id,
+        answer,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while saving happi-self content answer (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Save HappiSelf answer error:", err);
+      throw err;
     }
   };
 
   const paymentForIos = async ({
     id = 0,
     amount = 0,
-    marchantName = "apple_pay",
+    merchantName = "apple_pay",
     transactionId = null,
     transactionReceipt = null,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/payment-for-ios`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          plan_id: id,
-          amount,
-          marchant_name: marchantName,
-          transaction_id: transactionId,
-          transaction_receipt: transactionReceipt,
-        },
+      const res = await apiClient.post("/api/v1/payment-for-ios", {
+        plan_id: id,
+        amount,
+        merchant_name: merchantName,
+        transaction_id: transactionId,
+        transaction_receipt: transactionReceipt,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while payment for ios (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Payment for iOS error:", err);
+      throw err;
     }
   };
 
   const joinRoom = async ({ sessionId = "" }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/join-talk-room-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          session_id: sessionId,
-        },
+      const res = await apiClient.post("/api/v1/join-talk-room-user", {
+        session_id: sessionId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue grantng room access token (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Join room error:", err);
+      throw err;
     }
   };
   const joinRoomGuide = async ({ sessionId = "" }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/join-guide-room-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          session_id: sessionId,
-        },
+      const res = await apiClient.post("/api/v1/join-guide-room-user", {
+        session_id: sessionId,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue grantng room access token for guide (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Join room guide error:", err);
+      throw err;
     }
   };
 
-  const psycologistTalkListing = async ({ search = "" }) => {
+  const psychologistTalkListing = async ({ search = "" }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/psychologist-listing`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { search },
+      const res = await apiClient.post("/api/v1/psychologist-listing", {
+        search,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting psycologist listing (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Psychologist listing error:", err);
+      throw err;
     }
   };
 
   const myBookingUsers = async ({ bookingType }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/my-booking-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { type: bookingType },
+      const res = await apiClient.post("/api/v1/my-booking-user", {
+        type: bookingType,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting my booked users list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("My booking users error:", err);
+      throw err;
     }
   };
 
   const getSlotsOfPsy = async (id) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/get-slots-of-psy`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { psychologist_id: id },
+      const res = await apiClient.post("/api/v1/get-slots-of-psy", {
+        psychologist_id: id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting psycologist slots (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get slots error:", err);
+      throw err;
     }
   };
 
@@ -1849,492 +1148,260 @@ export const Hprovider = (props) => {
     time = "",
     session = "",
     shouldRecord = false,
-    coupen_id = 0,
+    coupon_id = 0,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/payment-for-happitalk`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          psychologist_id: psyId,
-          plan_id: planId,
-          amount,
-          date,
-          time,
-          session,
-          user_recording_permission: shouldRecord.toString(),
-          coupen_id: coupen_id,
-        },
+      const res = await apiClient.post("/api/v1/payment-for-happitalk", {
+        psychologist_id: psyId,
+        plan_id: planId,
+        amount,
+        date,
+        time,
+        session,
+        user_recording_permission: shouldRecord.toString(),
+        coupon_id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting paymentForHappiTalk (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Payment for HappiTalk error:", err);
+      throw err;
     }
   };
 
   const cancelBooking = async ({ sessionId = null, cancelReason = null }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/cancel-booking-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { session_id: sessionId, cancel_reason: cancelReason },
+      const res = await apiClient.post("/api/v1/cancel-booking-user", {
+        session_id: sessionId,
+        cancel_reason: cancelReason,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while cancelling user booking (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Cancel booking error:", err);
+      throw err;
     }
   };
 
   const creditsListing = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/list-to-book-another-session-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/list-to-book-another-session-user");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while credit listing (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Credits listing error:", err);
+      throw err;
     }
   };
 
   const bookAnotherSession = async ({ bookingId, date, time }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/book-another-session-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          booking_id: bookingId,
-          date,
-          time,
-          user_recording_permission: "true",
-        },
+      const res = await apiClient.post("/api/v1/book-another-session-user", {
+        booking_id: bookingId,
+        date,
+        time,
+        user_recording_permission: "true",
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while booking another session (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Book another session error:", err);
+      throw err;
     }
   };
   const rescheduleBooking = async ({ session, date, time }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/reschedule-booking-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { session_id: session, date, time },
+      const res = await apiClient.post("/api/v1/reschedule-booking-user", {
+        session_id: session,
+        date,
+        time,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while rescheduling booking (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Reschedule booking error:", err);
+      throw err;
     }
   };
   const rescheduleGuideBooking = async ({ session, date, time }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiguide-reschedule-session-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { session_id: session, date, time },
+      const res = await apiClient.post("/api/v1/happiguide-reschedule-session-user", {
+        session_id: session,
+        date,
+        time,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while rescheduling guide booking (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Reschedule guide booking error:", err);
+      throw err;
     }
   };
-  const psycologistPayment = async ({
+  const psychologistPayment = async ({
     psyId,
     session,
     date,
     time,
     shouldRecord = false,
-    coupen_id = 0,
+    coupon_id = 0,
   }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/avail-haapitalk-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: {
-          psychologist_id: psyId,
-          session,
-          date,
-          time,
-          user_recording_permission: shouldRecord,
-          coupen_id: coupen_id,
-        },
+      const res = await apiClient.post("/api/v1/avail-haapitalk-user", {
+        psychologist_id: psyId,
+        session,
+        date,
+        time,
+        user_recording_permission: shouldRecord,
+        coupon_id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while psycologist payment (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Psychologist payment error:", err);
+      throw err;
     }
   };
   const happiGUIDEPayment = async (data) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/payment-for-happiguide`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: data,
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/payment-for-happiguide", data);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while HappiGUIDE payment (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("HappiGUIDE payment error:", err);
+      throw err;
     }
   };
   const happiGUIDESession = async () => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/happiguide-session-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/happiguide-session-user");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting HappiGUIDE session (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("HappiGUIDE session error:", err);
+      throw err;
     }
   };
   const moodEmojiList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/mood-emoji-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/mood-emoji-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting Mood-O-Meter emoji list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Mood emoji list error:", err);
+      throw err;
     }
   };
   const userMood = async ({ id, name }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/user-mood`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { emoji_id: id, text: name },
+      const res = await apiClient.post("/api/v1/user-mood", {
+        emoji_id: id,
+        text: name,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while saving Mood-O-Meter response (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("User mood error:", err);
+      throw err;
     }
   };
   const totalRewardPoints = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/total-reward-points-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/total-reward-points-user");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while fetching reward points (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Total reward points error:", err);
+      throw err;
     }
   };
-  const refferalCode = async () => {
+  const referralCode = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/my-referral-code`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/my-referral-code");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while fetching refferal code (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Referral code error:", err);
+      throw err;
     }
   };
   const screenTrafficAnalytics = async ({ screenName }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: config.ANALYTICS_URL,
-        data: {
-          app_id: config.ANALYTOCS_APP_ID,
-          app_token: config.ANALYTOCS_APP_TOKEN,
-          screenName,
-        },
+      const res = await axios.post(config.ANALYTICS_URL, {
+        app_id: config.ANALYTOCS_APP_ID,
+        app_token: config.ANALYTOCS_APP_TOKEN,
+        screenName,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while sending analytics data (Hcontext) - ",
-          // err.response
-        );
-      }
+      console.log("Screen traffic analytics error:", err);
+      throw err;
     }
   };
   const rewardList = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/reward-instances-list`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/reward-instances-list");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting reward list (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Reward list error:", err);
+      throw err;
     }
   };
   const offerScreenContent = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/offer-screen-content`,
-        // headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await axios.get(`${config.BASE_URL}/api/v1/offer-screen-content`);
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting offer screen content (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Offer screen content error:", err);
+      throw err;
     }
   };
   const getUserReport = async ({ user }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/get-user-report-by-psy`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { user_id: user },
+      const res = await apiClient.post("/api/v1/get-user-report-by-psy", {
+        user_id: user,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting user report (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get user report error:", err);
+      throw err;
     }
   };
-  const availHappiGuideUser = async ({ planId, date, time, coupen_id = 0 }) => {
+  const availHappiGuideUser = async ({ planId, date, time, coupon_id = 0 }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/avail-happiguide-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { plan_id: planId, date, time, coupen_id },
+      const res = await apiClient.post("/api/v1/avail-happiguide-user", {
+        plan_id: planId,
+        date,
+        time,
+        coupon_id,
       });
 
-      return axiosRes.data;
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting avail happiguide user (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Avail HappiGuide user error:", err);
+      throw err;
     }
   };
   const saveEmail = async ({ email }) => {
     try {
-      const axiosRes = await axios({
-        method: "post",
-        url: `${config.BASE_URL}/api/v1/save-email`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-        data: { email },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.post("/api/v1/save-email", { email });
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while saving email (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Save email error:", err);
+      throw err;
     }
   };
   const getPenaltyClauseUser = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/get-penalty-clause-user`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/get-penalty-clause-user");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting panelity clause for user (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("Get penalty clause error:", err);
+      throw err;
     }
   };
   const onOffStatus = async () => {
     try {
-      const axiosRes = await axios({
-        method: "get",
-        url: `${config.BASE_URL}/api/v1/on-off-status`,
-        headers: { Authorization: "Bearer " + authState.user.access_token },
-      });
-
-      return axiosRes.data;
+      const res = await apiClient.get("/api/v1/on-off-status");
+      return res.data;
     } catch (err) {
-      const axiosRes = JSON.parse(JSON.stringify(err));
-
-      if (err.response) {
-        // Request made and server responded
-        console.log(
-          "Some issue while getting on-off status (Hcontext) - ",
-          err.response,
-        );
-      }
+      console.log("On-off status error:", err);
+      throw err;
     }
   };
 
@@ -2374,7 +1441,8 @@ export const Hprovider = (props) => {
         getLanguages,
         assignPsychologist,
         changePsychologist,
-        currentlyAssignedPsycologist,
+        currentlyAssignedPsychologist,
+        psychologistTalkListing,
         sendMsgToPsy,
         clearMessageBatch,
         happiLearnList,
@@ -2414,7 +1482,7 @@ export const Hprovider = (props) => {
         paymentForIos,
         joinRoom,
         joinRoomGuide,
-        psycologistTalkListing,
+        psychologistTalkListing,
         myBookingUsers,
         getSlotsOfPsy,
         paymentForHappiTalk,
@@ -2424,11 +1492,11 @@ export const Hprovider = (props) => {
         happiGUIDEPayment,
         happiGUIDESession,
         rescheduleBooking,
-        psycologistPayment,
+        psychologistPayment,
         rescheduleGuideBooking,
         moodEmojiList,
         userMood,
-        refferalCode,
+        referralCode,
         screenTrafficAnalytics,
         rewardList,
         offerScreenContent,

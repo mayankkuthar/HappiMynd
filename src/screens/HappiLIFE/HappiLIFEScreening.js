@@ -61,6 +61,7 @@ const HappiLIFEScreening = (props) => {
     startAssessment,
     submitAnswer,
     screenTrafficAnalytics,
+    snackDispatch,
   } = useContext(Hcontext);
 
   // State Variables
@@ -101,7 +102,12 @@ const HappiLIFEScreening = (props) => {
   const initialMount = async () => {
     try {
       console.log("Screening mount log - ", props);
-      getAssessment(authState.user.access_token);
+      const token = authState?.user?.access_token;
+      if (!token) {
+        console.log("No access token found in authState");
+        return;
+      }
+      getAssessment(token);
       screenTrafficAnalytics({ screenName: "HappiLIFE Screening Assessment" });
     } catch (err) {
       console.log(
@@ -117,6 +123,17 @@ const HappiLIFEScreening = (props) => {
     try {
       const data = await startAssessment({ token });
       console.log("The raw received data - ", data);
+      
+      if (!data || !data.questions || data.questions.length === 0) {
+        console.log("No questions received from API");
+        snackDispatch({
+          type: "SHOW_SNACK",
+          payload: "No screening questions available at the moment.",
+        });
+        setScreeningData([]);
+        return;
+      }
+      
       const modifiedData = data.questions.map((item, index) => {
         return { ...item, disabled: index > 0, position: index };
       });
@@ -124,6 +141,11 @@ const HappiLIFEScreening = (props) => {
       setScreeningData(modifiedData);
     } catch (err) {
       console.log("Some issue while getting assessment - ", err);
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: "Failed to load screening questions. Please try again.",
+      });
+      setScreeningData([]);
     }
     setScreenLoading(false);
   };
@@ -168,29 +190,37 @@ const HappiLIFEScreening = (props) => {
 
         {/* Screening Questions */}
         <View style={{ flex: 1 }}>
-          <ScrollView ref={listRef}>
-            {screeningData.map((item, index) => (
-              <View
-                key={item.id}
-                ref={(el) => (itemRefs.current[index] = el)}
-                style={{ paddingHorizontal: wp(10) }}
-              >
-                <ScreeningCard
-                  listRef={listRef}
-                  data={screeningData}
-                  setData={setScreeningData}
-                  item={item}
-                  index={index}
-                  selectedIndex={selectedIndex}
-                  setSelectedIndex={setSelectedIndex}
-                  getAssessment={getAssessment}
-                  {...props}
-                />
-                <View style={{ height: hp(2) }} />
-              </View>
-            ))}
-            <View style={{ height: hp(44) }} />
-          </ScrollView>
+          {screeningData.length === 0 ? (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: wp(10) }}>
+              <Text style={{ fontSize: RFValue(14), fontFamily: "Poppins", color: colors.borderLight, textAlign: "center" }}>
+                No screening questions available. Please try again later or contact support.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView ref={listRef}>
+              {screeningData.map((item, index) => (
+                <View
+                  key={item.id}
+                  ref={(el) => (itemRefs.current[index] = el)}
+                  style={{ paddingHorizontal: wp(10) }}
+                >
+                  <ScreeningCard
+                    listRef={listRef}
+                    data={screeningData}
+                    setData={setScreeningData}
+                    item={item}
+                    index={index}
+                    selectedIndex={selectedIndex}
+                    setSelectedIndex={setSelectedIndex}
+                    getAssessment={getAssessment}
+                    {...props}
+                  />
+                  <View style={{ height: hp(2) }} />
+                </View>
+              ))}
+              <View style={{ height: hp(44) }} />
+            </ScrollView>
+          )}
         </View>
       </View>
     </View>

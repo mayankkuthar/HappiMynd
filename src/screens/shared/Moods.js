@@ -56,14 +56,26 @@ const Moods = (props) => {
     try {
       const moodRes = await moodEmojiList();
       if (!isMounted.current) return;
-      console.log("Check the mod dres - ", moodRes);
-      if (moodRes.status === "success") {
+      console.log("Check the mood res - ", moodRes);
+      if (moodRes.status === "success" && moodRes.data && moodRes.data.length > 0) {
         setMoodList(moodRes.data);
         let happyItem = moodRes.data.filter((item) => item.name == "happy");
-        setSelectedMood(happyItem[0]);
+        if (happyItem.length > 0) {
+          setSelectedMood(happyItem[0]);
+        }
+      } else {
+        console.log("No mood data received from API");
+        snackDispatch({
+          type: "SHOW_SNACK",
+          payload: "Unable to load mood options. Please try again.",
+        });
       }
     } catch (err) {
       console.log("Some issue while getting mood list - ", err);
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: "Failed to load mood options. Please check your connection.",
+      });
     }
     if (isMounted.current) setLoading(false);
   };

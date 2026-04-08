@@ -103,7 +103,7 @@ const ScreeningCard = (props) => {
 
   return (
     <View style={{ ...styles.container, opacity: item.disabled ? 0.3 : 1 }}>
-      <Text style={styles.cardText}>{item?.question}</Text>
+      <Text style={styles.cardText}>{item?.question || "Loading question..."}</Text>
 
       {/* Sized Box */}
       <View style={{ height: hp(2) }} />
@@ -111,26 +111,32 @@ const ScreeningCard = (props) => {
       {loading ? (
         <ActivityIndicator size="small" color={colors.loaderColor} />
       ) : (
-        item?.options?.map(({ option, id }, index) => {
-          return (
-            <React.Fragment key={id}>
-              <Pressable
-                activeOpacity={0.7}
-                onPress={() => answerHandler(id)}
-                style={({ pressed }) =>
-                  selectedAnswer === id || pressed
-                    ? styles.cardButtonTrue
-                    : styles.cardButtonFalse
-                }
-                disabled={item.disabled}
-              >
-                <Text style={styles.cardButtonText}>{option}</Text>
-              </Pressable>
-              {/* Sized Box */}
-              <View style={{ height: hp(1) }} />
-            </React.Fragment>
-          );
-        })
+        item?.options && item.options.length > 0 ? (
+          item.options.map(({ option, id }, index) => {
+            return (
+              <React.Fragment key={id}>
+                <Pressable
+                  activeOpacity={0.7}
+                  onPress={() => answerHandler(id)}
+                  style={({ pressed }) =>
+                    selectedAnswer === id || pressed
+                      ? styles.cardButtonTrue
+                      : styles.cardButtonFalse
+                  }
+                  disabled={item.disabled}
+                >
+                  <Text style={styles.cardButtonText}>{option}</Text>
+                </Pressable>
+                {/* Sized Box */}
+                <View style={{ height: hp(1) }} />
+              </React.Fragment>
+            );
+          })
+        ) : (
+          <Text style={{ fontSize: RFValue(12), fontFamily: "Poppins", color: colors.borderLight }}>
+            No options available
+          </Text>
+        )
       )}
     </View>
   );

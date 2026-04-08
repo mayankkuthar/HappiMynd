@@ -17,6 +17,11 @@ export const initialAuthState = {
 export const authReducer = (state, action) => {
   switch (action.type) {
     case "LOGIN":
+      // Set global authToken for API client
+      if (action.payload?.access_token) {
+        global.authToken = action.payload.access_token;
+        console.log("Token set in global.authToken");
+      }
       return {
         ...state,
         isLogged: true,
@@ -58,6 +63,8 @@ export const authReducer = (state, action) => {
         isAnyScreeningComplete: action.payload,
       };
     case "LOGOUT":
+      // Clear global authToken
+      global.authToken = null;
       return {
         ...state,
         isLogged: false,

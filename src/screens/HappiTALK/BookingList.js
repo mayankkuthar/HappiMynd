@@ -30,7 +30,7 @@ const BookingList = (props) => {
   const { navigation } = props;
 
   // Context Variables
-  const { psycologistTalkListing } = useContext(Hcontext);
+  const { psychologistTalkListing } = useContext(Hcontext);
 
   // State Variables
   const [showModal, setShowModal] = useState(true);
@@ -47,8 +47,8 @@ const BookingList = (props) => {
   const getPsycologistListing = async (search) => {
     setLoading(true);
     try {
-      const listing = await psycologistTalkListing({ search });
-      console.log("The psycologist listing is - ", listing);
+      const listing = await psychologistTalkListing({ search });
+      console.log("The psychologist listing is - ", listing);
       if (listing.status === "success") {
         setUserDetail(listing.user_detail); // Setting the user details wheather it is individual / organisation
         setPsycologists(listing.list); // Setting the complete psycologist list
