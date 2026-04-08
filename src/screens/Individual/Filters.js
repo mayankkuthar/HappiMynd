@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    backgroundColor: "#E3FDFE",
+    backgroundColor: "#F3F0FF",
     // backgroundColor: "red",
     flexDirection: "row",
     alignItems: "flex-end",
@@ -359,12 +359,12 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
   },
   leftPaneContainer: {
-    backgroundColor: "#E3FDFE",
+    backgroundColor: "#F3F0FF",
     height: hp(70),
     width: wp(40),
   },
   rightPaneContainer: {
-    backgroundColor: "#F9FEFE",
+    backgroundColor: "#F5F2FF",
     height: hp(70),
     width: wp(60),
   },

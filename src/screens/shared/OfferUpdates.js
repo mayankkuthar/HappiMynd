@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     width: wp(80),
   },
   imageHeroContainer: {
-    backgroundColor: "#ACE6E4",
+    backgroundColor: "#C4B5FD",
     height: hp(40),
     width: wp(100),
     alignItems: "center",

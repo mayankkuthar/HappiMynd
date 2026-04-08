@@ -51,7 +51,7 @@ const SubscriptionCard = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FAFFFF",
+    backgroundColor: "#F3F0FF",
     paddingHorizontal: hp(2),
     paddingVertical: hp(3),
     borderRadius: 6,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   detailButtonText: {
-    color: "#FAFFFF",
+    color: "#F3F0FF",
     fontSize: RFValue(13),
     fontFamily: "PoppinsSemiBold",
     textAlign: "center",

@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   heroContainer: {
-    backgroundColor: "#C2F3F1",
+    backgroundColor: "#C4B5FD",
     borderRadius: 10,
     alignItems: "center",
     shadowColor: colors.borderLight,

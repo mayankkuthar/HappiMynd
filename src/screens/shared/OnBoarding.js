@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   backgroundContainer: {
     height: hp(66),
     width: wp(100),
-    backgroundColor: "#ACE9E6",
+    backgroundColor: "#C4B5FD",
   },
   backgroundMask: {
     // backgroundColor: "red",
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
   },
   activeDot: {
-    backgroundColor: "#59C5CC",
+    backgroundColor: "#895BF5",
   },
   buttonDone: {
     backgroundColor: colors.primary,

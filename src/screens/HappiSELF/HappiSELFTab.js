@@ -193,7 +193,7 @@ const tabCommon = {
   tabBarIndicatorStyle: {
     // borderBottomColor: colors.primary,
     // borderWidth: 1,
-    backgroundColor: "#A3E8E5",
+    backgroundColor: "#C4B5FD",
   },
   // tabBarIndicatorContainerStyle: { backgroundColor: "red" },
 };

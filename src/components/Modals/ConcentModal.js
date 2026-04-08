@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
   },
   pointsContainer: {
-    backgroundColor: "#E3FDFE",
+    backgroundColor: "#F3F0FF",
     width: "100%",
     paddingVertical: hp(1),
     paddingHorizontal: hp(1),

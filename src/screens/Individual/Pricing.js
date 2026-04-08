@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   amountBox: {
-    backgroundColor: "#F9FEFE",
+    backgroundColor: "#F5F2FF",
     width: wp(100),
     height: hp(10),
     paddingHorizontal: wp(8),

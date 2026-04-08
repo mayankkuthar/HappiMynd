@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     height: hp(30),
   },
   detailSection: {
-    backgroundColor: "#FAFFFF",
+    backgroundColor: "#F3F0FF",
     paddingHorizontal: hp(2.5),
     paddingVertical: hp(1.5),
     borderRadius: 10,

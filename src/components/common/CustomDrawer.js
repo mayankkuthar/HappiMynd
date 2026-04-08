@@ -29,11 +29,7 @@ const CustomDrawer = (props) => {
   const { authState, whiteLabelState } = useContext(Hcontext);
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/drawer_background.png")}
-      style={styles.contaier}
-      resizeMode="cover"
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <DrawerContentScrollView {...props}>
         <View style={styles.imageSection}>
           <Image
@@ -71,17 +67,16 @@ const CustomDrawer = (props) => {
               ...styles.poweredText,
             }}
           >
-            Copyright © 2023 HappiMynd
+            Copyright © 2026 HappiMynd
           </Text>
         </View>
       </DrawerContentScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  contaier: {
-    // backgroundColor: "red",
+  container: {
     flex: 1,
   },
   imageSection: {

@@ -103,7 +103,7 @@ const ResetPassword = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#E3FDFE",
+    backgroundColor: "#F3F0FF",
     flex: 1,
   },
   pageTitle: {

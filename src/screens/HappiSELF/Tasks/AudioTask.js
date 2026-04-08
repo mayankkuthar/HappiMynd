@@ -172,7 +172,7 @@ const AudioTask = (props) => {
             <FontAwesome
               name={isPlaying ? "pause-circle" : "play-circle"}
               size={hp(8)}
-              color="#58C4CB"
+              color="#895BF5"
             />
           )}
         </TouchableOpacity>
