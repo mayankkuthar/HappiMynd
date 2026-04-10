@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Create instance
 const apiClient = axios.create({
@@ -10,8 +11,25 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   async (req) => {
-    // Attach token dynamically from multiple possible sources
-    const token = global?.authToken || global?.authState?.user?.access_token;
+    // Try to get token from multiple sources
+    let token = global?.authToken || global?.authState?.user?.access_token;
+    
+    // If not found in global, try AsyncStorage
+    if (!token) {
+      try {
+        const userStr = await AsyncStorage.getItem("USER");
+        if (userStr) {
+          const userData = JSON.parse(userStr);
+          token = userData?.access_token;
+          // Cache it in global for future requests
+          if (token) {
+            global.authToken = token;
+          }
+        }
+      } catch (error) {
+        console.log("Error reading token from AsyncStorage:", error);
+      }
+    }
     
     if (token) {
       req.headers.Authorization = `Bearer ${token}`;

@@ -23,7 +23,7 @@ const MessageNotifies = (props) => {
   const { navigation } = props;
 
   // Context Variables
-  const { currentlyAssignedPsycologist } = useContext(Hcontext);
+  const { currentlyAssignedPsychologist } = useContext(Hcontext);
 
   //   State Varibales
   const [assignedPsy, setAssignedPsy] = useState(null);
@@ -43,7 +43,7 @@ const MessageNotifies = (props) => {
   // CHeck the previously assigned psycologist to continue with
   const checkCurrentPsycologist = async () => {
     try {
-      const currentPsy = await currentlyAssignedPsycologist();
+      const currentPsy = await currentlyAssignedPsychologist();
       console.log("The current psycoligist - ",
       //  currentPsy
        );
