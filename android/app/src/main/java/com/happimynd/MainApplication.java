@@ -5,27 +5,21 @@ import android.content.Context;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 
-import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
-import com.goodatlas.audiorecord.RNAudioRecordPackage;
-
-import com.pusherman.networkinfo.RNNetworkInfoPackage;
-import com.learnium.RNDeviceInfo.RNDeviceInfo;
-import com.airbnb.android.react.lottie.LottiePackage;
-import com.airbnb.android.react.lottie.LottiePackage;
-//import com.reactnativecommunity.netinfo.NetInfoPackage;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.react.PackageList;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
 
 import com.facebook.react.bridge.JSIModulePackage;
-import com.swmansion.reanimated.ReanimatedJSIModulePackage;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import com.twiliorn.library.TwilioPackage;
 import com.facebook.react.modules.network.OkHttpClientProvider;
@@ -43,9 +37,8 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       @SuppressWarnings("UnnecessaryLocalVariable")
       List<ReactPackage> packages = new PackageList(this).getPackages();
-      // Packages that cannot be autolinked yet can be added manually here, for example:
-      // packages.add(new MyReactNativePackage());
-     packages.add(new TwilioPackage());
+      // Expo autolinking handles all packages
+      // Packages that cannot be autolinked or require manual setup can be added here
       return packages;
     }
 
@@ -56,7 +49,7 @@ public class MainApplication extends Application implements ReactApplication {
 
     @Override
     protected JSIModulePackage getJSIModulePackage() {
-      return new ReanimatedJSIModulePackage();
+      return null;
     }
   });
 
@@ -68,6 +61,7 @@ public class MainApplication extends Application implements ReactApplication {
   @Override
   public void onCreate() {
     super.onCreate();
+    Fresco.initialize(this);
     OkHttpClientProvider.setOkHttpClientFactory(new SSLPinnerFactory());
     SoLoader.init(this, /* native exopackage */ false);
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());

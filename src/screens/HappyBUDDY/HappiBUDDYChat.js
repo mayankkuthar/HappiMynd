@@ -173,7 +173,7 @@ const HappiBUDDYChat = (props) => {
     snackState,
     snackDispatch,
     assignPsychologist,
-    currentlyAssignedPsycologist,
+    currentlyAssignedPsychologist,
     changePsychologist,
     sendMsgToPsy,
     clearMessageBatch,

@@ -528,7 +528,7 @@ const Home = (props) => {
   // COntext Variables
   const {
     authState,
-    currentlyAssignedPsycologist,
+    currentlyAssignedPsychologist,
     getWhiteLabel,
     whiteLabelState,
     whiteLabelDispatch,

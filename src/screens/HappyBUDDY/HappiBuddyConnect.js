@@ -48,7 +48,7 @@ const bulletPoints = [
 const HappiBuddyConnect = (props) => {
   // ─── Context ────────────────────────────────────────────────────────────────
   const {
-    currentlyAssignedPsycologist,
+    currentlyAssignedPsychologist,
     assignPsychologist,
     snackDispatch,
     getLanguages,
@@ -76,14 +76,14 @@ const HappiBuddyConnect = (props) => {
   // ─── Stable refs — always hold the latest context / nav values ───────────────
   // This pattern lets us write useCallback with [] deps (stable identity)
   // while still always calling the freshest function from context.
-  const currentlyAssignedPsycologistRef = useRef(currentlyAssignedPsycologist);
+  const currentlyAssignedPsychologistRef = useRef(currentlyAssignedPsychologist);
   const assignPsychologistRef = useRef(assignPsychologist);
   const snackDispatchRef = useRef(snackDispatch);
   const navigationRef = useRef(navigation);
   const getLanguagesRef = useRef(getLanguages);
 
   // Sync refs on every render (cheap, no side-effects)
-  currentlyAssignedPsycologistRef.current = currentlyAssignedPsycologist;
+  currentlyAssignedPsychologistRef.current = currentlyAssignedPsychologist;
   assignPsychologistRef.current = assignPsychologist;
   snackDispatchRef.current = snackDispatch;
   navigationRef.current = navigation;
@@ -93,7 +93,7 @@ const HappiBuddyConnect = (props) => {
   const checkCurrentPsycologist = useCallback(async () => {
     setPsyState((prev) => ({ ...prev, loading: true }));
     try {
-      const currentPsy = await currentlyAssignedPsycologistRef.current();
+      const currentPsy = await currentlyAssignedPsychologistRef.current();
       if (currentPsy.status === "success") {
         // Single setState call = single re-render (was 3 separate calls before)
         setPsyState({
