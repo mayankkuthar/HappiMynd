@@ -6,6 +6,9 @@
 #import <React/RCTLinkingManager.h>
 #import <React/RCTConvert.h>
 
+// Firebase
+#import <Firebase.h>
+
 #if defined(FB_SONARKIT_ENABLED) && __has_include(<FlipperKit/FlipperClient.h>)
 #import <FlipperKit/FlipperClient.h>
 #import <FlipperKitLayoutPlugin/FlipperKitLayoutPlugin.h>
@@ -32,6 +35,16 @@ static void InitializeFlipper(UIApplication *application) {
 #if defined(FB_SONARKIT_ENABLED) && __has_include(<FlipperKit/FlipperClient.h>)
   InitializeFlipper(application);
 #endif
+  
+  // Initialize Firebase
+  @try {
+    if ([FIRApp defaultApp] == nil) {
+      [FIRApp configure];
+      NSLog(@"Firebase initialized successfully");
+    }
+  } @catch (NSException *exception) {
+    NSLog(@"Firebase initialization failed: %@", exception.reason);
+  }
   
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
   RCTRootView *rootView = [[RCTRootView alloc] initWithBridge:bridge moduleName:@"main" initialProperties:nil];
@@ -69,7 +82,7 @@ static void InitializeFlipper(UIApplication *application) {
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge {
 #ifdef DEBUG
-  return [NSURL URLWithString:@"http://192.168.0.176:8081/index.bundle?platform=ios&dev=true&minify=false"];
+  return [NSURL URLWithString:@"http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false"];
 #else
   return [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
 #endif

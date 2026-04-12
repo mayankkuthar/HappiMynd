@@ -28,7 +28,7 @@
     "expo-cellular": "~4.0.0",
     "expo-document-picker": "~10.0.3",
     "expo-file-system": "~13.0.3",
-    "expo-firebase-analytics": "~5.0.3",
+    "expo-firebase-analytics": "^8.0.0",
     "expo-font": "~10.0.3",
     "expo-keep-awake": "~10.0.0",
     "expo-network": "~4.0.3",

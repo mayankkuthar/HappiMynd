@@ -1,14 +1,18 @@
 import "react-native-gesture-handler";
 import { AppRegistry, Platform, InteractionManager } from "react-native";
 import App from "./App";
-import messaging from "@react-native-firebase/messaging";
 
 // Register a background message handler so Firebase notifications are processed
 // even when the app is killed or in the background.
 // This MUST be called before AppRegistry.registerComponent.
-messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-  console.log("FCM background message received:", remoteMessage.messageId);
-});
+try {
+  const messaging = require("@react-native-firebase/messaging").default;
+  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+    console.log("FCM background message received:", remoteMessage.messageId);
+  });
+} catch (error) {
+  console.log("Firebase messaging setup deferred:", error.message);
+}
 
 /**
  * Firebase "Setting a timer for a long period" Android fix.

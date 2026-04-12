@@ -66,14 +66,19 @@ require File.join(File.dirname(`node --print "require.resolve('expo/package.json
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 require File.join(File.dirname(`node --print "require.resolve('@react-native-community/cli-platform-ios/package.json')"`), "native_modules")
 
-platform :ios, '12.0'
+platform :ios, '13.0'
 
 require 'json'
 podfile_properties = JSON.parse(File.read('./Podfile.properties.json')) rescue {}
 
+# Set Firebase SDK version for expo-firebase-analytics
+$FirebaseSDKVersion = '9.5.0'
+
 target 'HappiMynd' do
   use_expo_modules!
   config = use_native_modules!
+  
+  use_frameworks! :linkage => :static
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -109,6 +114,19 @@ target 'HappiMynd' do
     # Workaround `Cycle inside FBReactNativeSpec` error for react-native 0.64
     # Reference: https://github.com/software-mansion/react-native-screens/issues/842#issuecomment-812543933
     installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Set minimum iOS deployment target to 13.0 for Xcode 26.4 compatibility
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+        # Disable bitcode for all pods
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
+        config.build_settings['BITCODE_GENERATION_MODE'] = 'bitcode'
+        # Disable deprecated literal operator warning for Yoga compatibility with Xcode 26.4
+        if target.name == 'Yoga'
+          config.build_settings['GCC_WARN_PEDANTIC'] = 'NO'
+          config.build_settings['CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS'] = 'NO'
+        end
+      end
+      
       if (target.name&.eql?('FBReactNativeSpec'))
         target.build_phases.each do |build_phase|
           config = installer.pods_project.build_configuration_list

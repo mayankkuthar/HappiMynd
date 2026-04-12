@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { LogBox, View, Text } from "react-native";
 import JailMonkey from "jail-monkey";
+// Firebase - Initialize before any Firebase usage
+import "./src/context/Firebase";
 // Screens
 import Main from "./src/screens/Main";
 import AnimatedSplash from "./src/screens/shared/AnimatedSplash";
