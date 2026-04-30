@@ -510,7 +510,7 @@ const HappiBUDDYChat = (props) => {
         renderActions={() => (
           <View
             style={{
-              backgroundColor: "#F3F0FF",
+              backgroundColor: "#E4FDFE",
               paddingRight: wp(2),
             }}
           >
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   chatAddButton: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#4CA6A8",
     width: hp(6),
     height: hp(6),
     alignItems: "center",

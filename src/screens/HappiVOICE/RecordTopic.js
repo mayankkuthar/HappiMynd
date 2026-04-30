@@ -188,13 +188,13 @@ const styles = StyleSheet.create({
         borderRadius: 8
     },
     detailSection: {
-        backgroundColor: "#F3F0FF",
+        backgroundColor: "#FAFFFF",
         paddingHorizontal: hp(2.5),
         paddingVertical: hp(1.5),
         borderRadius: 10,
     },
     noteSection: {
-        backgroundColor: "#F3F0FF",
+        backgroundColor: "#FAFFFF",
         paddingVertical: hp(1.5),
         borderRadius: 30,
         alignItems: 'center'
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
         marginBottom: 2,
         marginRight: 5,
-        backgroundColor: '#F3F0FF',
+        backgroundColor: '#FAFFFF',
         borderWidth: 1,
         borderColor: colors.borderLight,
         borderRadius: 5,

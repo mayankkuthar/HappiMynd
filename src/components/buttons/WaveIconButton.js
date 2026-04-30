@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   subscribed: {
     borderRadius: 10,
-    shadowColor: "#ab89fcff",
+    shadowColor: "#00e6b8",
     shadowOffset: {
       width: 0,
       height: 0,
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 8, // For Android
-    backgroundColor: "#bfa3ffff",
+    backgroundColor: "#00e6b8",
   },
   buttonContainer: {
     borderRadius: 10,

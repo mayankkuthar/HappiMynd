@@ -87,7 +87,7 @@ const VideoSection = (props) => {
   const {} = props;
   return (
     <View style={styles.iconContainer}>
-      <FontAwesome name="play-circle" size={hp(3.5)} color="#895BF5" />
+      <FontAwesome name="play-circle" size={hp(3.5)} color="#58C4CB" />
     </View>
   );
 };

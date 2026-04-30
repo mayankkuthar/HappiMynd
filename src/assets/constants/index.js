@@ -1,16 +1,16 @@
 export const colors = {
-  background: "#F3F0FF",        // Light purple background
-  backgroundLight: "#F8F6FF",   // Even lighter purple
-  backgroundModal: "#F5F2FF",   // Modal background
+  background: "#E8FDFE",        // Light purple background
+  backgroundLight: "#EFFFFE",   // Even lighter purple
+  backgroundModal: "#F3FFFE",   // Modal background
   borderDim: "#E2E3E3",         // Neutral border
   borderLight: "#707070",       // Neutral dark border
   borderDark: "#3B3B3B",        // Very dark border
-  primary: "#C4B5FD",           // Light purple (primary action)
-  primaryText: "#7C3AED",       // Medium purple (text)
-  pageTitle: "#895BF5",         // Main purple (page titles)
-  loaderColor: "#5B21B6",       // Dark purple (loader)
-  receiverBubble: "#A78BFA",    // Medium-light purple (chat)
-  senderBubble: "#C4B5FD",      // Light purple (chat)
+  primary: "#A3E8E5",           // Light purple (primary action)
+  primaryText: "#339298",       // Medium purple (text)
+  pageTitle: "#59C5CC",         // Main purple (page titles)
+  loaderColor: "#28666B",       // Dark purple (loader)
+  receiverBubble: "#58C4CB",    // Medium-light purple (chat)
+  senderBubble: "#A3E8E5",      // Light purple (chat)
 };
 
 

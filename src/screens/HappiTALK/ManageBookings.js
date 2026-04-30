@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   cardContainer: {
-    backgroundColor: "#F5F2FF",
+    backgroundColor: "#F9FEFE",
     width: wp(80),
     // paddingVertical: hp(2),
     // paddingTop: hp(0.5),

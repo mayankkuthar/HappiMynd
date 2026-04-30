@@ -43,16 +43,6 @@ const DrawerNavigation = () => {
     <Drawer.Navigator
       initialRouteName="HomeTab"
       drawerContent={(props) => <CustomDrawer {...props} />}
-      screenOptions={{
-        headerShown: false,
-        drawerActiveTintColor: '#895BF5',
-        drawerInactiveTintColor: '#7C3AED',
-        drawerActiveBackgroundColor: '#F3F0FF',
-        drawerLabelStyle: {
-          fontSize: RFValue(12),
-          fontFamily: 'Poppins',
-        },
-      }}
     >
       <Drawer.Screen
         options={{

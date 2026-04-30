@@ -265,9 +265,9 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   questionContainer: {
-    backgroundColor: "#F3F0FF",
+    backgroundColor: "#E9FCFB",
     borderWidth: 1,
-    borderColor: "#E9E5FF",
+    borderColor: "#DDF1F0",
     borderRadius: 4,
     paddingVertical: hp(1),
     paddingHorizontal: hp(1.5),

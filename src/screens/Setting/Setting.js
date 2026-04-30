@@ -80,27 +80,27 @@ const Setting = (props) => {
     {
       id: 0,
       name: "Profile",
-      icon: <AntDesign name="user" size={hp(2.5)} color="#895BF5" />,
+      icon: <AntDesign name="user" size={hp(2.5)} color="#52B0AC" />,
       pressHandler: () => navigation.navigate("Profile"),
     },
     {
       id: 1,
       name: "Change Password",
-      icon: <Feather name="lock" size={hp(2.5)} color="#895BF5" />,
+      icon: <Feather name="lock" size={hp(2.5)} color="#52B0AC" />,
       pressHandler: () => navigation.navigate("ChangePassword"),
     },
     {
       id: 2,
       name: "Subscribed Services",
       icon: (
-        <MaterialIcons name="subscriptions" size={hp(2.5)} color="#895BF5" />
+        <MaterialIcons name="subscriptions" size={hp(2.5)} color="#52B0AC" />
       ),
       pressHandler: () => navigation.navigate("SubscribedServices"),
     },
     {
       id: 3,
       name: "Explore Services",
-      icon: <FontAwesome5 name="compass" size={hp(2.5)} color="#895BF5" />,
+      icon: <FontAwesome5 name="compass" size={hp(2.5)} color="#52B0AC" />,
       pressHandler: () => navigation.navigate("ExploreServices"),
     },
     {
@@ -110,7 +110,7 @@ const Setting = (props) => {
         <MaterialCommunityIcons
           name="delete-outline"
           size={hp(2.5)}
-          color="#895BF5"
+          color="#52B0AC"
         />
       ),
       pressHandler: async () => {
@@ -151,7 +151,7 @@ const Setting = (props) => {
     // {
     //   id: 5,
     //   name: "Recommend to Friends",
-    //   icon: <Entypo name="share" size={hp(2.5)} color="#895BF5" />,
+    //   icon: <Entypo name="share" size={hp(2.5)} color="#52B0AC" />,
     //   pressHandler: async () => {
     //     const { code } = await refferalCode();
     //     let shareObject;
@@ -174,7 +174,7 @@ const Setting = (props) => {
     // {
     //   id: 6,
     //   name: "Rate App",
-    //   icon: <MaterialIcons name="star-rate" size={hp(2.5)} color="#895BF5" />,
+    //   icon: <MaterialIcons name="star-rate" size={hp(2.5)} color="#52B0AC" />,
     //   pressHandler: () => {
     //     let url = "";
     //     if (Platform.OS === "ios")
@@ -188,7 +188,7 @@ const Setting = (props) => {
     {
       id: 7,
       name: "Logout",
-      icon: <Feather name="log-out" size={hp(2.5)} color="#895BF5" />,
+      icon: <Feather name="log-out" size={hp(2.5)} color="#52B0AC" />,
       pressHandler: () => setShowLogoutModal(true),
     },
   ];
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   cardContainer: {
-    backgroundColor: "#E9E5FF",
+    backgroundColor: "#D7FAF9",
     width: wp(80),
     flexDirection: "row",
     borderRadius: 6,

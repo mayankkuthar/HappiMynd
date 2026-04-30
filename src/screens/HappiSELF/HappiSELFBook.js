@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     height: hp(24),
   },
   reportContainer: {
-    backgroundColor: "#C4B5FD",
+    backgroundColor: "#C2F3F1",
     width: wp(80),
     alignItems: "center",
     borderRadius: 10,

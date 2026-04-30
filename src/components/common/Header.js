@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   pointsContainer: {
     position: "absolute",
     right: wp(6),
-    backgroundColor: "#C4B5FD",
+    backgroundColor: "#A6E4E6",
     borderRadius: 10,
     alignItems: "center",
     paddingHorizontal: hp(1),

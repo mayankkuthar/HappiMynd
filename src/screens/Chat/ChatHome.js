@@ -726,7 +726,7 @@ export default ChatHome;
 
 const styles = StyleSheet.create({
   chatAddButton: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#4CA6A8",
     width: hp(6),
     height: hp(6),
     alignItems: "center",

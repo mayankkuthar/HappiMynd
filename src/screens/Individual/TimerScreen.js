@@ -45,7 +45,7 @@ const TimerScreen = (props) => {
 
       <View style={styles.playButtonContaier}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => {}}>
-          <FontAwesome name="play-circle" size={hp(8)} color="#895BF5" />
+          <FontAwesome name="play-circle" size={hp(8)} color="#58C4CB" />
         </TouchableOpacity>
       </View>
     </ImageBackground>

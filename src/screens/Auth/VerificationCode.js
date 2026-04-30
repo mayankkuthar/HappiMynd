@@ -107,7 +107,7 @@ const VerificationCode = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F3F0FF",
+    backgroundColor: "#E3FDFE",
     flex: 1,
   },
   pageTitle: {
