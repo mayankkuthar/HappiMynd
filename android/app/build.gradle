@@ -137,8 +137,8 @@ android {
 
     defaultConfig {
         applicationId 'com.happimynd'
-        minSdkVersion 26
-        targetSdkVersion 35
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 41
         versionName "41"
         missingDimensionStrategy "store", "play"
