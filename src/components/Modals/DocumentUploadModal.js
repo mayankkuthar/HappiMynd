@@ -1,59 +1,68 @@
-import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import Modal from "react-native-modal";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import * as DocumentPicker from "expo-document-picker";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import * as FileSystem from "expo-file-system";
 
 // Constants
 import { colors } from "../../assets/constants";
 
 const DocumentUploadModal = (props) => {
-  // Prop Destructuring
   const {
     showModal = false,
     setShowModal = () => {},
-    fielName,
     setFileName,
     setFileType,
     setFilePath,
     setCustomText,
   } = props;
 
-  const documentHandler = async () => {
+  const [uploading, setUploading] = useState(false);
+
+  const pickImage = async () => {
     try {
-      // opening document picker
-      const document = await DocumentPicker.getDocumentAsync();
+      setUploading(true);
 
-      // // Creating a blob for the document
-      // const response = await fetch(document.uri);
-      // const blob = await response.blob();
+      // Pick any image file from the device
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*",
+        copyToCacheDirectory: true,
+      });
 
-      // Extracting file-name
-      const fileName = document.uri.substring(
-        document.uri.lastIndexOf("/") + 1
-      );
+      if (result.type === "cancel") {
+        setUploading(false);
+        return;
+      }
 
-      setFileName(fileName);
-      setFileType("document");
-      setFilePath(document);
-      setCustomText(fileName);
+      const { uri, name, mimeType } = result;
+      const mime = mimeType || "image/jpeg";
 
-      // // Firrebase Storage reference
-      // const storage = getStorage();
-      // const storageRef = ref(storage, fileName);
+      // Read as base64 — matches web version base64 approach
+      // expo-document-picker for images typically returns small-enough files
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      // // Uploading the bytes to Firebase
-      // uploadBytes(storageRef, blob).then((snapshot) => {
-      //   console.log("Uploaded a blob or file!", snapshot);
-      //   setShowModal(false);
-      // });
+      setFileName(name || uri.split("/").pop());
+      setFileType("image");
+      setFilePath({ uri, base64, mimeType: mime });
+      setCustomText("📷 Image");
+      setShowModal(false);
     } catch (err) {
-      console.log("Some issue while uploading doc - ", err);
+      console.log("Image pick error:", err);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -63,36 +72,41 @@ const DocumentUploadModal = (props) => {
       isVisible={showModal}
       onBackButtonPress={() => setShowModal(false)}
       onBackdropPress={() => setShowModal(false)}
-      onSwipeComplete={() => {}}
-      swipeDirection={["up", "left", "right", "down"]}
+      onSwipeComplete={() => setShowModal(false)}
+      swipeDirection={["down"]}
       style={styles.modalContainer}
     >
       <View style={styles.container}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={documentHandler}
-          style={{
-            ...styles.actionContainer,
-            borderBottomWidth: 1.5,
-            borderBottomColor: colors.borderDim,
-          }}
-        >
-          <Text style={styles.actionText}>Upload File</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => setShowModal(false)}
-          style={styles.actionContainer}
-        >
-          <Text style={{ ...styles.actionText, color: "red" }}>Cancel</Text>
-        </TouchableOpacity>
+        {uploading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="small" color={colors.primary || "#4CA6A8"} />
+            <Text style={styles.loaderText}>Processing…</Text>
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={pickImage}
+              style={[styles.actionContainer, styles.borderBottom]}
+            >
+              <Text style={styles.actionText}>🖼️  Choose Image</Text>
+            </TouchableOpacity>
 
-        {/* Sized Box */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowModal(false)}
+              style={styles.actionContainer}
+            >
+              <Text style={[styles.actionText, { color: "red" }]}>Cancel</Text>
+            </TouchableOpacity>
+          </>
+        )}
         <View style={{ height: hp(4) }} />
       </View>
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   modalContainer: {
     justifyContent: "flex-end",
@@ -100,11 +114,16 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: "#fff",
-    // height: hp(20),
     width: wp(100),
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: hp(1),
+  },
+  borderBottom: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#EFEFEF",
   },
   actionContainer: {
-    // backgroundColor: "red",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: hp(2),
@@ -112,6 +131,17 @@ const styles = StyleSheet.create({
   actionText: {
     fontFamily: "PoppinsMedium",
     fontSize: RFValue(13),
+  },
+  loaderContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: hp(3),
+  },
+  loaderText: {
+    fontFamily: "Poppins",
+    fontSize: RFValue(11),
+    color: "#888",
+    marginTop: 8,
   },
 });
 

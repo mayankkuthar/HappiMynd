@@ -26,6 +26,9 @@ buildscript {
 
 allprojects {
     repositories {
+        flatDir {
+            dirs "${rootDir}/app/libs"
+        }
         mavenLocal()
         maven {
             // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm

@@ -4,6 +4,7 @@ import React, {
   useContext,
   useCallback,
   useLayoutEffect,
+  useRef,
 } from "react";
 import {
   StyleSheet,
@@ -27,7 +28,7 @@ import {
   InputToolbar,
   Send,
   Bubble,
-} from "react-native-gifted-chat"; // Chat Module
+} from "react-native-gifted-chat";
 import {
   addDoc,
   orderBy,
@@ -37,9 +38,8 @@ import {
   where,
 } from "firebase/firestore";
 import moment from "moment";
-import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { Audio } from "expo-av";
-// import { usePermissions } from "expo-permissions";
+import * as FileSystem from "expo-file-system";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -54,40 +54,32 @@ import {
   _renderChatBubble,
 } from "../../components/common/Chat";
 import AudioCard from "../../components/cards/AudioCard";
-import DocumentCard from "../../components/cards/DocumentCard";
 
-const ChatNote = (props) => {
-  // Prop Destructuring
-  const {} = props;
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
+const MAX_RECORDING_SECONDS = 30;
 
-  return (
-    <View style={styles.noteContainer}>
-      <Text style={styles.noteText}>
-        Share your emotions, feelings & thoughts here & let your expert Buddy
-        answer & guide you.
-      </Text>
-      {/* Sized Box */}
-      <View style={{ height: hp(1) }} />
-      <Text style={styles.noteSubText}>
-        Note- This is not a real time conversation. You may have to wait for the
-        expert Buddy to get back to you
-      </Text>
-    </View>
-  );
-};
+// Module-level tracker: only ONE audio plays at a time across all AudioBubble instances.
+// When a new bubble starts playing, it stops whatever was previously playing.
+const activeSoundRef = { current: null, setPlaying: null };
 
-const Header = (props) => {
-  // Context Variables
+const ChatNote = () => (
+  <View style={styles.noteContainer}>
+    <Text style={styles.noteText}>
+      Share your emotions, feelings & thoughts here & let your expert Buddy
+      answer & guide you.
+    </Text>
+    <View style={{ height: hp(1) }} />
+    <Text style={styles.noteSubText}>
+      Note- This is not a real time conversation. You may have to wait for the
+      expert Buddy to get back to you
+    </Text>
+  </View>
+);
+
+const Header = ({ navigation, fetchPsycologist, showLanguageModal, setShowLanguageModal }) => {
   const { getLanguages, assignPsychologist } = useContext(Hcontext);
-
-  // Prop Destructuring
-  const {
-    navigation,
-    fetchPsycologist,
-    showLanguageModal,
-    setShowLanguageModal,
-  } = props;
-
   return (
     <View style={styles.headerContainer}>
       <LanguageModal
@@ -97,18 +89,11 @@ const Header = (props) => {
         fetchPsycologist={fetchPsycologist}
       />
       <View style={styles.headerBox}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}
-          // style={{ backgroundColor: "red" }}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()}>
           <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
         </TouchableOpacity>
         <Text style={styles.chatPersonTitle}>BUDDY</Text>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => setShowLanguageModal(true)}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={() => setShowLanguageModal(true)}>
           <Image
             style={styles.chatHeaderAction}
             source={require("../../assets/images/chat_language.png")}
@@ -120,54 +105,133 @@ const Header = (props) => {
   );
 };
 
-const ChatFooter = (props) => {
-  // Prop Destructuring
-  // const {} = props;
+// ─────────────────────────────────────────────
+// Inline image bubble rendered inside GiftedChat
+// ─────────────────────────────────────────────
+const ImageBubble = ({ base64, mimeType = "image/jpeg" }) => (
+  <View style={styles.imageBubble}>
+    <Image
+      source={{ uri: `data:${mimeType};base64,${base64}` }}
+      style={styles.inlineImage}
+      resizeMode="cover"
+    />
+  </View>
+);
+
+// ─────────────────────────────────────────────
+// Audio bubble that plays from a base64 string
+// ─────────────────────────────────────────────
+const AudioBubble = ({ base64, mimeType = "audio/mp4" }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const soundRef = useRef(null);
+  const durationTimerRef = useRef(null);
+
+  // Stop this bubble's sound (called externally via activeSoundRef too)
+  const stopThis = async () => {
+    try {
+      if (durationTimerRef.current) clearTimeout(durationTimerRef.current);
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+    } catch (_) {}
+    setIsPlaying(false);
+  };
+
+  const play = async () => {
+    try {
+      setLoading(true);
+
+      // ── Stop any other bubble that is currently playing ──
+      if (activeSoundRef.current && activeSoundRef.setPlaying) {
+        await activeSoundRef.current();
+      }
+
+      // ── CRITICAL: switch audio mode to PLAYBACK (not recording) ──
+      // After recording, expo-av leaves the session in recording mode
+      // which routes audio to earpiece and often mutes speaker output.
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false, // force loudspeaker
+        staysActiveInBackground: false,
+      });
+
+      // Write base64 → temp file (expo-av cannot play data URIs directly)
+      const ext = mimeType.includes("mp4") || mimeType.includes("m4a") ? ".mp4" : ".wav";
+      const tempUri = FileSystem.cacheDirectory + `audio_${Date.now()}${ext}`;
+      await FileSystem.writeAsStringAsync(tempUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: tempUri },
+        { shouldPlay: false, volume: 1.0 },
+      );
+      soundRef.current = sound;
+
+      // Register this as the globally active sound
+      activeSoundRef.current = stopThis;
+      activeSoundRef.setPlaying = setIsPlaying;
+
+      setIsPlaying(true);
+      setLoading(false);
+
+      const status = await sound.playAsync();
+      const duration = status.durationMillis || 30000;
+
+      // Auto-reset playing state when audio finishes
+      durationTimerRef.current = setTimeout(async () => {
+        setIsPlaying(false);
+        if (activeSoundRef.current === stopThis) {
+          activeSoundRef.current = null;
+          activeSoundRef.setPlaying = null;
+        }
+      }, duration);
+    } catch (err) {
+      console.log("AudioBubble play error:", err);
+      setIsPlaying(false);
+      setLoading(false);
+    }
+  };
+
+  const stop = async () => {
+    await stopThis();
+    if (activeSoundRef.current === stopThis) {
+      activeSoundRef.current = null;
+      activeSoundRef.setPlaying = null;
+    }
+  };
 
   return (
-    <View style={styles.chatFooterContainer}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        style={styles.chatAddButton}
-        onPress={() => {}}
-      >
-        <AntDesign name="plus" size={hp(3)} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Chat Text Area */}
-      <View style={styles.chatTextArea}>
-        <TextInput style={styles.chatInput} placeholder="Type a message" />
+    <View style={styles.audioBubble}>
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.loaderColor} />
+      ) : (
         <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.chatIconContainer}
-          onPress={() => {}}
+          style={styles.audioPlayBtn}
+          onPress={isPlaying ? stop : play}
         >
-          <Ionicons
-            name="mic-outline"
-            size={hp(3)}
-            color={colors.borderLight}
+          <FontAwesome
+            name={isPlaying ? "stop" : "play"}
+            size={hp(1.6)}
+            color="black"
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.chatIconContainer}
-          onPress={() => {}}
-        >
-          <Feather name="send" size={hp(2.8)} color={colors.borderLight} />
-        </TouchableOpacity>
-      </View>
+      )}
+      <View style={{ width: wp(3) }} />
+      <Text style={styles.audioLabel}>🎤 Voice Message</Text>
     </View>
   );
 };
 
+// ─────────────────────────────────────────────
+// Main Chat Screen
+// ─────────────────────────────────────────────
 const HappiBUDDYChat = (props) => {
-  // Permissions
-  // const [permission, askForPermission] = usePermissions(
-  //   Permissions.AUDIO_RECORDING,
-  //   { ask: true }
-  // );
-
-  // Context Variables
   const {
     authState,
     snackState,
@@ -178,74 +242,62 @@ const HappiBUDDYChat = (props) => {
     sendMsgToPsy,
     clearMessageBatch,
     sendChatNotification,
-    fileUploadFirebase,
     screenTrafficAnalytics,
   } = useContext(Hcontext);
 
-  // Prop Destructuring
   const { navigation } = props;
   const { assignedPsy = "", group = "" } = props.route.params;
 
-  // State Variables
+  // ── State ──────────────────────────────────
   const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [messages, setMessages] = useState([]); // Chat Message
+  const [messages, setMessages] = useState([]);
   const [receiverPsy, setReceiverPsy] = useState(assignedPsy);
-  const [senderUser, setSenderUser] = useState(authState.user.user.id + "_u");
+  const [senderUser] = useState(authState.user.user.id + "_u");
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [groupId, setGroupId] = useState(group);
+
+  // Media state (image or audio pending send)
   const [fileName, setFileName] = useState("");
-  const [fileType, setFileType] = useState(null);
+  const [fileType, setFileType] = useState(null);      // "image" | "audio" | null
+  const [filePath, setFilePath] = useState(null);      // { uri, base64, mimeType }
   const [customText, setCustomText] = useState("");
+  const [mediaSending, setMediaSending] = useState(false);
+
+  // Audio recording state
   const [startAudio, setStartAudio] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [recording, setRecording] = useState(null);
-  const [filePath, setFilePath] = useState("");
-  const [audioLoading, setAudioLoading] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0); // countdown
+
+  // Refs
+  const recordingRef = useRef(null);    // always up-to-date recording object (avoids stale closure)
+  const timerRef = useRef(null);        // countdown interval
+  const autoStopRef = useRef(null);     // auto-stop at 30s
+
   const [loading, setLoading] = useState(true);
 
-  // Mounting
+  // ── Lifecycle ──────────────────────────────
   useEffect(() => {
-    // getDownloadableFile();
     screenTrafficAnalytics({ screenName: "HappiBUDDY Chatting Screen" });
-    return () => clearMessages();
+    return () => {
+      clearMessages();
+      clearTimers();
+    };
   }, []);
+
+  const clearTimers = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+  };
 
   const clearMessages = async () => {
     try {
-      const messageRes = await clearMessageBatch();
-      console.log("check the message clear - ", messageRes);
+      await clearMessageBatch();
     } catch (err) {
-      console.log("Some issuw while clearing messages - ", err);
+      console.log("Error clearing messages:", err);
     }
   };
 
-  const getDownloadableFile = (file) => {
-    const storage = getStorage();
-    getDownloadURL(ref(storage, file))
-      .then((url) => {
-        console.log("check the dowanloadable file - ", url);
-        Linking.openURL(url);
-        // // `url` is the download URL for 'images/stars.jpg'
-
-        // // This can be downloaded directly:
-        // const xhr = new XMLHttpRequest();
-        // xhr.responseType = 'blob';
-        // xhr.onload = (event) => {
-        //   const blob = xhr.response;
-        // };
-        // xhr.open('GET', url);
-        // xhr.send();
-
-        // Or inserted into an <img> element
-        // const img = document.getElementById('myimg');
-        // img.setAttribute('src', url);
-      })
-      .catch((error) => {
-        // Handle any errors
-      });
-  };
-
-  // Mounting & Updating
+  // ── Firestore listener ─────────────────────
   useLayoutEffect(() => {
     const collectionRef = collection(db, "chats");
     const q = query(
@@ -257,319 +309,325 @@ const HappiBUDDYChat = (props) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        // Mapping through messages
         const messageList = snapshot.docs.map((doc) => {
+          const data = doc.data();
+
+          // ── Resolve media across two schemas ──────────────────────────────
+          // Mobile schema:  { mediaBase64, mediaType, mediaMime }
+          // Web/psy schema: { fileName: "data:image/jpeg;base64,...", fileType: "image/jpeg" }
+
+          let resolvedBase64 = data.mediaBase64 || null;
+          let resolvedType   = data.mediaType   || null;
+          let resolvedMime   = data.mediaMime   || null;
+
+          // Web schema: fileName holds the full data URI
+          if (!resolvedBase64 && data.fileName && typeof data.fileName === "string"
+              && data.fileName.startsWith("data:")) {
+            const dataUri = data.fileName;
+            // e.g. "data:image/jpeg;base64,/9j/4AAQ..."
+            const commaIdx = dataUri.indexOf(",");
+            if (commaIdx !== -1) {
+              const header = dataUri.substring(5, commaIdx); // "image/jpeg;base64"
+              resolvedBase64 = dataUri.substring(commaIdx + 1);
+              resolvedMime   = header.split(";")[0] || "image/jpeg";
+              resolvedType   = resolvedMime.startsWith("audio") ? "audio" : "image";
+            }
+          }
+
           return {
             _id: doc.id,
-            createdAt: doc.data().createdAt.toDate(),
-            text: doc.data().text,
-            user: doc.data().user,
+            createdAt: data.createdAt.toDate(),
+            text: data.text || "",
+            user: data.user,
+            mediaBase64: resolvedBase64,
+            mediaType:   resolvedType,
+            mediaMime:   resolvedMime,
+            fileName:    data.fileName || null,
           };
         });
-
-        // Setting message state
-        setMessages(messageList.filter((message) => message));
+        setMessages(messageList.filter(Boolean));
         setLoading(false);
       },
       (error) => {
-        // Firestore backend connectivity error — log and fail gracefully
         console.error("Firestore onSnapshot error:", error.message);
         setLoading(false);
       },
     );
 
-    console.log("Chekc the receicer psy - ", receiverPsy);
-
     return () => unsubscribe();
   }, []);
 
-  // Assigning a Psycologist
+  // ── Change psychologist ────────────────────
   const fetchPsycologist = async (language) => {
     try {
       const psycologist = await changePsychologist({ language });
-
-      console.log("The fetched selected psycologist - ", psycologist);
-
       if (psycologist.status === "success") {
         setGroupId(psycologist.group_id);
         setReceiverPsy(psycologist.psychologist_detail.id + "_p");
-        snackDispatch({
-          type: "SHOW_SNACK",
-          payload: "Your Buddy is waiting for you.",
-        });
+        snackDispatch({ type: "SHOW_SNACK", payload: "Your Buddy is waiting for you." });
       }
     } catch (err) {
-      console.log("Some issue while asigning psycologist - ", err);
+      console.log("Assign psychologist error:", err);
     }
   };
 
+  // ── Audio Recording ────────────────────────
   const startRecording = async () => {
     try {
-      // console.log("Requesting permissions..");
-      // // await Audio.requestPermissionsAsync();
-      // await Audio.setAudioModeAsync({
-      //   allowsRecordingIOS: true,
-      //   interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-      //   playsInSilentModeIOS: true,
-      //   shouldDuckAndroid: true,
-      //   interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-      // });
-      // console.log("Starting recording..");
-      // const { recording } = await Audio.Recording.createAsync(
-      //   Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-      // );
-      // setRecording(recording);
-      // console.log("Recording started");
-
-      await Audio.requestPermissionsAsync();
-      const rec = new Audio.Recording();
-      setRecording(rec);
+      const permResult = await Audio.requestPermissionsAsync();
+      if (!permResult.granted) {
+        console.warn("Microphone permission denied");
+        return;
+      }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
-        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
-        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
       });
-      // await rec.prepareToRecordAsync(
-      //   Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-      // );
-      await rec.prepareToRecordAsync({
-        android: {
-          extension: ".mp4",
-          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          ...Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY.ios,
-          extension: ".wav",
-          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
-          sampleRate: 16000,
-          bitRateStrategy:
-            Audio.RECORDING_OPTION_IOS_BIT_RATE_STRATEGY_CONSTANT,
-        },
-      });
+
+      const rec = new Audio.Recording();
+      // Use the built-in HIGH_QUALITY preset — safe for expo-av 11.x
+      // Individual Audio.RECORDING_OPTION_* constants don't exist in this version
+      await rec.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
       await rec.startAsync();
-      const recs = await rec.getStatusAsync();
-      console.log("the rec status", recs);
-      // You are now recording!
+
+      // Store in ref so stopRecording always has the current instance (no stale closure)
+      recordingRef.current = rec;
+      setStartAudio(true);
+      setRecordingSeconds(0);
+
+      console.log("🎙 Recording started");
+
+      // Live second counter
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds((s) => s + 1);
+      }, 1000);
+
+      // Auto-stop at 30 seconds
+      autoStopRef.current = setTimeout(() => {
+        stopRecordingFromRef();
+      }, MAX_RECORDING_SECONDS * 1000);
     } catch (err) {
-      console.error("Failed to start recording", err);
+      console.error("Failed to start recording:", err);
     }
   };
 
-  const stopRecording = async () => {
-    console.log("Stopping recording..");
-    setRecording(null);
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    const mediaName = uri.split("/")[uri.split("/").length - 1];
-    setFilePath({ uri });
-    setFileName(mediaName);
-    setCustomText(mediaName);
-    setFileType("audio");
-    console.log("Recording stopped and stored at", uri);
-  };
-
-  const playSound = async () => {
+  // Always reads from ref — no stale closure
+  const stopRecordingFromRef = async () => {
     try {
-      console.log("Loading Sound", filePath);
-
-      if (filePath) {
-        const { sound } = await Audio.Sound.createAsync(filePath);
-
-        setIsPlaying(true);
-
-        // Playing the sound
-        const { durationMillis } = await sound.playAsync();
-
-        // Stop playing state after audio completes
-        setTimeout(() => setIsPlaying(false), durationMillis);
+      clearTimers();
+      const rec = recordingRef.current;
+      if (!rec) {
+        console.warn("stopRecordingFromRef: no recording in ref");
+        return;
       }
+
+      recordingRef.current = null;
+      setStartAudio(false);
+      setRecordingSeconds(0);
+
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      console.log("🎙 Recording stopped, uri:", uri);
+
+      if (!uri) {
+        console.warn("No URI from recording");
+        return;
+      }
+
+      // Read audio file as base64 — matching web version's approach
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const mediaName = uri.split("/").pop();
+      const mimeType = "audio/mp4"; // expo-av HIGH_QUALITY preset produces mp4 on Android
+
+      // Reset audio mode back to playback so the recorded clip can be heard
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+
+      setFileName(mediaName);
+      setFileType("audio");
+      setFilePath({ uri, base64, mimeType });
+      setCustomText("🎤 Voice Message");
+      console.log("🎙 Audio ready to send, size:", base64.length, "chars");
     } catch (err) {
-      console.log("Some issue while playing sound - ", err);
+      console.error("Failed to stop recording:", err);
     }
   };
 
-  // const stopSound = async () => {
-  //   try {
-  //     if (filePath) {
-  //       const { sound } = await Audio.Sound.createAsync(filePath, {
-  //         shouldPlay: false,
-  //       });
-  //       const result = await sound.stopAsync();
-  //       console.log("UnLoading Sound", sound);
-
-  //       setIsPlaying(false);
-
-  //       // Playing the sound
-  //       // const stopRes = await sound.stopAsync();
-
-  //       // // Stop playing state after audio completes
-  //       // setTimeout(() => setIsPlaying(false), durationMillis);
-  //     }
-  //   } catch (err) {
-  //     console.log("Some issue while stopping sound - ", err);
-  //   }
-  // };
-
-  // Handles mic icon click
   const audioHandler = () => {
-    try {
-      if (startAudio) {
-        stopRecording();
-        setStartAudio(false);
-      } else {
-        startRecording();
-        setStartAudio(true);
-      }
-    } catch (err) {
-      console.log("Some issue while handling audio - ", err);
+    if (startAudio) {
+      stopRecordingFromRef();
+    } else {
+      startRecording();
     }
   };
 
-  // Removes the recorded audio
-  const removeAudio = () => {
+  const removeMedia = () => {
     setStartAudio(false);
     setIsPlaying(false);
-    setRecording(null);
-    setFilePath("");
+    recordingRef.current = null;
+    setFilePath(null);
     setFileType(null);
     setFileName("");
     setCustomText("");
+    setRecordingSeconds(0);
+    clearTimers();
   };
 
-  // Chat Send Action
-  const onSend = async (messages = []) => {
+  // ── Send Message ───────────────────────────
+  const onSend = async (newMessages = []) => {
     try {
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages),
-      );
-      const { _id, createdAt, text, user } = messages[0];
+      setMediaSending(true);
 
-      addDoc(collection(db, "chats"), {
+      setMessages((prev) => GiftedChat.append(prev, newMessages));
+      const { _id, createdAt, text, user } = newMessages[0];
+
+      // Build data URI the same way the web app stores it
+      // Web schema: fileName = "data:<mime>;base64,<data>", fileType = "<mime>"
+      const webFileName = filePath?.base64
+        ? `data:${filePath.mimeType || "image/jpeg"};base64,${filePath.base64}`
+        : fileName || null;
+      const webFileType = filePath?.mimeType || null;
+
+      const chatDoc = {
         _id,
         createdAt,
-        text,
+        text: text || "",
         user,
         receiverId: receiverPsy,
         senderId: senderUser,
-        fileName,
-        fileType,
         groupId,
-      });
+        // ── Mobile schema (read by this app) ──────────────────────────────
+        mediaBase64: filePath?.base64 || null,
+        mediaType:   fileType || null,
+        mediaMime:   filePath?.mimeType || null,
+        // ── Web schema (read by psychologist's web app) ───────────────────
+        fileName:  webFileName,
+        fileType:  webFileType,
+      };
 
-      const messageRes = await sendMsgToPsy({
+      await addDoc(collection(db, "chats"), chatDoc);
+
+      // Also notify the backend API
+      await sendMsgToPsy({
         groupId,
         psyId: receiverPsy.substring(0, receiverPsy.length - 2),
-        message: text,
+        message: text || (fileType === "image" ? "[Image]" : "[Voice Message]"),
       });
-      console.log("check the message clear - ", messageRes);
 
-      if (filePath) {
-        fileUploadFirebase(filePath.uri);
-        setFileName("");
-        removeAudio();
-      }
-      if (recording) removeAudio();
+      removeMedia();
     } catch (err) {
-      console.log("Sending message error - ", err);
+      console.log("Send message error:", err);
+    } finally {
+      setMediaSending(false);
     }
   };
 
-  if (loading)
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: colors.background,
-        }}
-      >
-        <ActivityIndicator size="small" color={colors.loaderColor} />
-      </View>
-    );
+  // ── Render media inside message bubble ─────
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (!currentMessage?.mediaBase64) return null;
 
-  const _renderInputToolbar = (props) => {
+    if (currentMessage.mediaType === "image") {
+      return (
+        <ImageBubble
+          base64={currentMessage.mediaBase64}
+          mimeType={currentMessage.mediaMime || "image/jpeg"}
+        />
+      );
+    }
+
+    if (currentMessage.mediaType === "audio") {
+      return (
+        <AudioBubble
+          base64={currentMessage.mediaBase64}
+          mimeType={currentMessage.mediaMime || "audio/mp4"}
+        />
+      );
+    }
+
+    return null;
+  };
+
+  // ── Input toolbar ──────────────────────────
+  const _renderInputToolbar = (toolbarProps) => {
+    const secsLeft = MAX_RECORDING_SECONDS - recordingSeconds;
+
     return (
       <InputToolbar
-        {...props}
-        containerStyle={{
-          backgroundColor: "white",
-          borderTopColor: "#E8E8E8",
-          marginHorizontal: wp(3),
-          alignItems: "center",
-          justifyContent: "center",
-          // padding: 8,
-        }}
+        {...toolbarProps}
+        containerStyle={styles.inputToolbar}
         renderActions={() => (
-          <View
-            style={{
-              backgroundColor: "#E4FDFE",
-              paddingRight: wp(2),
-            }}
-          >
+          <View style={styles.inputActionsBox}>
             <TouchableOpacity
               activeOpacity={0.7}
               style={styles.chatAddButton}
               onPress={() => setShowDocumentModal(true)}
+              disabled={startAudio}
             >
               <AntDesign name="plus" size={hp(3)} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
-        renderSend={(props) => (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+        renderSend={(sendProps) => (
+          <View style={styles.sendRow}>
+            {/* ── Audio mode: show countdown, trash, play preview ── */}
             {fileType === "audio" ? (
+              <>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={removeMedia}
+                  style={{ marginRight: wp(2) }}
+                >
+                  <FontAwesome name="trash-o" size={hp(3)} color="red" />
+                </TouchableOpacity>
+                <Text style={styles.audioPreviewLabel}>🎤 Ready</Text>
+              </>
+            ) : startAudio ? (
+              // ── Recording in progress: countdown ──
+              <TouchableOpacity activeOpacity={0.7} onPress={audioHandler}>
+                <View style={styles.recordingPill}>
+                  <View style={styles.recordingDot} />
+                  <Text style={styles.recordingTimer}>{secsLeft}s</Text>
+                </View>
+              </TouchableOpacity>
+            ) : fileType === "image" ? (
+              // ── Image selected: show trash ──
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={removeAudio}
-                style={{ opacity: isPlaying ? 0.5 : 1 }}
-                disabled={isPlaying}
+                onPress={removeMedia}
+                style={{ marginRight: wp(2) }}
               >
                 <FontAwesome name="trash-o" size={hp(3)} color="red" />
               </TouchableOpacity>
-            ) : null}
-            {fileType === "audio" ? (
-              <>
-                <View style={{ width: wp(4.5) }} />
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => (isPlaying ? null : playSound())}
-                  style={{ opacity: isPlaying ? 0.5 : 1 }}
-                  disabled={isPlaying}
-                >
-                  <FontAwesome
-                    name={isPlaying ? "play" : "play"}
-                    size={hp(3)}
-                    color={colors.borderLight}
-                  />
-                </TouchableOpacity>
-              </>
             ) : (
-              <>
-                <View style={{ width: wp(4) }} />
-                <TouchableOpacity activeOpacity={0.7} onPress={audioHandler}>
-                  <Ionicons
-                    name="mic-outline"
-                    size={hp(3)}
-                    color={startAudio ? "red" : colors.borderLight}
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-            <Send {...props}>
-              <View style={styles.chatIconContainer}>
-                <Feather
-                  name="send"
-                  size={hp(2.8)}
+              // ── Default mic button ──
+              <TouchableOpacity activeOpacity={0.7} onPress={audioHandler}>
+                <Ionicons
+                  name="mic-outline"
+                  size={hp(3)}
                   color={colors.borderLight}
+                  style={{ marginRight: wp(2) }}
                 />
+              </TouchableOpacity>
+            )}
+
+            {/* Send button */}
+            <Send {...sendProps} disabled={mediaSending}>
+              <View style={styles.chatIconContainer}>
+                {mediaSending ? (
+                  <ActivityIndicator size="small" color={colors.borderLight} />
+                ) : (
+                  <Feather name="send" size={hp(2.8)} color={colors.borderLight} />
+                )}
               </View>
             </Send>
           </View>
@@ -577,6 +635,15 @@ const HappiBUDDYChat = (props) => {
       />
     );
   };
+
+  // ── Loading state ──────────────────────────
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="small" color={colors.loaderColor} />
+      </View>
+    );
+  }
 
   return (
     <ImageBackground
@@ -594,23 +661,17 @@ const HappiBUDDYChat = (props) => {
 
       <GiftedChat
         text={customText}
-        onInputTextChanged={(text) => setCustomText(text)}
+        onInputTextChanged={(t) => setCustomText(t)}
         messages={messages}
-        onSend={(messages) => onSend(messages)}
+        onSend={(msgs) => onSend(msgs)}
         user={{
-          _id: authState?.user?.user?.id + "_u", // Adding _u for distinction b/w user & phsycologist
+          _id: authState?.user?.user?.id + "_u",
           name: authState?.user?.user?.username,
-          fileName,
-          fileType,
-        }}
-        onLongPress={(context, message) => {
-          if (message?.user?.fileName)
-            getDownloadableFile(message.user.fileName);
         }}
         renderBubble={_renderChatBubble}
         renderTime={_renderBubbleTime}
-        // renderAvatar={() => null}
         renderInputToolbar={_renderInputToolbar}
+        renderCustomView={renderCustomView}
         alwaysShowSend
       />
 
@@ -624,14 +685,20 @@ const HappiBUDDYChat = (props) => {
         setFileType={setFileType}
         setCustomText={setCustomText}
       />
-      {/* <ChatFooter /> */}
     </ImageBackground>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  loaderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
   },
   headerContainer: {
     backgroundColor: colors.background,
@@ -643,7 +710,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   headerBox: {
-    // backgroundColor: "yellow",
     width: wp(100),
     paddingHorizontal: wp(4),
     flexDirection: "row",
@@ -655,20 +721,19 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
   },
   chatHeaderAction: {
-    // backgroundColor: "green",
     width: hp(4),
     height: hp(4),
   },
-  chatFooterContainer: {
-    // backgroundColor: "red",
-    position: "absolute",
-    bottom: 0,
-    paddingHorizontal: wp(6),
-    paddingVertical: hp(2),
-    width: wp(100),
-    flexDirection: "row",
+  inputToolbar: {
+    backgroundColor: "white",
+    borderTopColor: "#E8E8E8",
+    marginHorizontal: wp(3),
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+  },
+  inputActionsBox: {
+    backgroundColor: "#E4FDFE",
+    paddingRight: wp(2),
   },
   chatAddButton: {
     backgroundColor: "#4CA6A8",
@@ -678,29 +743,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: hp(100),
   },
-  chatTextArea: {
-    backgroundColor: "#fff",
-    width: wp(74),
-    height: hp(6),
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.borderDim,
-    paddingHorizontal: hp(1),
+  sendRow: {
     flexDirection: "row",
-  },
-  chatInput: {
-    // backgroundColor: "green",
-    // height: "100%",
-    flex: 1,
-    fontSize: RFValue(12),
-    fontFamily: "Poppins",
+    alignItems: "center",
+    paddingRight: wp(1),
   },
   chatIconContainer: {
-    // backgroundColor: "yellow",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: hp(0.3),
+    paddingHorizontal: hp(0.5),
+    minWidth: hp(4),
+  },
+  // Recording countdown pill
+  recordingPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFE8E8",
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.6),
+    borderRadius: 20,
+    marginRight: wp(2),
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "red",
+    marginRight: 5,
+  },
+  recordingTimer: {
+    fontSize: RFValue(11),
+    fontFamily: "PoppinsMedium",
+    color: "red",
+  },
+  audioPreviewLabel: {
+    fontSize: RFValue(11),
+    fontFamily: "Poppins",
+    color: "#555",
+    marginRight: wp(2),
   },
   noteContainer: {
     backgroundColor: "#FBFFE1",
@@ -720,26 +801,38 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsMedium",
     color: "#3E3A3A",
   },
-  bubbleContainer: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: hp(2),
-    paddingVertical: hp(2),
-    borderRadius: hp(2),
+  // Image in bubble
+  imageBubble: {
+    borderRadius: 10,
+    overflow: "hidden",
+    margin: 4,
+  },
+  inlineImage: {
+    width: wp(55),
+    height: hp(22),
+    borderRadius: 10,
+  },
+  // Audio in bubble
+  audioBubble: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: hp(1),
+    backgroundColor: colors.primary || "#E4FDFE",
+    paddingHorizontal: hp(1.5),
+    paddingVertical: hp(1.2),
+    borderRadius: 10,
+    margin: 4,
   },
-  bubbleText: {
-    fontSize: RFValue(12),
-    fontFamily: "Poppins",
-  },
-  chatDownloadButton: {
+  audioPlayBtn: {
     borderWidth: 1,
-    borderColor: colors.borderDark,
+    borderColor: "#aaa",
     borderRadius: hp(100),
-    paddingHorizontal: hp(1),
+    paddingHorizontal: hp(1.2),
     paddingVertical: hp(1),
+  },
+  audioLabel: {
+    fontSize: RFValue(11),
+    fontFamily: "Poppins",
+    color: "#333",
   },
 });
 
