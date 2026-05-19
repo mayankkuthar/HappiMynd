@@ -139,8 +139,8 @@ android {
         applicationId 'com.happimynd'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 42
-        versionName "42"
+        versionCode 43
+        versionName "43"
         missingDimensionStrategy "store", "play"
     }
     splits {

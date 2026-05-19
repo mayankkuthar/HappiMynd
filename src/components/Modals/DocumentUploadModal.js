@@ -14,6 +14,7 @@ import {
 import { RFValue } from "react-native-responsive-fontsize";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -40,29 +41,38 @@ const DocumentUploadModal = (props) => {
         copyToCacheDirectory: true,
       });
 
-      if (result.type === "cancel") {
+      if (result.type === "cancel" || result.canceled) {
         setUploading(false);
+        setShowModal(false);
         return;
       }
 
       const { uri, name, mimeType } = result;
       const mime = mimeType || "image/jpeg";
 
-      // Read as base64 — matches web version base64 approach
-      // expo-document-picker for images typically returns small-enough files
-      const base64 = await FileSystem.readAsStringAsync(uri, {
+      // Compress & resize the image to avoid Firestore 1MB doc limit
+      // and dramatically speed up base64 read + Firestore write
+      const compressed = await manipulateAsync(
+        uri,
+        [{ resize: { width: 1200 } }],
+        { compress: 0.7, format: SaveFormat.JPEG },
+      );
+
+      // Read compressed result as base64
+      const base64 = await FileSystem.readAsStringAsync(compressed.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
       setFileName(name || uri.split("/").pop());
       setFileType("image");
-      setFilePath({ uri, base64, mimeType: mime });
+      setFilePath({ uri: compressed.uri, base64, mimeType: mime });
       setCustomText("📷 Image");
+      setUploading(false);
       setShowModal(false);
     } catch (err) {
       console.log("Image pick error:", err);
-    } finally {
       setUploading(false);
+      setShowModal(false);
     }
   };
 

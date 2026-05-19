@@ -29,6 +29,7 @@ import {
   Send,
   Bubble,
 } from "react-native-gifted-chat";
+import ImageView from "react-native-image-viewing";
 import {
   addDoc,
   orderBy,
@@ -36,6 +37,7 @@ import {
   onSnapshot,
   collection,
   where,
+  limit,
 } from "firebase/firestore";
 import moment from "moment";
 import { Audio } from "expo-av";
@@ -108,14 +110,18 @@ const Header = ({ navigation, fetchPsycologist, showLanguageModal, setShowLangua
 // ─────────────────────────────────────────────
 // Inline image bubble rendered inside GiftedChat
 // ─────────────────────────────────────────────
-const ImageBubble = ({ base64, mimeType = "image/jpeg" }) => (
-  <View style={styles.imageBubble}>
+const ImageBubble = ({ base64, mimeType = "image/jpeg", onPress }) => (
+  <TouchableOpacity
+    activeOpacity={0.8}
+    onPress={onPress}
+    style={styles.imageBubble}
+  >
     <Image
       source={{ uri: `data:${mimeType};base64,${base64}` }}
       style={styles.inlineImage}
       resizeMode="cover"
     />
-  </View>
+  </TouchableOpacity>
 );
 
 // ─────────────────────────────────────────────
@@ -275,6 +281,10 @@ const HappiBUDDYChat = (props) => {
 
   const [loading, setLoading] = useState(true);
 
+  // Full-screen image viewer
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState("");
+
   // ── Lifecycle ──────────────────────────────
   useEffect(() => {
     screenTrafficAnalytics({ screenName: "HappiBUDDY Chatting Screen" });
@@ -304,6 +314,7 @@ const HappiBUDDYChat = (props) => {
       collectionRef,
       where("groupId", "==", groupId),
       orderBy("createdAt", "desc"),
+      limit(50),
     );
 
     const unsubscribe = onSnapshot(
@@ -484,50 +495,52 @@ const HappiBUDDYChat = (props) => {
 
   // ── Send Message ───────────────────────────
   const onSend = async (newMessages = []) => {
+    // Capture media state immediately so we can free the UI
+    const hasMedia = fileType !== null && filePath !== null;
+    const capturedFileType = fileType;
+    const capturedFilePath = filePath;
+    const capturedFileName = fileName;
+
+    // Clear media state and release send button right away
+    // so the user can send text messages while the image uploads
+    if (hasMedia) {
+      removeMedia();
+    }
+
+    setMessages((prev) => GiftedChat.append(prev, newMessages));
+    const { _id, createdAt, text, user } = newMessages[0];
+
+    // Build data URI the same way the web app stores it
+    const webFileName = hasMedia && capturedFilePath?.base64
+      ? `data:${capturedFilePath.mimeType || "image/jpeg"};base64,${capturedFilePath.base64}`
+      : capturedFileName || null;
+    const webFileType = hasMedia && capturedFilePath?.mimeType ? capturedFilePath.mimeType : null;
+
+    const chatDoc = {
+      _id,
+      createdAt,
+      text: text || "",
+      user,
+      receiverId: receiverPsy,
+      senderId: senderUser,
+      groupId,
+      mediaBase64: hasMedia ? capturedFilePath?.base64 || null : null,
+      mediaType:   hasMedia ? capturedFileType || null : null,
+      mediaMime:   hasMedia ? capturedFilePath?.mimeType || null : null,
+      fileName:  webFileName,
+      fileType:  webFileType,
+    };
+
     try {
-      setMediaSending(true);
-
-      setMessages((prev) => GiftedChat.append(prev, newMessages));
-      const { _id, createdAt, text, user } = newMessages[0];
-
-      // Build data URI the same way the web app stores it
-      // Web schema: fileName = "data:<mime>;base64,<data>", fileType = "<mime>"
-      const webFileName = filePath?.base64
-        ? `data:${filePath.mimeType || "image/jpeg"};base64,${filePath.base64}`
-        : fileName || null;
-      const webFileType = filePath?.mimeType || null;
-
-      const chatDoc = {
-        _id,
-        createdAt,
-        text: text || "",
-        user,
-        receiverId: receiverPsy,
-        senderId: senderUser,
-        groupId,
-        // ── Mobile schema (read by this app) ──────────────────────────────
-        mediaBase64: filePath?.base64 || null,
-        mediaType:   fileType || null,
-        mediaMime:   filePath?.mimeType || null,
-        // ── Web schema (read by psychologist's web app) ───────────────────
-        fileName:  webFileName,
-        fileType:  webFileType,
-      };
-
       await addDoc(collection(db, "chats"), chatDoc);
 
-      // Also notify the backend API
       await sendMsgToPsy({
         groupId,
         psyId: receiverPsy.substring(0, receiverPsy.length - 2),
-        message: text || (fileType === "image" ? "[Image]" : "[Voice Message]"),
+        message: text || (capturedFileType === "image" ? "[Image]" : "[Voice Message]"),
       });
-
-      removeMedia();
     } catch (err) {
       console.log("Send message error:", err);
-    } finally {
-      setMediaSending(false);
     }
   };
 
@@ -541,6 +554,12 @@ const HappiBUDDYChat = (props) => {
         <ImageBubble
           base64={currentMessage.mediaBase64}
           mimeType={currentMessage.mediaMime || "image/jpeg"}
+          onPress={() => {
+            setViewerImageUri(
+              `data:${currentMessage.mediaMime || "image/jpeg"};base64,${currentMessage.mediaBase64}`
+            );
+            setImageViewerVisible(true);
+          }}
         />
       );
     }
@@ -636,15 +655,6 @@ const HappiBUDDYChat = (props) => {
     );
   };
 
-  // ── Loading state ──────────────────────────
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="small" color={colors.loaderColor} />
-      </View>
-    );
-  }
-
   return (
     <ImageBackground
       source={require("../../assets/images/language_background.png")}
@@ -659,21 +669,28 @@ const HappiBUDDYChat = (props) => {
       />
       <ChatNote />
 
-      <GiftedChat
-        text={customText}
-        onInputTextChanged={(t) => setCustomText(t)}
-        messages={messages}
-        onSend={(msgs) => onSend(msgs)}
-        user={{
-          _id: authState?.user?.user?.id + "_u",
-          name: authState?.user?.user?.username,
-        }}
-        renderBubble={_renderChatBubble}
-        renderTime={_renderBubbleTime}
-        renderInputToolbar={_renderInputToolbar}
-        renderCustomView={renderCustomView}
-        alwaysShowSend
-      />
+      <View style={{ flex: 1 }}>
+        <GiftedChat
+          text={customText}
+          onInputTextChanged={(t) => setCustomText(t)}
+          messages={messages}
+          onSend={(msgs) => onSend(msgs)}
+          user={{
+            _id: authState?.user?.user?.id + "_u",
+            name: authState?.user?.user?.username,
+          }}
+          renderBubble={_renderChatBubble}
+          renderTime={_renderBubbleTime}
+          renderInputToolbar={_renderInputToolbar}
+          renderCustomView={renderCustomView}
+          alwaysShowSend
+        />
+        {loading && (
+          <View style={styles.loaderOverlay}>
+            <ActivityIndicator size="small" color={colors.loaderColor} />
+          </View>
+        )}
+      </View>
 
       <View style={{ height: hp(1) }} />
 
@@ -684,6 +701,13 @@ const HappiBUDDYChat = (props) => {
         setFilePath={setFilePath}
         setFileType={setFileType}
         setCustomText={setCustomText}
+      />
+
+      <ImageView
+        images={[{ uri: viewerImageUri }]}
+        imageIndex={0}
+        visible={imageViewerVisible}
+        onRequestClose={() => setImageViewerVisible(false)}
       />
     </ImageBackground>
   );
@@ -699,6 +723,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
+  },
+  loaderOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    zIndex: 10,
   },
   headerContainer: {
     backgroundColor: colors.background,
