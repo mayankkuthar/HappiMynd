@@ -49,7 +49,7 @@ const MakeBooking = (props) => {
     snackDispatch,
     bookAnotherSession,
     rescheduleBooking,
-    psycologistPayment,
+    psychologistPayment,
     happiGUIDEPayment,
     rescheduleGuideBooking,
     getBundles,
@@ -273,7 +273,7 @@ const MakeBooking = (props) => {
         };
 
         console.log("zero........", dataToSend);
-        const bookingRes = await psycologistPayment(dataToSend);
+        const bookingRes = await psychologistPayment(dataToSend);
         console.log("check the data to send for zero- ", bookingRes);
 
         if (bookingRes.status === "success") {
