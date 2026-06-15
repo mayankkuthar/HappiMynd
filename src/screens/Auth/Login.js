@@ -1,47 +1,115 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ImageBackground,
   Image,
-  TextInput,
   TouchableOpacity,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Components
 import InputField from "../../components/input/InputField";
 import Button from "../../components/buttons/Button";
-import OutlineButton from "../../components/buttons/OutineButton";
-
-// Constants
+import SendPhoneOtp from "../../components/input/SendPhoneOtp";
+import VerifyOtp from "../../components/input/VerifyOtp";
 import { colors } from "../../assets/constants";
-
-// Context
 import { Hcontext } from "../../context/Hcontext";
 
 const Login = (props) => {
-  // Context Variables
-  const { authDispatch, userLogin, snackDispatch, startAssessment } =
-    useContext(Hcontext);
+  const {
+    authDispatch,
+    userLogin,
+    snackDispatch,
+    sendLoginOTP,
+    verifyLoginOTP,
+  } = useContext(Hcontext);
 
-  // Prop Destucturing
   const { navigation } = props;
 
-  // State Variables
+  const [activeTab, setActiveTab] = useState("phone");
+
+  const [countryCode, setCountryCode] = useState("+91");
+  const [mobile, setMobile] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [sendOtpLoading, setSendOtpLoading] = useState(false);
+  const [verifyOtpLoading, setVerifyOtpLoading] = useState(false);
+  const [otpValid, setOtpValid] = useState(false);
+
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handles the user login
+  const COOLDOWN_SECONDS = 120;
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) { clearInterval(timer); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const sendOtpHandler = async () => {
+    if (!mobile || mobile.length < 10) {
+      return snackDispatch({
+        type: "SHOW_SNACK",
+        payload: "Please enter a valid phone number",
+      });
+    }
+    setSendOtpLoading(true);
+    const res = await sendLoginOTP({ type: "mobile", mobile, country_code: countryCode.replace("+", "") });
+    if (res?.status === "success") {
+      setOtpSent(true);
+      setCooldown(COOLDOWN_SECONDS);
+      snackDispatch({ type: "SHOW_SNACK", payload: "OTP sent to your phone" });
+    } else {
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: res?.message || "Failed to send OTP",
+      });
+    }
+    setSendOtpLoading(false);
+  };
+
+  const loginWithOtpHandler = async () => {
+    if (!otp || otp.length < 4) {
+      return snackDispatch({
+        type: "SHOW_SNACK",
+        payload: "Please enter the OTP",
+      });
+    }
+    setVerifyOtpLoading(true);
+    const res = await verifyLoginOTP({ mobile, otp, country_code: countryCode.replace("+", "") });
+    if (res?.access_token) {
+      await AsyncStorage.setItem("USER", JSON.stringify(res));
+      authDispatch({ type: "LOGIN", payload: res });
+    } else if (res?.status === "register" && res?.mobile_verified_token) {
+      navigation.replace("GettingStarted", {
+        country_code: countryCode,
+        mobile,
+        mobile_verified_token: res.mobile_verified_token,
+      });
+    } else {
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: res?.message || "Verification failed",
+      });
+    }
+    setVerifyOtpLoading(false);
+  };
+
   const loginHandler = async () => {
     setLoading(true);
     try {
@@ -55,8 +123,6 @@ const Login = (props) => {
 
       const userRes = await userLogin({ username: userName, password });
 
-      console.log("The login response - ", userRes);
-
       if (userRes.status === "error") {
         setLoading(false);
         return snackDispatch({ type: "SHOW_SNACK", payload: userRes.message });
@@ -68,7 +134,7 @@ const Login = (props) => {
         authDispatch({ type: "LOGIN", payload: userRes });
       }
     } catch (err) {
-      console.log("Some issue while login - ", err);
+      console.log("Login error - ", err);
     }
     setLoading(false);
   };
@@ -76,7 +142,6 @@ const Login = (props) => {
   return (
     <View style={styles.container}>
       <KeyboardAwareScrollView>
-        {/* Header Section */}
         <ImageBackground
           source={require("../../assets/images/login_head.png")}
           style={styles.loginHeadContainer}
@@ -104,64 +169,117 @@ const Login = (props) => {
             </View>
           </ImageBackground>
         </ImageBackground>
-        {/* Body Section */}
-        <View style={styles.loginBodyContainer}>
-          <View style={styles.loginBodySection1}>
-            {/* <Text style={styles.loginBodySubText}>
-              Please log into your account
-            </Text> */}
-          </View>
-          <View style={styles.loginBodySection2}>
-            <InputField
-              title="Username"
-              value={userName}
-              onChangeText={(text) => setUserName(text)}
-            />
-            <View style={{ height: hp(1.5) }} />
-            <InputField
-              title="Password"
-              password={true}
-              value={password}
-              onChangeText={(text) => setPassword(text)}
-            />
-            <View style={{ height: hp(1.5) }} />
 
+        <View style={styles.loginBodyContainer}>
+          <View style={styles.tabRow}>
             <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => navigation.push("ForgotPassword")}
+              style={[styles.tab, activeTab === "phone" && styles.activeTab]}
+              onPress={() => setActiveTab("phone")}
             >
-              <Text style={styles.loginForgotText}>Forgot Password ?</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "phone" && styles.activeTabText,
+                ]}
+              >
+                Login with{"\n"}Phone
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "password" && styles.activeTab]}
+              onPress={() => setActiveTab("password")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "password" && styles.activeTabText,
+                ]}
+              >
+                Login with Password
+              </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.loginBodySection3}>
-            <View style={{ paddingBottom: hp(2) }}>
+
+          {activeTab === "phone" ? (
+            <View style={styles.phoneTabContent}>
+              <SendPhoneOtp
+                value={mobile}
+                setValue={setMobile}
+                otpHandler={sendOtpHandler}
+                loading={sendOtpLoading}
+                countryCode={countryCode}
+                setCountryCode={setCountryCode}
+                cooldown={cooldown}
+              />
+
+              {otpSent ? (
+                <>
+                  <View style={{ height: hp(2) }} />
+                  <VerifyOtp value={otp} setValue={setOtp} valid={otpValid} />
+                  <View style={{ height: hp(2) }} />
+                  <Button
+                    text="Login with OTP"
+                    pressHandler={loginWithOtpHandler}
+                    loading={verifyOtpLoading}
+                  />
+                </>
+              ) : null}
+
+              <View style={styles.loginNewUserContainer}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.push("GettingStarted")}
+                  style={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                >
+                  <Text style={styles.loginNewUserContainerText}>
+                    New to HappiMynd ?
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.passwordTabContent}>
+              <InputField
+                title="Username"
+                value={userName}
+                onChangeText={(text) => setUserName(text)}
+              />
+              <View style={{ height: hp(1.5) }} />
+              <InputField
+                title="Password"
+                password
+                value={password}
+                onChangeText={(text) => setPassword(text)}
+              />
+              <View style={{ height: hp(1.5) }} />
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.push("ForgotPassword")}
+              >
+                <Text style={styles.loginForgotText}>Forgot Password ?</Text>
+              </TouchableOpacity>
+              <View style={{ height: hp(2) }} />
+
               <Button
                 text="Log into my account"
                 pressHandler={loginHandler}
                 loading={loading}
               />
+
+              <View style={styles.loginNewUserContainer}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.push("GettingStarted")}
+                  style={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                >
+                  <Text style={styles.loginNewUserContainerText}>
+                    New to HappiMynd ?
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            {/* <View>
-              <OutlineButton
-                text="Log in with HappiMynd Code"
-                pressHandler={() => navigation.push("LoginWithCode")}
-              />
-            </View> */}
-            <View style={styles.loginNewUserContainer}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => navigation.push("GettingStarted")}
-                style={{
-                  paddingVertical: 10,
-                  paddingHorizontal: 20,
-                }}
-              >
-                <Text style={styles.loginNewUserContainerText}>
-                  New to HappiMynd ?
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
         </View>
       </KeyboardAwareScrollView>
     </View>
@@ -169,85 +287,51 @@ const Login = (props) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loginHeadContainer: {
-    width: wp(100),
-    height: hp(40),
-  },
-  loginHeadMask: {
-    width: wp(100),
-    height: hp(40),
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  loginHeadContainer: { width: wp(100), height: hp(40) },
+  loginHeadMask: { width: wp(100), height: hp(40) },
   loginImagesContainer: {
     flexDirection: "row",
     flex: 1,
-    // alignItems: "center",
     justifyContent: "space-between",
     paddingTop: hp(12),
     paddingHorizontal: wp(10),
-    // backgroundColor: "yellow",
   },
-  loginGirl: {
-    width: wp(40),
-    height: hp(20),
-    // backgroundColor: "red",
-  },
+  loginGirl: { width: wp(40), height: hp(20) },
   loginLogo: {
     width: wp(20),
     height: hp(10),
     marginBottom: hp(12),
     alignSelf: "flex-end",
-    // backgroundColor: "green",
   },
-  loginHeadTitle: {
-    paddingHorizontal: wp(10),
-  },
-  loginHeadTitleText: {
-    fontSize: RFValue(33),
-    // fontFamily: "PoppinsBold",
-    fontWeight: "bold",
-  },
+  loginHeadTitle: { paddingHorizontal: wp(10) },
+  loginHeadTitleText: { fontSize: RFValue(33), fontWeight: "bold" },
   loginBodyContainer: {
-    // backgroundColor: "lime",
     width: wp(100),
-    height: hp(60),
     paddingHorizontal: wp(10),
+    paddingTop: hp(2),
   },
-  loginBodySubText: {
-    fontSize: RFValue(14),
-    fontFamily: "Poppins",
+  tabRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  loginBodySection1: {
+  tab: {
     flex: 1,
-    // backgroundColor: "yellow",
+    paddingVertical: hp(1.5),
+    alignItems: "center",
   },
-  loginBodySection2: {
-    flex: 3,
-    // backgroundColor: "blue",
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primaryText,
   },
-  loginBodySection3: {
-    flex: 3,
-    // backgroundColor: "red",
+  tabText: { fontSize: RFValue(13), fontFamily: "Poppins", color: "#999" },
+  activeTabText: {
+    color: colors.primaryText,
+    fontFamily: "PoppinsSemiBold",
   },
-  loginFormText: {
-    fontSize: RFValue(12),
-    color: "#758080",
-    fontFamily: "Poppins",
-    paddingBottom: 4,
-  },
-  loginInput: {
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 6,
-    backgroundColor: "#EFFEFE",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 6,
-    height: hp(5),
-  },
+  phoneTabContent: { paddingTop: hp(3) },
+  passwordTabContent: { paddingTop: hp(3) },
   loginForgotText: {
     alignSelf: "flex-end",
     color: colors.primaryText,
@@ -255,10 +339,10 @@ const styles = StyleSheet.create({
     fontSize: RFValue(11),
   },
   loginNewUserContainer: {
-    flex: 1,
     paddingBottom: hp(1),
     alignItems: "center",
     justifyContent: "flex-end",
+    paddingTop: hp(3),
   },
   loginNewUserContainerText: {
     fontFamily: "Poppins",

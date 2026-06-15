@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -5,25 +6,30 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
-import React from "react";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { CountryPicker } from "react-native-country-codes-picker";
 
-// Constants
 import { colors } from "../../assets/constants";
 
 const SendPhoneOtp = (props) => {
-  // Prop Destructuring
   const {
     value = "",
     setValue = () => {},
     otpHandler = () => {},
     loading = false,
+    countryCode = "+91",
+    setCountryCode = () => {},
+    cooldown = 0,
   } = props;
+
+  const [show, setShow] = useState(false);
+
   return (
     <View
       style={{
@@ -38,23 +44,42 @@ const SendPhoneOtp = (props) => {
           alignItems: "center",
         }}
       >
-        <View
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setShow(true)}
+          disabled={cooldown > 0}
           style={{
+            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
+            paddingRight: wp(1),
           }}
         >
           <Text style={{ fontSize: RFValue(10), fontFamily: "Poppins" }}>
-            +91
+            {countryCode}
           </Text>
-        </View>
-        {/* Sized Box */}
-        <View style={{ width: wp(2) }} />
+          <Image
+            source={require("../../assets/images/downArrow.png")}
+            style={{ height: 12, width: 12, marginLeft: 3, tintColor: "grey" }}
+          />
+        </TouchableOpacity>
+
+        <CountryPicker
+          show={show}
+          initialState={countryCode}
+          pickerButtonOnPress={(item) => {
+            setCountryCode(item.dial_code);
+            setShow(false);
+          }}
+          onBackdropPress={() => setShow(false)}
+          style={{ modal: { height: 400 } }}
+        />
+
         <TextInput
           keyboardType="number-pad"
           placeholder="Enter phone number"
           value={value}
           onChangeText={(text) => setValue(text)}
+          style={{ flex: 1, fontSize: RFValue(12) }}
         />
       </View>
       <TouchableOpacity
@@ -63,11 +88,13 @@ const SendPhoneOtp = (props) => {
         autoCorrect={false}
         activeOpacity={0.7}
         style={styles.otpButton}
-        disabled={loading}
+        disabled={loading || cooldown > 0}
         onPress={otpHandler}
       >
         {loading ? (
           <ActivityIndicator size="small" color="#fff" />
+        ) : cooldown > 0 ? (
+          <Text style={styles.otpButtonText}>Resend in {String(Math.floor(cooldown / 60)).padStart(2, '0')}:{String(cooldown % 60).padStart(2, '0')}</Text>
         ) : (
           <Text style={styles.otpButtonText}>Send OTP</Text>
         )}

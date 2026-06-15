@@ -15,7 +15,7 @@ import { heightPercentageToDP } from "react-native-responsive-screen";
 
 const GettingStarted = (props) => {
   // Prop Destructuring
-  const { navigation } = props;
+  const { navigation, route } = props;
   return (
     <View style={styles.container}>
       {/* Section 1 */}
@@ -55,13 +55,26 @@ const GettingStarted = (props) => {
             width={78}
             height={12}
             text="Organisation/Institution Sponsored"
-            pressHandler={() => navigation.push("RegisterWithCode")}
+            pressHandler={() => navigation.push("RegisterWithCode", {
+              ...(route?.params?.mobile_verified_token ? {
+                mobile_verified_token: route.params.mobile_verified_token,
+                mobile: route.params.mobile,
+                country_code: route.params.country_code,
+              } : {}),
+            })}
           />
           <WaveButton
             width={78}
             height={12}
             text="Self Sponsored"
-            pressHandler={() => navigation.push("Register")}
+            pressHandler={() => navigation.push("PhoneRegistration", {
+              signupType: "individual",
+              ...(route?.params?.mobile_verified_token ? {
+                mobile_verified_token: route.params.mobile_verified_token,
+                mobile: route.params.mobile,
+                country_code: route.params.country_code,
+              } : {}),
+            })}
           />
         </View>
       </View>

@@ -61,6 +61,8 @@ const Register = (props) => {
   const [refferalCode, setRefferalCode] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phone, setPhone] = useState(route?.params?.mobile || "");
+  const [countryCode, setCountryCode] = useState(route?.params?.country_code || "+91");
 
   // Mounting
   useEffect(() => {
@@ -150,14 +152,17 @@ const Register = (props) => {
         userName,
         password,
         confirmPassword,
+        country_code: countryCode,
+        mobile: phone || null,
         happimyndCode: route?.params?.happimyndCode
           ? route.params.happimyndCode
           : null,
         signupType: route?.params?.signupType
           ? route.params.signupType
           : "individual",
-        language: 1, // Hardcoded to hindi but need to replace
+        language: 1,
         refferalCode: refferalCode || null,
+        mobile_verified_token: route?.params?.mobile_verified_token || null,
       };
 
       console.log("The signup user data to send - ", dataToSend);
@@ -311,6 +316,21 @@ const Register = (props) => {
               Other
             </Text>
           </View>
+          <View style={styles.phoneRow}>
+            <View style={styles.countryCodeBox}>
+              <Text style={styles.countryCodeText}>{countryCode}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <InputField
+                title="Phone (optional)"
+                placeHolder="Enter phone number"
+                keyboardType="number-pad"
+                value={phone}
+                onChangeText={setPhone}
+              />
+            </View>
+          </View>
+          <View style={{ height: hp(1.5) }} />
           <InputField
             title="Username"
             placeHolder="Enter Username"
@@ -468,6 +488,19 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     paddingBottom: 4,
   },
+  phoneRow: { flexDirection: "row", alignItems: "flex-end" },
+  countryCodeBox: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    backgroundColor: "#EFFEFE",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginRight: wp(2),
+    height: hp(5),
+    justifyContent: "center",
+  },
+  countryCodeText: { fontSize: RFValue(12), fontFamily: "Poppins" },
 });
 
 export default Register;

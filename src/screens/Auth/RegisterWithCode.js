@@ -28,7 +28,7 @@ import Button from "../../components/buttons/Button";
 
 const RegisterWithCode = (props) => {
   // Prop Destructuring
-  const { navigation } = props;
+  const { navigation, route } = props;
 
   // Context Variables
   const { getSponsorList, snackDispatch, checkSponsorCode } =
@@ -92,6 +92,11 @@ const RegisterWithCode = (props) => {
           navigation.navigate("Register", {
             happimyndCode: code,
             signupType: "organization",
+            ...(route?.params?.mobile_verified_token ? {
+              mobile_verified_token: route.params.mobile_verified_token,
+              mobile: route.params.mobile,
+              country_code: route.params.country_code,
+            } : {}),
           });
       }
     } catch (err) {

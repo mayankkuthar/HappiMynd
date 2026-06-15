@@ -246,8 +246,10 @@ export const Hprovider = (props) => {
       username: data.userName,
       password: data.password,
       confirm_password: data.confirmPassword,
-      signup_type: data.signupType, // FIXED
+      signup_type: data.signupType,
       happimyndCode: data.happimyndCode,
+      country_code: data.country_code,
+      mobile: data.mobile,
       language: data.language,
       device_token: deviceToken,
       referral_code: data.refferalCode,
@@ -673,16 +675,16 @@ export const Hprovider = (props) => {
     }
     
     try {
-      const res = await apiClient.post("/api/v1/send-verification-otp", dataToSend);
+      const res = await axios.post(`${config.BASE_URL}/api/v1/send-verification-otp`, dataToSend);
       return res.data;
     } catch (err) {
-      const message = err.message || "";
-      if (message.includes("Email address is already exist")) {
+      const msg = err?.response?.data?.message || err.message || "";
+      if (msg.includes("Email address is already exist")) {
         snackDispatch({
           type: "SHOW_SNACK",
           payload: "This Email ID is already registered.",
         });
-      } else if (message.includes("Mobile number is already exist")) {
+      } else if (msg.includes("Mobile number is already exist")) {
         snackDispatch({
           type: "SHOW_SNACK",
           payload: "This mobile number is already registered.",
@@ -690,10 +692,49 @@ export const Hprovider = (props) => {
       } else {
         snackDispatch({
           type: "SHOW_SNACK",
-          payload: message,
+          payload: msg || "Failed to send OTP",
         });
       }
-      throw err;
+      return err?.response?.data || { status: "error", message: msg };
+    }
+  };
+
+  const sendLoginOTP = async ({ type, mobile, country_code }) => {
+    let dataToSend;
+    if (type === "email") {
+      dataToSend = { type, email };
+    } else if (type === "mobile") {
+      dataToSend = { type, mobile, country_code };
+    }
+
+    try {
+      const res = await axios.post(`${config.BASE_URL}/api/v1/send-login-otp`, dataToSend);
+      return res.data;
+    } catch (err) {
+      const msg = err?.response?.data?.message || err.message || "";
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: msg || "Failed to send OTP",
+      });
+      return err?.response?.data || { status: "error", message: msg };
+    }
+  };
+
+  const verifyLoginOTP = async ({ mobile, otp, country_code }) => {
+    try {
+      const res = await axios.post(`${config.BASE_URL}/api/v1/verify-login-otp`, {
+        mobile,
+        country_code,
+        otp,
+      });
+      return res.data;
+    } catch (err) {
+      const msg = err?.response?.data?.message || err.message || "";
+      snackDispatch({
+        type: "SHOW_SNACK",
+        payload: msg || "Verification failed",
+      });
+      return err?.response?.data || { status: "error", message: msg };
     }
   };
 
@@ -1403,6 +1444,18 @@ export const Hprovider = (props) => {
       throw err;
     }
   };
+  const phoneLogin = async ({ mobile, country_code }) => {
+    try {
+      const res = await axios.post(`${config.BASE_URL}/api/v1/phone-login`, {
+        mobile,
+        country_code,
+      });
+      return res.data;
+    } catch (err) {
+      console.log("Phone login error:", err);
+      return err?.response?.data || { status: "error", message: "Login failed" };
+    }
+  };
 
   return (
     <Hcontext.Provider
@@ -1453,6 +1506,8 @@ export const Hprovider = (props) => {
         getSubscriptions,
         applyCoupon,
         sendOTP,
+        sendLoginOTP,
+        verifyLoginOTP,
         getEmojiList,
         submitRating,
         raiseQuery,
@@ -1497,6 +1552,7 @@ export const Hprovider = (props) => {
         userMood,
         referralCode,
         screenTrafficAnalytics,
+        phoneLogin,
         rewardList,
         offerScreenContent,
         getUserReport,

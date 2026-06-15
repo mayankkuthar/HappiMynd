@@ -23,6 +23,7 @@ import ForgotPassword from "../../screens/Auth/ForgotPassword";
 import VerificationCode from "../../screens/Auth/VerificationCode";
 import ResetPassword from "../../screens/Auth/ResetPassword";
 import LoginWithCode from "../../screens/Auth/LoginWithCode";
+import PhoneRegistration from "../../screens/Auth/PhoneRegistration";
 import Home from "../../screens/Home/Home";
 import HappiLIFE from "../../screens/HappiLIFE/HappiLIFE";
 import HappiGUIDE from "../../screens/HappiGUIDE/HappiGUIDE";
@@ -147,6 +148,11 @@ const AuthStackScreen = ({ navigation, route }) => {
         options={{ headerShown: false }}
         name="RegisterWithCode"
         component={RegisterWithCode}
+      />
+      <AuthStack.Screen
+        options={{ headerShown: false }}
+        name="PhoneRegistration"
+        component={PhoneRegistration}
       />
       <AuthStack.Screen
         options={{ headerShown: false }}
