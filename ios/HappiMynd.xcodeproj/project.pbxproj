@@ -357,7 +357,7 @@
 				CODE_SIGN_ENTITLEMENTS = HappiMynd/HappiMynd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = X2UGLVSS64;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -368,7 +368,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = HappiMynd;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 14.0.9;
+				MARKETING_VERSION = 14.0.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -394,14 +394,14 @@
 				CODE_SIGN_ENTITLEMENTS = HappiMynd/HappiMynd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = X2UGLVSS64;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = HappiMynd/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HappiMynd;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 14.0.9;
+				MARKETING_VERSION = 14.0.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

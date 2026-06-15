@@ -1329,7 +1329,6 @@ export const Hprovider = (props) => {
       return res.data;
     } catch (err) {
       console.log("Screen traffic analytics error:", err);
-      throw err;
     }
   };
   const rewardList = async () => {

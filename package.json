@@ -2,8 +2,8 @@
   "name": "happimynd",
   "version": "1.0.0",
   "scripts": {
-    "start": "set NODE_OPTIONS=--openssl-legacy-provider && react-native start",
-    "android": "set NODE_OPTIONS=--openssl-legacy-provider && react-native run-android",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider react-native start",
+    "android": "NODE_OPTIONS=--openssl-legacy-provider react-native run-android",
     "ios": "react-native run-ios",
     "web": "expo start --web",
     "eject": "expo eject",
@@ -39,6 +39,7 @@
     "expo-status-bar": "~1.1.0",
     "firebase": "9.6.1",
     "jail-monkey": "^2.8.0",
+    "jsc-android": "^250231.0.0",
     "lottie-ios": "3.4.1",
     "lottie-react-native": "5.1.4",
     "moment": "^2.29.1",

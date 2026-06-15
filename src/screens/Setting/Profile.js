@@ -73,7 +73,7 @@ const Profile = (props) => {
   // Mounting
   useEffect(() => {
     // Getting the updated user profile
-    fetchUserProfile(authState.user.access_token);
+    fetchUserProfile(authState?.user?.access_token);
   }, []);
 
   const fetchUserProfile = async (token) => {
@@ -139,7 +139,7 @@ const Profile = (props) => {
       setEditMode(false);
 
       // fetching the updated data and saving to memory
-      fetchUserProfile(authState.user.access_token);
+      fetchUserProfile(authState?.user?.access_token);
       navigation.goBack();
     } catch (err) {
       console.log("Some issue while editing profile (Profile.js) - ", err);
