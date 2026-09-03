@@ -50,8 +50,6 @@ import BookingConfirm from "../../screens/Individual/BookingConfirm";
 import BookingList from "../../screens/HappiTALK/BookingList";
 import BookingFeedback from "../../screens/Individual/BookingFeedback";
 import AssessmentComplete from "../../screens/HappiLIFE/AssessmentComplete";
-import ContactVerification from "../../screens/HappiLIFE/ContactVerification";
-
 const ExploreServicesStack = createNativeStackNavigator();
 
 const ExploreServicesStackScreen = ({ navigation, route }) => {
@@ -214,11 +212,6 @@ const ExploreServicesStackScreen = ({ navigation, route }) => {
         options={{ headerShown: false }}
         name="AssessmentComplete"
         component={AssessmentComplete}
-      />
-      <ExploreServicesStack.Screen
-        options={{ headerShown: false }}
-        name="ContactVerification"
-        component={ContactVerification}
       />
     </ExploreServicesStack.Navigator>
   );

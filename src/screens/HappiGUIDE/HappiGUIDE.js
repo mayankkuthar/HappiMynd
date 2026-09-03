@@ -236,21 +236,14 @@ const HappiGUIDE = (props) => {
               loading={loadingButton}
               pressHandler={() => {
                 if (authState.user) {
-                  if (isPhoneVerified) {
-                    //only checking if phone is verified
-                    navigation.push("MakeBooking", {
-                      module: "guide",
-                      type: "add",
-                      // psyId: 10,
-                      planId: "22",
-                      amount: "539",
-                      // session: 1,
-                    });
-                  } else {
-                    navigation.navigate("ContactVerification", {
-                      isFrom: "Guide",
-                    });
-                  }
+                  navigation.push("MakeBooking", {
+                    module: "guide",
+                    type: "add",
+                    // psyId: 10,
+                    planId: "22",
+                    amount: "539",
+                    // session: 1,
+                  });
                 } else {
                   navigation.push("WelcomeScreen");
                 }

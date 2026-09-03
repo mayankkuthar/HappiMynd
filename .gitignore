@@ -63,6 +63,7 @@ buck-out/
 
 # Bundle artifacts
 *.jsbundle
+/ios/assets/
 
 # CocoaPods
 /ios/Pods/

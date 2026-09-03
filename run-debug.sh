@@ -13,7 +13,7 @@ fi
 
 # 2. Build and install
 echo "Building and installing..."
-npx react-native run-android --no-launch 2>&1 | tail -5
+npx react-native run-android 2>&1 | tail -5
 
 # 3. Launch and dismiss dialog
 echo "Launching app and dismissing 16 KB dialog..."

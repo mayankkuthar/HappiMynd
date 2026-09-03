@@ -122,26 +122,18 @@ const VoiceReport = (props) => {
       setVoiceReport(voiceScore);
       await saveReport(userData, voiceScore);
       if (authState?.user) {
-        if (isPhoneVerified) {
-          //only checking if phone is verified
-          if (voiceScore) {
-            if (isSubscribed) {
-              setLoadingButton(false);
-              navigation.navigate("ReportsCheck");
-            } else {
-              setLoadingButton(false);
-              navigation.push("Pricing", {
-                selectedPlan: "HappiVOICE (Year)",
-              });
-            }
+        if (voiceScore) {
+          if (isSubscribed) {
+            setLoadingButton(false);
+            navigation.navigate("ReportsCheck");
           } else {
             setLoadingButton(false);
+            navigation.push("Pricing", {
+              selectedPlan: "HappiVOICE (Year)",
+            });
           }
         } else {
           setLoadingButton(false);
-          navigation.navigate("ContactVerification", {
-            isFrom: "Voice",
-          });
         }
       } else {
         setLoadingButton(false);

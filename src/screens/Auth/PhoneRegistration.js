@@ -28,8 +28,8 @@ import { Hcontext } from "../../context/Hcontext";
 
 const PhoneRegistration = (props) => {
   const {
-    sendOTP,
-    verifyOtp,
+    sendLoginOTP,
+    verifyLoginOTP,
     userSignup,
     snackDispatch,
     authDispatch,
@@ -50,6 +50,7 @@ const PhoneRegistration = (props) => {
   const [verifyOtpLoading, setVerifyOtpLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [otpValid, setOtpValid] = useState(false);
+  const [verifiedToken, setVerifiedToken] = useState(mobileVerifiedToken || null);
 
   const COOLDOWN_SECONDS = 120;
   const [cooldown, setCooldown] = useState(0);
@@ -96,7 +97,7 @@ const PhoneRegistration = (props) => {
       });
     }
     setSendOtpLoading(true);
-    const res = await sendOTP({ type: "mobile", mobile, country_code: countryCode.replace("+", "") });
+    const res = await sendLoginOTP({ type: "mobile", mobile, country_code: countryCode.replace("+", "") });
     if (res?.status === "success") {
       setOtpSent(true);
       setStep(2);
@@ -119,10 +120,14 @@ const PhoneRegistration = (props) => {
       });
     }
     setVerifyOtpLoading(true);
-    const res = await verifyOtp({ mobile, otp });
-    if (res?.status === "success") {
+    const res = await verifyLoginOTP({ mobile, otp, country_code: countryCode.replace("+", "") });
+    if (res?.access_token) {
+      await AsyncStorage.setItem("USER", JSON.stringify(res));
+      authDispatch({ type: "LOGIN", payload: res });
+    } else if (res?.mobile_verified_token) {
       setOtpVerified(true);
       setStep(3);
+      setVerifiedToken(res.mobile_verified_token);
       snackDispatch({
         type: "SHOW_SNACK",
         payload: "Phone verified! Complete your profile",
@@ -180,7 +185,7 @@ const PhoneRegistration = (props) => {
       mobile,
       signupType,
       language: 1,
-      mobile_verified_token: mobileVerifiedToken,
+      mobile_verified_token: verifiedToken,
     };
 
     const res = await userSignup(dataToSend);
@@ -386,7 +391,9 @@ const PhoneRegistration = (props) => {
               <View style={{ height: hp(1.5) }} />
 
               <View style={styles.termsRow}>
-                <Checkbox checked={agreeTerms} setChecked={setAgreeTerms} />
+                <View>
+                  <Checkbox checked={agreeTerms} setChecked={setAgreeTerms} />
+                </View>
                 <View style={{ width: wp(2) }} />
                 <Text style={styles.termsText}>
                   By creating an account, you agree to our{" "}

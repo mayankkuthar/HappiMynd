@@ -108,6 +108,9 @@ target 'HappiMynd' do
 
   pod 'RNAudioRecord', :path => '../node_modules/react-native-audio-record'
 
+  # Use updated glog that compiles with Xcode 26+ SDK
+  pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec'
+
   post_install do |installer|
     react_native_post_install(installer)
 
@@ -124,6 +127,7 @@ target 'HappiMynd' do
         if target.name == 'Yoga'
           config.build_settings['GCC_WARN_PEDANTIC'] = 'NO'
           config.build_settings['CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS'] = 'NO'
+          config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
         end
       end
       
@@ -133,6 +137,33 @@ target 'HappiMynd' do
           if (build_phase.respond_to?(:name) && build_phase.name.eql?('[CP-User] Generate Specs'))
             target.build_phases.move(build_phase, 0)
           end
+        end
+      end
+
+      # Fix shell scripts that use `bash -l -c` with paths containing spaces.
+      # The outer shell expands $VAR references, then inner bash splits on spaces.
+      target.build_phases.each do |build_phase|
+        if build_phase.respond_to?(:shell_script) && build_phase.shell_script
+          script = build_phase.shell_script
+
+          # Fix FBReactNativeSpec: VAR=/path/with space/... -> VAR="/path/with space/..."
+          if script.include?("bash -l -c '")
+            parts = script.split("'")
+            if parts.length >= 3
+              cmd = parts[1]
+              cmd = cmd.gsub(/(\w+)=(\S+ \S+?)(?=\s+\w+=)/) { "#{$1}=\"#{$2}\"" }
+              cmd = cmd.gsub(/(\S+ \S+\/generate-specs\.sh)/) { "\"#{$1}\"" }
+              parts[1] = cmd
+              script = parts.join("'")
+            end
+          end
+
+          # Fix EXConstants-style: bash -l -c "$VAR/path" -> bash -l -c "\"$VAR/path\""
+          script = script.gsub(/bash -l -c "\$(\w+)([^"]*)"/) {
+            'bash -l -c "\"$' + $1 + $2 + '\""'
+          }
+
+          build_phase.shell_script = script
         end
       end
     end

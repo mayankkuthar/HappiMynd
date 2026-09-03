@@ -108,11 +108,7 @@ const AssessmentComplete = (props) => {
           text="Continue"
           loading={loadingButton}
           pressHandler={() => {
-            if (isPhoneVerified) {
-              navigation.navigate("HomeScreen");
-            } else {
-              navigation.navigate("ContactVerification");
-            }
+            navigation.navigate("HomeScreen");
           }}
         />
         {/* Sized Box */}

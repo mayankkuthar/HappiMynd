@@ -305,9 +305,6 @@ const UserPane = (props) => {
                     }
                     return;
                   }
-                  if (!isEmailVerified || !isPhoneVerified) {
-                    return navigation.push("ContactVerification");
-                  }
                   if (!isSubscribed) {
                     return navigation.push("Pricing");
                   }

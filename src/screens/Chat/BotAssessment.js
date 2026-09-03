@@ -102,18 +102,10 @@ const BotAssessment = (props) => {
 
     if (RESULT?.status == "Success") {
       if (authState.user) {
-        if (isEmailVerified && isPhoneVerified) {
-          navigation.navigate("ResultScreen", {
-            cat_id: categoryId,
-            profile_id: authState?.user?.user?.id,
-          });
-        } else {
-          navigation.navigate("ContactVerification", {
-            isFrom: "HappiBot",
-            category_Id: categoryId,
-            profile_id: authState?.user?.user?.id,
-          });
-        }
+        navigation.navigate("ResultScreen", {
+          cat_id: categoryId,
+          profile_id: authState?.user?.user?.id,
+        });
       } else {
         navigation.push("HomeScreen");
       }
