@@ -15,12 +15,23 @@ import Snack from "./src/components/common/Snack";
 
 LogBox.ignoreLogs(["useNativeDriver"]);
 
+// Default all Text to Nunito Sans (registered via the Poppins* font keys).
+// Individual <Text> style fontFamily values (Poppins*/Nunito) still override.
+Text.defaultProps = {
+  ...(Text.defaultProps || {}),
+  style: [
+    { fontFamily: "Poppins" },
+    ...((Text.defaultProps && Text.defaultProps.style) || []),
+  ],
+};
+
 const App = () => {
   const [loaded] = useFonts({
-    Poppins: require("./src/assets/fonts/Poppins-Regular.ttf"),
-    PoppinsBold: require("./src/assets/fonts/Poppins-Bold.ttf"),
-    PoppinsSemiBold: require("./src/assets/fonts/Poppins-SemiBold.ttf"),
-    PoppinsMedium: require("./src/assets/fonts/Poppins-Medium.ttf"),
+    Poppins: require("./src/assets/fonts/NunitoSans-Regular.ttf"),
+    PoppinsBold: require("./src/assets/fonts/NunitoSans-Bold.ttf"),
+    PoppinsSemiBold: require("./src/assets/fonts/NunitoSans-SemiBold.ttf"),
+    PoppinsMedium: require("./src/assets/fonts/NunitoSans-Medium.ttf"),
+    PoppinsRegular: require("./src/assets/fonts/NunitoSans-Regular.ttf"),
   });
 
   // Show a simple loading indicator while fonts load

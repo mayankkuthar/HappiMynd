@@ -21,7 +21,6 @@ import { Hcontext } from "../../context/Hcontext";
 
 // Components
 import Header from "../../components/common/Header";
-import Button from "../../components/buttons/Button";
 
 const Moods = (props) => {
   // Prop Destructuring
@@ -59,10 +58,6 @@ const Moods = (props) => {
       console.log("Check the mood res - ", moodRes);
       if (moodRes.status === "success" && moodRes.data && moodRes.data.length > 0) {
         setMoodList(moodRes.data);
-        let happyItem = moodRes.data.filter((item) => item.name == "happy");
-        if (happyItem.length > 0) {
-          setSelectedMood(happyItem[0]);
-        }
       } else {
         console.log("No mood data received from API");
         snackDispatch({
@@ -113,6 +108,12 @@ const Moods = (props) => {
     return str[0].toUpperCase() + str.slice(1);
   }
 
+  // Group moods into 3 rows: 4 + 4 + remaining (last 2)
+  const moodRows = [];
+  for (let i = 0; i < moodList.length; i += 4) {
+    moodRows.push(moodList.slice(i, i + 4));
+  }
+
   return (
     <ImageBackground
       source={require("../../assets/images/language_background.png")}
@@ -128,120 +129,107 @@ const Moods = (props) => {
         <View style={{ height: hp(4) }} />
 
         <View style={{ justifyContent: "center", alignItems: "center" }}>
-          <Image
-            source={{ uri: selectedMood?.image }}
-            resizeMode="contain"
-            style={styles.feedbackFaceHero}
-          />
-          <Text style={styles.feedbackHeroText}>
-            {capitalize(selectedMood?.name)}
-          </Text>
+          {selectedMood ? (
+            <>
+              <Image
+                source={{ uri: selectedMood?.image }}
+                resizeMode="contain"
+                style={styles.feedbackFaceHero}
+              />
+              <Text style={styles.feedbackHeroText}>
+                {capitalize(selectedMood?.name)}
+              </Text>
+            </>
+          ) : (
+            <Image
+              source={require("../../assets/images/mood_indicator_mascot.png")}
+              resizeMode="contain"
+              style={styles.feedbackFaceHero}
+            />
+          )}
         </View>
 
         {/* Sized Box */}
         <View style={{ height: hp(4) }} />
 
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            width: "100%",
-          }}
-        >
-          {moodList.map(
-            (mood, index) =>
-              index < 5 && (
-                <TouchableOpacity
-                  key={mood?.id}
-                  activeOpacity={0.7}
-                  onPress={() => setSelectedMood(mood)}
-                  style={styles.feedbackButton}
-                >
-                  <Image
-                    source={{ uri: mood?.image }}
-                    resizeMode="contain"
-                    style={{
-                      ...styles.feedbackFace,
-                      borderColor:
-                        selectedMood.id === mood.id
-                          ? colors.pageTitle
-                          : "transparent",
-                    }}
-                  />
-                  <Text
-                    style={{
-                      ...styles.feedbackFaceText,
-                      fontFamily:
-                        selectedMood.id === mood.id ? "PoppinsBold" : "Poppins",
-                      color:
-                        selectedMood.id === mood.id
+        <View style={styles.moodGrid}>
+          {moodRows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.moodRow}>
+              {row.map((mood) => {
+                const isSelected = selectedMood && selectedMood.id === mood.id;
+                return (
+                  <TouchableOpacity
+                    key={mood?.id}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedMood(mood)}
+                    style={styles.feedbackButton}
+                  >
+                    <View
+                      style={[
+                        styles.moodBox,
+                        isSelected ? styles.moodBoxSelected : null,
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: mood?.image }}
+                        resizeMode="contain"
+                        style={styles.feedbackFace}
+                      />
+                    </View>
+                    <Text
+                      style={{
+                        ...styles.feedbackFaceText,
+                        fontFamily: isSelected ? "PoppinsBold" : "Poppins",
+                        color: isSelected
                           ? colors.primaryText
                           : colors.borderDark,
-                    }}
-                  >
-                    {capitalize(mood?.name)}
-                  </Text>
-                </TouchableOpacity>
-              ),
-          )}
-        </View>
-
-        {/* Sized Box */}
-        <View style={{ height: hp(3) }} />
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            width: "100%",
-          }}
-        >
-          {moodList.map(
-            (mood, index) =>
-              index > 4 && (
-                <TouchableOpacity
-                  key={mood?.id}
-                  activeOpacity={0.7}
-                  onPress={() => setSelectedMood(mood)}
-                  style={styles.feedbackButton}
-                >
-                  <Image
-                    source={{ uri: mood?.image }}
-                    resizeMode="contain"
-                    style={{
-                      ...styles.feedbackFace,
-                      borderColor:
-                        selectedMood.id === mood.id
-                          ? colors.pageTitle
-                          : "transparent",
-                    }}
-                  />
-                  <Text
-                    style={{
-                      ...styles.feedbackFaceText,
-                      fontFamily:
-                        selectedMood.id === mood.id ? "PoppinsBold" : "Poppins",
-                      color:
-                        selectedMood.id === mood.id
-                          ? colors.primaryText
-                          : colors.borderDark,
-                    }}
-                  >
-                    {capitalize(mood?.name)}
-                  </Text>
-                </TouchableOpacity>
-              ),
-          )}
+                      }}
+                    >
+                      {capitalize(mood?.name)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
         </View>
       </View>
       <View style={styles.submitButton}>
-        <Button
-          text="Confirm"
-          pressHandler={() =>
-            saveUserMode(selectedMood?.id, selectedMood?.name)
-          }
-          loading={buttonLoading}
-        />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[
+            styles.confirmButton,
+            selectedMood
+              ? styles.confirmButtonEnabled
+              : styles.confirmButtonDisabled,
+          ]}
+          disabled={!selectedMood || buttonLoading}
+          onPress={() => {
+            if (!selectedMood) {
+              snackDispatch({
+                type: "SHOW_SNACK",
+                payload: "Please select a mood",
+              });
+              return;
+            }
+            saveUserMode(selectedMood?.id, selectedMood?.name);
+          }}
+        >
+          {buttonLoading ? (
+            <ActivityIndicator size="small" color="#000" />
+          ) : (
+            <Text
+              style={[
+                styles.confirmButtonText,
+                selectedMood
+                  ? styles.confirmTextEnabled
+                  : styles.confirmTextDisabled,
+              ]}
+            >
+              Confirm
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
@@ -262,28 +250,41 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsBold",
   },
   feedbackFaceHero: {
-    width: hp(16),
-    height: hp(16),
+    width: hp(22),
+    height: hp(22),
   },
   feedbackHeroText: {
     fontSize: RFValue(28),
     fontFamily: "PoppinsSemiBold",
   },
   feedbackButton: {
-    // backgroundColor: "yellow",
     justifyContent: "center",
     alignItems: "center",
     width: wp(20),
-    // borderWidth: 1,
-    // borderColor: colors.pageTitle,
-    // borderRadius: hp(100),
+  },
+  moodGrid: {
+    width: "100%",
+  },
+  moodRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginBottom: hp(2),
+  },
+  moodBox: {
+    width: wp(19),
+    height: wp(19),
+    borderRadius: 11,
+    backgroundColor: "#EDE6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moodBoxSelected: {
+    backgroundColor: "#A38AF2",
   },
   feedbackFace: {
-    // backgroundColor: "red",
-    width: hp(5),
-    height: hp(5),
-    borderWidth: 2,
-    borderRadius: hp(100),
+    width: hp(6.5),
+    height: hp(6.5),
   },
   feedbackFaceText: {
     fontSize: RFValue(9),
@@ -295,6 +296,30 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: hp(4),
   },
+  confirmButton: {
+    width: "100%",
+    height: hp(6),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 100,
+  },
+  confirmButtonDisabled: {
+    backgroundColor: "#EEDFFF",
+  },
+  confirmButtonEnabled: {
+    backgroundColor: "#EBDAFF",
+    shadowColor: "rgba(0,0,0,0.16)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  confirmButtonText: {
+    fontFamily: "PoppinsMedium",
+    fontSize: RFValue(14),
+  },
+  confirmTextDisabled: { color: "#A0A0A0" },
+  confirmTextEnabled: { color: "#000" },
 });
 
 export default Moods;

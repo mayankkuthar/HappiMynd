@@ -4,103 +4,143 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   Image,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { Feather } from "@expo/vector-icons";
+import Collapsible from "react-native-collapsible";
 
 // Constants
 import { colors, happiVoice_constants } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
+import {
+  growthPlanNames,
+  validityMap,
+  growthPlanFeatures,
+  featureLabels,
+  getFeatureValue,
+  formatPrice,
+} from "./ExploreServices";
 
-// Components
-import SubscriptionCard from "../../components/cards/SubscriptionCard";
+// Known service descriptions (API returns raw Package rows)
+const descriptionMap = {
+  "HappiLIFE Screening":
+    "Evaluate your wellbeing on several parameters of emotional and mental health with a unique profile based approach.",
+  "HappiLIFE Summary Reading":
+    "Enrich yourself with a 24*7 access to 5000+ minutes of curated, well researched self-help content that includes video, audio, blogs and more.",
+  HappiBUDDY:
+    "Connect with a professional expert buddy in a personal emotional log room that is non-judgemental, anonymous, and 100% confidential.",
+  HappiSELF:
+    "Self-manage your emotional wellbeing with globally validated, interactive self help tools that include mind soothing content and gamified exercises.",
+};
 
-// Dummy Data
-// const subscriptions = [
-//   {
-//     id: 1,
-//     title: "HappiLIFE",
-//     description:
-//       "Evaluate your wellbeing on 10 different parameters of emotional and mental health with a unique profile based approach. ",
-//     screen: "HappiLIFE",
-//   },
-//   {
-//     id: 2,
-//     title: "HappiGUIDE",
-//     description:
-//       "Make the most out of your HappiLIFE screening summary with a summary reading session by our emotional wellbeing expert.",
-//     screen: "ReportReadingBook",
-//   },
-//   {
-//     id: 3,
-//     title: "HappiLEARN",
-//     description:
-//       "24*7 access to 5000+ minutes of curated, well-researched self-help content that includes video, audio, blogs, and more.",
-//     screen: "HappiLEARN",
-//   },
-//   {
-//     id: 4,
-//     title: "HappiBUDDY",
-//     description:
-//       "Connect with a professional expert buddy in a personal emotional log room that is non-judgemental, anonymous, and 100% confidential.",
-//     screen: "HappiBuddyConnect",
-//   },
-//   {
-//     id: 5,
-//     title: "HappiSELF",
-//     description:
-//       "Self-manage your emotional wellbeing with globally validated, interactive self help tools that include mind soothing content and gamified exercises.",
-//     screen: "HappiSELFBook",
-//   },
-//   {
-//     id: 6,
-//     title: "HappiTALK",
-//     description:
-//       "Discuss life, aspirations, personal issues and more with the best of our country’s experts in a confidential safe space from the comfort of your home.",
-//     screen: "HappiTALKBook",
-//   },
-// ];
+// Tolerant match: "HappiBUDDY" / "Happi BUDDY" → "BUDDY", etc.
+const matchPlanKey = (name) => {
+  const raw = (name || "").toUpperCase().replace(/^HAPPI\s*/i, "").trim();
+  return growthPlanNames.find((key) => key === raw) || null;
+};
 
-const Header = (props) => {
-  // Prop Destructuring
-  const { navigation } = props;
+const SubscriptionCard = ({ subscription }) => {
+  // State Variables
+  const [expanded, setExpanded] = useState(false);
+
+  const name = subscription.name;
+  const planKey = matchPlanKey(name);
+  const features = planKey ? growthPlanFeatures[planKey] || {} : null;
+  const featureEntries = features ? Object.entries(features) : [];
+  const description =
+    descriptionMap[name] ||
+    happiVoice_constants?.happiVoice_desc ||
+    subscription.description ||
+    "";
+  const price = formatPrice(subscription.regular_price);
+  const validity =
+    subscription.validity ||
+    validityMap[name?.toUpperCase?.()] ||
+    validityMap[planKey] ||
+    "";
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/subscribed_services_background.png")}
-      style={styles.headerContainer}
-      resizeMode="cover"
-    >
-      {/* Sized Box */}
-      <View style={{ height: hp(6) }} />
+    <View style={styles.card}>
+      {/* Top Row: Name + Pricing + Dropdown */}
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setExpanded(!expanded)}
+          style={styles.nameWrap}
+        >
+          <Text style={styles.cardName}>{name}</Text>
+        </TouchableOpacity>
 
-      {/* Drawer Button */}
-      {/* <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => navigation.openDrawer()}
-      >
-        <Feather name="align-left" size={hp(3)} color="black" />
-      </TouchableOpacity> */}
+        {price ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setExpanded(!expanded)}
+            style={styles.priceWrap}
+          >
+            <Text style={styles.price}>{price}</Text>
+          </TouchableOpacity>
+        ) : null}
 
-      {/* Header Content */}
-      <View style={{ alignItems: "center", justifyContent: "center" }}>
-        <Image
-          source={require("../../assets/images/happimynd_logo.png")}
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
-        <Text style={styles.headerTitle}>My Subscribed Services</Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setExpanded(!expanded)}
+        >
+          <Feather
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={hp(2.2)}
+            color="#45434D"
+          />
+        </TouchableOpacity>
       </View>
-    </ImageBackground>
+
+      {/* Expanded Details */}
+      <Collapsible collapsed={!expanded}>
+        <View style={styles.detailsBox}>
+          {featureEntries.length ? (
+            featureEntries.map(([key, item]) => {
+              const { count } = getFeatureValue(item);
+              return (
+                <View key={key} style={styles.featureRow}>
+                  <Image
+                    source={require("../../assets/images/bullet_point.png")}
+                    style={styles.bulletPoint}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.featureLabel}>
+                    {featureLabels[key] || key.replace(/_/g, " ")}
+                    {count > 0 ? (
+                      <Text style={styles.featureValue}>
+                        {" "}
+                        – {count} session{count === 1 ? "" : "s"}
+                      </Text>
+                    ) : null}
+                  </Text>
+                </View>
+              );
+            })
+          ) : description ? (
+            <Text style={styles.description}>{description}</Text>
+          ) : null}
+        </View>
+      </Collapsible>
+
+      {/* Validity Row */}
+      {validity ? (
+        <View style={styles.validityRow}>
+          <Text style={styles.validityText}>
+            Validity: <Text style={styles.validityValue}>{validity}</Text>
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 };
 
@@ -122,6 +162,7 @@ const SubscribedServices = (props) => {
   useEffect(() => {
     fetchSubscriptions();
     screenTrafficAnalytics({ screenName: "Subscribed Services Screen" });
+    return () => {};
   }, []);
 
   const fetchSubscriptions = async () => {
@@ -132,78 +173,8 @@ const SubscribedServices = (props) => {
       console.log("che cthe my suvbscribed - ", mySub);
 
       if (mySub.status === "success") {
-        const subs = mySub.data.map((sub) => {
-          if (sub.name === "HappiLIFE Screening") {
-            return {
-              ...sub,
-              name: "HappiLIFE Awareness Tool",
-              description:
-                "Evaluate your wellbeing on several parameters of emotional and mental health with a unique profile based approach.",
-              screen: "HappiLIFE",
-              subscribed: true,
-            };
-          } else if (sub.name === "HappiLIFE Summary Reading") {
-            //HappiLEARN
-            return {
-              ...sub,
-              name: "HappiLEARN",
-              description:
-                "Enrich yourself with a 24*7 access to 5000+ minutes of curated, well researched self-help content that includes video, audio, blogs and more.",
-              screen: "HappiLEARN",
-              subscribed: true,
-            };
-          } else if (sub.name === "HappiBUDDY") {
-            return {
-              ...sub,
-              description:
-                "Connect with a professional expert buddy in a personal emotional log room that is non-judgemental, anonymous, and 100% confidential.",
-              screen: "HappiBuddyConnect",
-              subscribed: true,
-            };
-          } else if (sub.name === "HappiSELF") {
-            return {
-              ...sub,
-              description:
-                "Self-manage your emotional wellbeing with globally validated, interactive self help tools that include mind soothing content and gamified exercises.",
-              screen: "HappiSELFTab",
-              subscribed: true,
-            };
-          } else if (sub.name === "HappiVOICE (Month)") {
-            return {
-              ...sub,
-              description: happiVoice_constants?.happiVoice_desc,
-              screen: "HappiVoice",
-              subscribed: true,
-            };
-          } else if (sub.name === "HappiVOICE (Year)") {
-            return {
-              ...sub,
-              description: happiVoice_constants?.happiVoice_desc,
-              screen: "HappiVoice",
-              subscribed: true,
-            };
-          } else {
-            return {
-              ...sub,
-              description: "",
-              screen: "",
-              subscribed: false,
-            };
-          }
-        });
-
-        // remove the HappiGUIDE and HappiTALK
-        let removeGuideAndTalk = subs.filter((sub) => {
-          return sub.subscribed === true;
-        });
-
-        // remove the HappiTALK
-        // let removeTalk = removeGuide.filter((sub) => {
-        //   return sub.name !== "HappiTALK";
-        // });
-
         if (!isMounted.current) return;
-        setSubscriptions(removeGuideAndTalk);
+        setSubscriptions(mySub.data || []);
       }
     } catch (err) {
       console.log("Some issue while fetching subscription - ", err);
@@ -213,45 +184,46 @@ const SubscribedServices = (props) => {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} />
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        {/* Sized Box */}
+        <View style={{ height: hp(6) }} />
+
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          <Image
+            source={require("../../assets/images/happimynd_logo.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>My Subscription</Text>
+        </View>
+      </View>
 
       {/* Cards */}
-      <ScrollView>
-        {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
-        {loading ? (
-          <ActivityIndicator size="small" color={colors.loaderColor} />
-        ) : (
-          <View style={styles.bodyContainer}>
-            {subscriptions.length ? (
-              subscriptions.map((subscription) => (
-                <React.Fragment key={subscription.id}>
-                  <SubscriptionCard
-                    navigation={navigation}
-                    subscription={subscription}
-                  />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.bodyContainer}>
+          {/* Sized Box */}
+          <View style={{ height: hp(2.8) }} />
 
-                  {/* Sized Box */}
-                  <View style={{ height: hp(2) }} />
-                </React.Fragment>
-              ))
-            ) : (
-              <Text
-                style={{
-                  fontSize: RFValue(18),
-                  fontFamily: "PoppinsMedium",
-                  textAlign: "center",
-                  color: colors.borderLight,
-                }}
-              >
-                No Subscriptions
-              </Text>
-            )}
-          </View>
-        )}
+          {loading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : subscriptions.length ? (
+            subscriptions.map((subscription) => (
+              <React.Fragment key={subscription.id}>
+                <SubscriptionCard subscription={subscription} />
+                {/* Sized Box */}
+                <View style={{ height: hp(2.5) }} />
+              </React.Fragment>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No Subscriptions</Text>
+          )}
 
-        {/* Sized Box */}
-        <View style={{ height: hp(3) }} />
+          {/* Sized Box */}
+          <View style={{ height: hp(4) }} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -259,25 +231,117 @@ const SubscribedServices = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F8F7FF",
     flex: 1,
   },
   headerContainer: {
     width: wp(100),
-    height: hp(30),
+    height: hp(20),
     paddingHorizontal: wp(4),
+    paddingBottom: hp(1.5),
+    backgroundColor: "#EEE7FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerLogo: {
-    // backgroundColor: "red",
-    width: hp(14),
-    height: hp(14),
+    width: hp(10),
+    height: hp(10),
   },
   headerTitle: {
-    fontSize: RFValue(16),
-    fontFamily: "PoppinsMedium",
+    fontSize: RFValue(18),
+    fontFamily: "PoppinsSemiBold",
+    color: "#111111",
   },
   bodyContainer: {
-    paddingHorizontal: wp(4),
+    paddingHorizontal: wp(3.5),
+  },
+  loaderContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: hp(10),
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E4DFF4",
+    borderRadius: hp(2.7),
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2.6),
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  nameWrap: {
+    flex: 1,
+  },
+  cardName: {
+    fontSize: RFValue(14),
+    fontFamily: "PoppinsSemiBold",
+    color: "#8250F6",
+  },
+  priceWrap: {
+    marginLeft: wp(1),
+  },
+  price: {
+    fontSize: RFValue(16),
+    fontFamily: "PoppinsBold",
+    color: "#8250F6",
+  },
+  validityRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginTop: hp(1.2),
+  },
+  validityText: {
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#4C4A55",
+    flex: 1,
+  },
+  validityValue: {
+    color: "#4C4A55",
+  },
+  detailsBox: {
+    marginTop: hp(1.8),
+    paddingTop: hp(1.8),
+    borderTopWidth: 1,
+    borderTopColor: "#E4DFF4",
+  },
+  description: {
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#4C4A55",
+    lineHeight: hp(2.2),
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(0.8),
+  },
+  bulletPoint: {
+    width: hp(2),
+    height: hp(2),
+    marginRight: wp(1.5),
+  },
+  featureLabel: {
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#4C4A55",
+    flex: 1,
+  },
+  featureValue: {
+    fontSize: RFValue(12),
+    fontFamily: "PoppinsSemiBold",
+    color: "#8250F6",
+  },
+  emptyText: {
+    fontSize: RFValue(18),
+    fontFamily: "PoppinsMedium",
+    textAlign: "center",
+    color: colors.borderLight,
+    marginTop: hp(10),
   },
 });
 

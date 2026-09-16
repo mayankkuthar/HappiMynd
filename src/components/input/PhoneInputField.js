@@ -32,7 +32,9 @@ const PhoneInputField = (props) => {
       <Text style={styles.text}>{title}</Text>
       <View style={styles.inputBox}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontSize: RFValue(12), fontFamily: "Poppins" }}>
+          <Text
+            style={{ fontSize: RFValue(12), fontFamily: "Poppins", color: "#999" }}
+          >
             +91
           </Text>
         </View>
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderRadius: 6,
-    backgroundColor: "#EFFEFE",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: hp(1.5),
     // paddingVertical: hp(0),
     marginBottom: 6,

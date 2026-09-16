@@ -67,15 +67,15 @@ const styles = StyleSheet.create({
   },
   subscribed: {
     borderRadius: 10,
-    shadowColor: "#00e6b8",
+    shadowColor: colors.pageTitle,
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8, // For Android
-    backgroundColor: "#00e6b8",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+    backgroundColor: "transparent",
   },
   buttonContainer: {
     borderRadius: 10,

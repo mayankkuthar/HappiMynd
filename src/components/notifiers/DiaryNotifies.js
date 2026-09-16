@@ -22,7 +22,7 @@ import { colors } from "../../assets/constants";
 const HAPPILIFE_ASSESSMENT = "You have pending HappiLIFE assessment";
 const HAPPILIFE_ASSESSMENT_DOWNLOAD =
   "Subscribe or verify to get HappiLIFE assessment report";
-const HAPPIGUIDE = "Try summary illustration by HappiGUIDE";
+const HAPPIGUIDE = "Try summary illustration by SOLV";
 const HAPPILEARN = "Try exclusive content with HappiLEARN";
 const HAPPIBUDDY = "Try reaching out to our experts by HappiBUDDY";
 const HAPPISELF = "Try interactive questions with HappiSELF";

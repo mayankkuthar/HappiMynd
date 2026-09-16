@@ -63,7 +63,7 @@ const Header = (props) => {
             onPress={() => navigation.push("Moods")}
             style={styles.pointsContainer}
           >
-            <Text style={styles.pointsText}>YOUR POINTS</Text>
+            <Text style={styles.pointsText}>HappiPoints</Text>
             <Text
               style={{
                 ...styles.pointsText,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   pointsContainer: {
     position: "absolute",
     right: wp(6),
-    backgroundColor: "#A6E4E6",
+    backgroundColor: "#EEDFFF",
     borderRadius: 10,
     alignItems: "center",
     paddingHorizontal: hp(1),

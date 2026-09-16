@@ -5,16 +5,14 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import Collapsible from "react-native-collapsible";
 import { Entypo } from "@expo/vector-icons";
-import RenderHtml from "react-native-render-html";
 
 // Constatnts
 import { colors } from "../../assets/constants";
@@ -113,70 +111,17 @@ const faqData = [
   },
 ];
 
-const Question = (props) => {
-  // Prop Destructuring
-  const { title, content } = props.data;
-
-  // State variables
-  const [isCollapsed, setIsCollapsed] = useState(true);
-
-  // Prototype defination to replace multiple characters from String
-  String.prototype.allReplace = function (obj) {
-    var retStr = this;
-    for (var x in obj) {
-      retStr = retStr.replace(new RegExp(x, "g"), obj[x]);
-    }
-    return retStr;
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      style={styles.questionContainer}
-      onPress={() => setIsCollapsed((prevState) => !prevState)}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text style={styles.questionText}>{title}</Text>
-        <TouchableOpacity
-          // style={{ backgroundColor: "red" }}
-          activeOpacity={0.7}
-          onPress={() => setIsCollapsed((prevState) => !prevState)}
-        >
-          <Entypo
-            name={isCollapsed ? "chevron-down" : "chevron-up"}
-            size={hp(2.5)}
-            color="black"
-          />
-        </TouchableOpacity>
-      </View>
-      <Collapsible collapsed={isCollapsed}>
-        {/* Sized Box */}
-        <View style={{ height: hp(2) }} />
-
-        <Text style={styles.answerText}>
-          {content.allReplace({
-            "<p>": "",
-            "</p>": "",
-            '<a href="mailto:support@happimynd.com">': "",
-            '<a href="mailto:contactus@happimynd.com">': "",
-            "</a>": "",
-            "&nbsp;": "",
-            "&amp;": "&",
-          })}
-        </Text>
-        {/* <RenderHtml
-          // contentWidth={wp(100)}
-          source={{ html: content }}
-        /> */}
-      </Collapsible>
-    </TouchableOpacity>
-  );
+// Prototype definition to replace multiple characters from String
+const cleanContent = (content) => {
+  if (typeof content !== "string") return String(content || "");
+  return content
+    .replace(/<p>/g, "")
+    .replace(/<\/p>/g, "")
+    .replace(/<a href="mailto:support@happimynd.com">/g, "")
+    .replace(/<a href="mailto:contactus@happimynd.com">/g, "")
+    .replace(/<\/a>/g, "")
+    .replace(/&nbsp;/g, "")
+    .replace(/&amp;/g, "&");
 };
 
 const FAQ = (props) => {
@@ -187,8 +132,8 @@ const FAQ = (props) => {
   const { getFAQ } = useContext(Hcontext);
 
   // State Variables
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [list, setList] = useState(faqData);
+  const [expandedIndex, setExpandedIndex] = useState(0);
 
   // Mounting
   useEffect(() => {
@@ -197,55 +142,67 @@ const FAQ = (props) => {
 
   // Getting FAQ list from server
   const fetchFAQList = async () => {
-    setLoading(true);
     try {
       const faqList = await getFAQ();
-      // console.log("The fetched FAQ list is - ", faqList);
-
-      if (faqList.status === "success") {
+      if (
+        faqList.status === "success" &&
+        faqList.general_faqs &&
+        faqList.general_faqs.length > 0
+      ) {
         setList(faqList.general_faqs);
       }
     } catch (err) {
       console.log("Some issue while getting FAQ list - ", err);
     }
-    setLoading(false);
+  };
+
+  const toggleItem = (index) => {
+    setExpandedIndex((prev) => (prev === index ? -1 : index));
   };
 
   return (
     <View style={styles.container}>
       <Header navigation={navigation} />
       <ScrollView
-        style={{ paddingHorizontal: wp(6) }}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Sized Box */}
-        <View style={{ height: hp(3) }} />
-
         {/* Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Frequently Asked Questions</Text>
-        </View>
-
-        {/* Sized Box */}
-        <View style={{ height: hp(2) }} />
+        <Text style={styles.title}>Frequently Asked Questions</Text>
 
         {/* Body Section */}
-        {loading ? (
-          <ActivityIndicator size="small" color={colors.loaderColor} />
-        ) : (
-          <View>
-            {list.map((data) => (
-              <View key={data.id}>
-                <Question data={data} />
-                {/* Sized Box */}
-                <View style={{ height: hp(1.5) }} />
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Sized Box */}
-        <View style={{ height: hp(5) }} />
+        <View>
+          {list.map((data, index) => (
+            <View key={data.id}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.questionContainer}
+                onPress={() => toggleItem(index)}
+              >
+                <View style={styles.questionRow}>
+                  <Text style={styles.questionText}>
+                    {data.question || data.title}
+                  </Text>
+                  <Entypo
+                    name={expandedIndex === index ? "chevron-up" : "chevron-down"}
+                    size={hp(2.5)}
+                    color="#4A4A4A"
+                  />
+                </View>
+                <Collapsible collapsed={expandedIndex !== index}>
+                  {/* Sized Box */}
+                  <View style={{ height: hp(1.5) }} />
+                  <Text style={styles.answerText}>
+                    {cleanContent(data.answer || data.content)}
+                  </Text>
+                </Collapsible>
+              </TouchableOpacity>
+              {/* Sized Box */}
+              <View style={{ height: hp(1.8) }} />
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -256,31 +213,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
   },
-  titleSection: {
-    // backgroundColor: "red",
+  scroll: {
+    paddingHorizontal: wp(4.2),
+  },
+  scrollContent: {
+    paddingBottom: hp(12),
   },
   title: {
     fontSize: RFValue(26),
     fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
+    color: colors.primaryText,
+    marginTop: hp(2.5),
+    marginBottom: hp(2),
   },
   questionContainer: {
-    backgroundColor: "#E9FCFB",
+    backgroundColor: "#EEE8FF",
     borderWidth: 1,
-    borderColor: "#DDF1F0",
-    borderRadius: 4,
-    paddingVertical: hp(1),
-    paddingHorizontal: hp(1.5),
+    borderColor: "#D3D0DD",
+    borderRadius: hp(2.6),
+    paddingHorizontal: wp(5.7),
+    paddingVertical: hp(3),
+  },
+  questionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   questionText: {
-    fontSize: RFValue(12),
-    fontFamily: "Poppins",
-    color: colors.borderDark,
-    textAlign: "justify",
+    fontSize: RFValue(15),
+    fontFamily: "PoppinsSemiBold",
+    color: "#111111",
+    flex: 1,
+    paddingRight: wp(2),
   },
   answerText: {
-    fontSize: RFValue(12),
-    fontFamily: "PoppinsMedium",
+    fontSize: RFValue(14),
+    fontFamily: "Poppins",
+    color: "#606060",
     lineHeight: hp(3),
     textAlign: "justify",
   },

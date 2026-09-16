@@ -581,7 +581,7 @@ const ChatHome = (props) => {
                   onPress={() => {
                     setSelectedTools(item.text)
                     if (item?.id == 1) {
-                      navigation.navigate("HappiGUIDE")
+                      navigation.navigate("SOLV")
                     }
                     if (item?.id == 2) {
                       navigation.navigate("HappiBUDDY")

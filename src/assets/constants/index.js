@@ -1,16 +1,18 @@
 export const colors = {
-  background: "#E8FDFE",        // Light purple background
-  backgroundLight: "#EFFFFE",   // Even lighter purple
-  backgroundModal: "#F3FFFE",   // Modal background
-  borderDim: "#E2E3E3",         // Neutral border
-  borderLight: "#707070",       // Neutral dark border
-  borderDark: "#3B3B3B",        // Very dark border
-  primary: "#A3E8E5",           // Light purple (primary action)
-  primaryText: "#339298",       // Medium purple (text)
-  pageTitle: "#59C5CC",         // Main purple (page titles)
-  loaderColor: "#28666B",       // Dark purple (loader)
-  receiverBubble: "#58C4CB",    // Medium-light purple (chat)
-  senderBubble: "#A3E8E5",      // Light purple (chat)
+  background: "#F9F7FF",        // Page Background
+  backgroundLight: "#EFEBFF",   // Secondary surface (light)
+  backgroundModal: "#FFFFFF",   // Card / Popover background
+  borderDim: "#E8E6F4",         // Input / divider border
+  borderLight: "#68657F",       // Muted foreground (labels / subtle text)
+  borderDark: "#191928",        // Foreground (primary text)
+  primary: "#8E66F1",           // Primary (buttons, active states, links)
+  primaryText: "#31205A",       // Accent foreground (emphasized text on light)
+  pageTitle: "#8453ED",         // Lavender Deep (brand / page titles)
+  loaderColor: "#7540EC",       // Brand (loader / spinners)
+  receiverBubble: "#EFEBFF",    // Secondary (chat incoming bubble)
+  senderBubble: "#E5DFFF",      // Accent (chat outgoing bubble)
+  lightGray: "#68657F",         // Muted foreground (placeholder / helper)
+  borderBlack: "#191928",       // Foreground (very dark text)
 };
 
 
@@ -173,7 +175,7 @@ export const chatBotSelfMngOptions = [
 export const chatBotGuidedSupportOptions = [
   {
     "senderId": 0,
-    "text": "Get the right guidance to start your emotional wellbeing journey through HappiLIFE & HappiGUIDE.",
+    "text": "Get the right guidance to start your emotional wellbeing journey through HappiLIFE & SOLV.",
     "id": 1
   },
   {

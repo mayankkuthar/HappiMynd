@@ -396,10 +396,10 @@ const ServiceSection = (props) => {
             pressHandler={() => navigation.push("HappiLIFE")}
           />
           <CategoryButton
-            text="HappiGUIDE"
+            text="SOLV"
             icon={require("../../assets/images/category_report.png")}
             iconSize={4}
-            pressHandler={() => navigation.push("HappiGUIDE")}
+            pressHandler={() => navigation.push("SOLV")}
           />
           <CategoryButton
             text="HappiLEARN"

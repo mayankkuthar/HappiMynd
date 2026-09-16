@@ -12,7 +12,7 @@ import { colors } from "../../assets/constants";
 
 const NotificationCard = (props) => {
   // Prop Destructuring
-  const { id = "", message = "", created_at = "", read = 0 } = props.data;
+  const { id = "", message = "", created_at = "", is_read = 0 } = props.data;
 
   const readNotificationhandler = (id) => {};
 
@@ -30,7 +30,7 @@ const NotificationCard = (props) => {
         <View
           style={{
             ...styles.activeDot,
-            backgroundColor: read ? colors.pageTitle : "#C6C6C6",
+            backgroundColor: is_read ? "#C6C6C6" : "#A454FE",
           }}
         />
       </View>
@@ -55,18 +55,18 @@ const NotificationCard = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F7FCFC",
+    backgroundColor: "#FFFFFF",
     height: hp(12),
     width: wp(80),
-    borderRadius: 10,
+    borderRadius: 24,
     paddingVertical: hp(1.5),
     paddingHorizontal: hp(2),
     flexDirection: "row",
-    shadowColor: colors.borderLight,
-    shadowOffset: { width: 1, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: hp(1.5),
-    // elevation: 10,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
   },
   activeDot: {
     width: hp(1),

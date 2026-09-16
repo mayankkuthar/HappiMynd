@@ -70,7 +70,7 @@ const ReportReadingBook = (props) => {
       <ComingSoon showModal={showComingSoon} setShowModal={setShowComingSoon} />
 
       <ScrollView style={{ paddingHorizontal: wp(10) }}>
-        <Text style={styles.pageTitle}>HappiGUIDE</Text>
+        <Text style={styles.pageTitle}>SOLV</Text>
 
         {/* Sized Box */}
         <View style={{ height: hp(4) }} />

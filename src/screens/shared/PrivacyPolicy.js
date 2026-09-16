@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,7 +10,9 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
+import Collapsible from "react-native-collapsible";
+import { Entypo } from "@expo/vector-icons";
 
 // Constatnts
 import { colors } from "../../assets/constants";
@@ -29,7 +31,7 @@ const policyContentData = [
     id: 2,
     title: "Definitions",
     description:
-      "Company - “HappiMynd”, “HappiMynd.com”,“Company”, “Firm”, “we”, “our”, “us”, “Service Provider” or similar terminology are all in reference to HappiMynd Professional Services Pvt. Ltd. as a provider of Services for the remainder of this document. User - “Client”, “user”, “you”, “your” or other similar terminology are all in reference to you as the user of the platform as a recipient of our products, Services and resources for the remainder of this document. Platform-“Platform” or similar terminology are all in reference to any mobile app, website, chat bot or web links that the User can employ to access Services provided by the Company. Psychological Wellness Professional -“Psychological Wellness Practitioner”, “Psychological Wellness    Professional”, “Wellness Professional”, “therapist”, “wellness advisor”, “expert”, “doctor”, “consultant” or similar terminology are all in reference to the Psychological Wellness Practitioner.",
+      'Company - “HappiMynd”, “HappiMynd.com”,“Company”, “Firm”, “we”, “our”, “us”, “Service Provider” or similar terminology are all in reference to HappiMynd Professional Services Pvt. Ltd. as a provider of Services for the remainder of this document. User - “Client”, “user”, “you”, “your” or other similar terminology are all in reference to you as the user of the platform as a recipient of our products, Services and resources for the remainder of this document. Platform-“Platform” or similar terminology are all in reference to any mobile app, website, chat bot or web links that the User can employ to access Services provided by the Company. Psychological Wellness Professional -“Psychological Wellness Practitioner”, “Psychological Wellness    Professional”, “Wellness Professional”, “therapist”, “wellness advisor”, “expert”, “doctor”, “consultant” or similar terminology are all in reference to the Psychological Wellness Practitioner.',
   },
   {
     id: 3,
@@ -47,7 +49,7 @@ const policyContentData = [
     id: 4,
     title: "Personal Information",
     description:
-      "To enable you to engage with our Services, we will use personal information about yourself - provided directly to us or to a third party or your organisation - to contact or identify you, such as your name, phone number, emergency contact number, gender, occupation, hometown, personal interests, your email address, reason(s) for cancelling an appointment with a healthcare professional, medical history and any other information that the Wellness Professional might require from you. We also collect information you provide from responses, in-app inputs, assessments or the feedback you send to us. If you communicate with us by email or phone, any information provided in such communication may be collected as personal information (“Personal Information”).The main reason we collect this Personal Information is to provide you a smooth, efficient and customised experience. The collection of Personal Information also enables the user to create an account and profile that can be used to interact with our wellness professionals. You may change some of the information that you provide through your account page at the website or profile details for the mobile application(s).We may use your Personal Information to: Identify and reach you; Resolve service and billing problems via telephone or email. Assist you in scheduling appointments, remind you of upcoming or follow-up appointments, as well as cancelled appointments. Provide you with further information, products and services and newsletters. Better understand users’ needs and interests. Personalise your experience. Run statistical research (such research will only use your information in an anonymous way and cannot be linked back to you) Detect and protect us against error, fraud, and other criminal activity. Make disclosures as may be required under applicable law. Improve our website, mobile application(s) in order to better serve you. Allow us to better service you in responding to your customer service requests. Run a contest, promotion, survey or other site, mobile application feature. Quickly process your transactions. Your information is used by the Wellness Professionals and our app algorithms to better assess your condition and provide you with the most suitable counselling service or digital experience. Your Personal Information is held safe by the Wellness Professional working with you and not normally shared with other Wellness Professionals. However, there may be certain occasions when HappiMynd and/or Wellness Professionals use third-party tools to tailor the counselling sessions and in-app experience. In such cases, only minimal information as required is shared with others. We are dedicated to maintaining the privacy and integrity of your Personal Information. If you decide at any time that you no longer wish to receive certain communications from us, you can inform us by writing to support@happimynd.com.",
+      "To enable you to engage with our Services, we will use personal information about yourself - provided directly to us or to a third party or your organisation - to contact or identify you, such as your name, phone number, emergency contact number, gender, occupation, hometown, personal interests, your email address, reason(s) for cancelling an appointment with a healthcare professional, medical history and any other information that the Wellness Professional might require from you. We also collect information you provide from responses, in-app inputs, assessments or the feedback you send to us. If you communicate with us by email or phone, any information provided in such communication may be collected as personal information (“Personal Information”).The main reason we collect this Personal Information is to provide you a smooth, efficient and customised experience. The collection of Personal Information also enables the user to create an account and profile that can be used to interact with our wellness professionals. You may change some of the information that you provide through your account page at the website or profile details for the mobile application(s).We may use your Personal Information to: Identify and reach you; Resolve service and billing problems via telephone or email. Assist you in scheduling appointments, remind you of upcoming or follow-up appointments, as well as cancelled appointments. Provide you with further information, products and services and newsletters. Better understand users’ needs and interests. Personalise your experience. Run statistical research (such research will only use your information in an anonymous way and cannot be linked back to you) Detect and protect us against error, fraud, and other criminal activity. Make disclosures as may be required under applicable law. Improve our website, mobile application(s) in order to better serve you. Allow us to better service you in responding to your customer service requests.",
   },
   {
     id: 4.5,
@@ -117,53 +119,55 @@ const policyContentData = [
   },
 ];
 
-const PolicyContent = (props) => {
-  //Prop Destructuring
-  const { title, description } = props;
-
-  return (
-    <View>
-      <Text style={styles.PolicyTitle}>{title}</Text>
-
-      {/* Sized Box */}
-      <View style={{ height: hp(1) }} />
-
-      <Text style={styles.PolicyDescription}>{description}</Text>
-    </View>
-  );
-};
-
 const PrivacyPolicy = (props) => {
   // Prop Destructuring
   const { navigation } = props;
+
+  // State Variables
+  const [expandedIndex, setExpandedIndex] = useState(0);
+
+  const toggleItem = (index) => {
+    setExpandedIndex((prev) => (prev === index ? -1 : index));
+  };
+
   return (
     <View style={styles.container}>
       <Header navigation={navigation} />
       <ScrollView
-        style={{ paddingHorizontal: wp(6) }}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Sized Box */}
-        <View style={{ height: hp(3) }} />
-
         {/* Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Privacy Policy</Text>
-        </View>
-
-        {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
+        <Text style={styles.title}>Privacy Policy</Text>
 
         {/* Body Section */}
         <View>
-          {policyContentData.map((data) => (
+          {policyContentData.map((data, index) => (
             <View key={data.id}>
-              <PolicyContent
-                title={data.title}
-                description={data.description}
-              />
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.accordionContainer}
+                onPress={() => toggleItem(index)}
+              >
+                <View style={styles.accordionRow}>
+                  <Text style={styles.accordionTitle}>{data.title}</Text>
+                  <Entypo
+                    name={expandedIndex === index ? "chevron-up" : "chevron-down"}
+                    size={hp(2.5)}
+                    color="#4A4A4A"
+                  />
+                </View>
+                <Collapsible collapsed={expandedIndex !== index}>
+                  {/* Sized Box */}
+                  <View style={{ height: hp(1.6) }} />
+                  <Text style={styles.accordionDescription}>
+                    {data.description}
+                  </Text>
+                </Collapsible>
+              </TouchableOpacity>
               {/* Sized Box */}
-              <View style={{ height: hp(4) }} />
+              <View style={{ height: hp(2.6) }} />
             </View>
           ))}
         </View>
@@ -177,22 +181,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
   },
-  titleSection: {
-    // backgroundColor: "red",
+  scroll: {
+    paddingHorizontal: wp(3.8),
+  },
+  scrollContent: {
+    paddingBottom: hp(12),
   },
   title: {
     fontSize: RFValue(26),
     fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
+    color: colors.primaryText,
+    marginTop: hp(3.2),
+    marginBottom: hp(3.9),
   },
-  PolicyTitle: {
-    fontSize: RFValue(22),
-    fontFamily: "PoppinsMedium",
+  accordionContainer: {
+    backgroundColor: "#EEE8FF",
+    borderWidth: 1,
+    borderColor: "#D3D0DD",
+    borderRadius: hp(2.6),
+    paddingHorizontal: wp(5.7),
+    paddingVertical: hp(3),
   },
-  PolicyDescription: {
-    fontSize: RFValue(12),
+  accordionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  accordionTitle: {
+    fontSize: RFValue(18),
+    fontFamily: "PoppinsSemiBold",
+    color: "#111111",
+    flex: 1,
+    paddingRight: wp(2),
+  },
+  accordionDescription: {
+    fontSize: RFValue(14),
     fontFamily: "Poppins",
-    color: colors.borderDark,
+    color: "#606060",
     lineHeight: hp(3),
     textAlign: "justify",
   },

@@ -191,7 +191,7 @@ const HappiGUIDE = (props) => {
         <View style={{ height: hp(3) }} />
 
         <View>
-          <Text style={styles.title}>HappiGUIDE</Text>
+          <Text style={styles.title}>SOLV</Text>
 
           {/* Sized Box */}
           <View style={{ height: hp(2) }} />
@@ -232,7 +232,7 @@ const HappiGUIDE = (props) => {
 
           {!session?.id ? (
             <Button
-              text="Get HappiGUIDE Now"
+              text="Get SOLV Now"
               loading={loadingButton}
               pressHandler={() => {
                 if (authState.user) {

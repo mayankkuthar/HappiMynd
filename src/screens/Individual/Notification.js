@@ -91,16 +91,14 @@ const Notification = (props) => {
       <View style={{ height: hp(2) }} />
 
       <View style={{ paddingHorizontal: wp(10), flex: 1 }}>
-        <View style={{ flex: 1 }}>
-          {/* Title Section */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={styles.title}>Notifications</Text>
+          <View style={{ flex: 1 }}>
+            {/* Title Section */}
+            <View
+              style={{
+                alignItems: "center",
+              }}
+            >
+              <Text style={styles.title}>Notifications</Text>
             {/* <TouchableOpacity
               style={styles.actionButton}
               activeOpacity={0.7}

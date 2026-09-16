@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,8 +11,9 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { FontAwesome } from "@expo/vector-icons";
 
 // Constatnts
 import { colors } from "../../assets/constants";
@@ -23,13 +24,14 @@ import Header from "../../components/common/Header";
 import Button from "../../components/buttons/Button";
 import DropDown from "../../components/input/DropDown";
 
+const totalStars = [1, 2, 3, 4, 5];
+
 const Feedback = (props) => {
   // Prop Destructuring
   const { navigation } = props;
 
   // Context Variables
   const {
-    getEmojiList,
     submitRating,
     submitFeedback,
     snackDispatch,
@@ -37,51 +39,19 @@ const Feedback = (props) => {
   } = useContext(Hcontext);
 
   // State variables
-  const [emojiList, setEmojiList] = useState([]);
-  const [selectedMood, setSelectedMood] = useState(null);
+  const [rating, setRating] = useState(0);
   const [selectedReason, setSelectedReason] = useState("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Mounting
-  useEffect(() => {
-    fetchEmojiList();
-  }, []);
-
-  const fetchEmojiList = async () => {
-    setLoading(true);
-    try {
-      const emojis = await getEmojiList();
-
-      console.log("chec kthe emolji list - ", emojis);
-
-      if (emojis.status === "success") {
-        // setEmojiList(
-        //   emojis.list.map((e) => {
-        //     if (e.id == 1) return { ...e, name: "Delighted" };
-        //     else if (e.id == 2) return { ...e, name: "Happy" };
-        //     else if (e.id == 3) return { ...e, name: "Not Happy" };
-        //     else if (e.id == 4) return { ...e, name: "Somewhat \n Happy" };
-        //     else if (e.id == 5) return { ...e, name: "Very Happy" };
-        //     else return e;
-        //   })
-        // );
-        setEmojiList(emojis.list);
-      }
-    } catch (err) {
-      console.log("Some issuw while fetching the emojis - ", err);
-    }
-    setLoading(false);
-  };
-
   const feedbackSubmitHandler = async () => {
     setLoading(true);
     try {
-      if (!selectedMood) {
+      if (!rating) {
         setLoading(false);
         return snackDispatch({
           type: "SHOW_SNACK",
-          payload: "Please select a mood",
+          payload: "Please select a rating",
         });
       }
       if (!comment) {
@@ -101,7 +71,7 @@ const Feedback = (props) => {
         ratingRes = await submitOpinionAfterSession({
           module: props?.route?.params?.module,
           sessionId: props?.route?.params?.sessionId,
-          emojiId: selectedMood,
+          emojiId: rating,
           reason: selectedReason?.name,
           comments: comment,
         });
@@ -110,12 +80,12 @@ const Feedback = (props) => {
 
       if (props?.route?.name === "Rate") {
         ratingRes = await submitRating({
-          id: selectedMood,
+          id: rating,
           review: comment,
         });
       } else if (props?.route?.name === "Feedback") {
         ratingRes = await submitFeedback({
-          id: selectedMood,
+          id: rating,
           review: comment,
         });
       }
@@ -135,7 +105,7 @@ const Feedback = (props) => {
         });
       }
 
-      setSelectedMood(null);
+      setRating(0);
       setComment("");
     } catch (err) {
       console.log("Some issue while submitting feedback - ", err);
@@ -143,17 +113,16 @@ const Feedback = (props) => {
     setLoading(false);
   };
 
-  console.log("CHeck teh feedback props - ", props);
-
   return (
     <View style={styles.container}>
       <Header navigation={navigation} showBack={props.route.params?.showBack} />
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ paddingHorizontal: wp(10) }}>
-          {/* Sized Box */}
-          <View style={{ height: hp(3) }} />
 
-          {/* Hero Section */}
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: wp(3.8), paddingVertical: hp(2.5) }}
+      >
+        <View>
+          {/* Illustration */}
           <View style={{ alignItems: "center" }}>
             <Image
               source={require("../../assets/images/feedback_hero.png")}
@@ -163,153 +132,158 @@ const Feedback = (props) => {
           </View>
 
           {/* Sized Box */}
-          <View style={{ height: hp(4) }} />
+          <View style={{ height: hp(1.5) }} />
 
-          <View>
-            <Text style={styles.feedbackTitle}>Your opinion matters</Text>
-            {/* Sized Box */}
-            <View style={{ height: hp(2) }} />
-            <Text style={styles.feedbackDescription}>
-              Please Rate your Experience
-            </Text>
+          {/* Heading */}
+          <Text style={styles.feedbackTitle}>Your Opinion Matters</Text>
 
-            {/* Sized Box */}
-            <View style={{ height: hp(2) }} />
+          {/* Sized Box */}
+          <View style={{ height: hp(2.5) }} />
 
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-around" }}
-            >
-              {emojiList.length
-                ? emojiList.map((emoji) => (
-                    <TouchableOpacity
-                      key={emoji.id}
-                      activeOpacity={1}
-                      onPress={() => setSelectedMood(emoji.id)}
-                      style={styles.feedbackButton}
-                    >
-                      <Image
-                        source={{ uri: emoji.image }}
-                        resizeMode="contain"
-                        style={styles.feedbackFace}
-                      />
-                      {/* Sized Box */}
-                      <View style={{ height: hp(1) }} />
-                      <Text
-                        style={{
-                          ...styles.faceText,
-                          color:
-                            selectedMood === emoji.id
-                              ? colors.primaryText
-                              : "#000",
-                          fontFamily:
-                            selectedMood === emoji.id
-                              ? "PoppinsSemiBold"
-                              : "Poppins",
-                        }}
-                      >
-                        {emoji.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                : null}
-            </View>
+          {/* Rating */}
+          <Text style={styles.feedbackDescription}>
+            Please Rate Your Experience
+          </Text>
 
-            {/* Sized Box */}
-            <View style={{ height: hp(2) }} />
+          {/* Sized Box */}
+          <View style={{ height: hp(1.5) }} />
 
-            {props?.route?.params?.module === "guide" ||
-              (props?.route?.params?.module === "talk" && (
-                <View style={{ width: wp(80) }}>
-                  <DropDown
-                    title="Select Reason"
-                    placeHolder="Select status"
-                    data={[
-                      { id: 1, name: "Very insightful, will book again" },
-                      { id: 2, name: "Session was helpful" },
-                      { id: 3, name: "Session was not helpful" },
-                      { id: 4, name: "Please change the therapist" },
-                      { id: 5, name: "Therapist did not show up" },
-                    ]}
-                    setSelectedData={setSelectedReason}
-                  />
-                </View>
-              ))}
-
-            {/* Sized Box */}
-            <View style={{ height: hp(2) }} />
-
-            <Text style={styles.feedbackDescription}>Additional comment</Text>
-
-            {/* Sized Box */}
-            <View style={{ height: hp(2) }} />
-
-            <TextInput
-              multiline={true}
-              // numberOfLines={4}
-              style={styles.feedbackComment}
-              placeholder="Type your Comment here . . . . . . ."
-              value={comment}
-              onChangeText={(text) => setComment(text)}
-            />
-
-            {/* Sized Box */}
-            <View style={{ height: hp(3) }} />
-
-            <Button
-              text="Submit"
-              loading={loading}
-              pressHandler={feedbackSubmitHandler}
-            />
+          <View style={styles.starRow}>
+            {totalStars.map((star) => (
+              <TouchableOpacity
+                key={star}
+                activeOpacity={0.7}
+                onPress={() => setRating(star)}
+              >
+                <FontAwesome
+                  name={star <= rating ? "star" : "star-o"}
+                  size={hp(3.5)}
+                  color={star <= rating ? "#9747FF" : "#111111"}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
+
+          {/* Sized Box */}
+          <View style={{ height: hp(2.5) }} />
+
+          {props?.route?.params?.module === "guide" ||
+            props?.route?.params?.module === "talk" ? (
+              <View>
+                <DropDown
+                  title="Select Reason"
+                  placeHolder="Select status"
+                  data={[
+                    { id: 1, name: "Very insightful, will book again" },
+                    { id: 2, name: "Session was helpful" },
+                    { id: 3, name: "Session was not helpful" },
+                    { id: 4, name: "Please change the therapist" },
+                    { id: 5, name: "Therapist did not show up" },
+                  ]}
+                  setSelectedData={setSelectedReason}
+                />
+
+                {/* Sized Box */}
+                <View style={{ height: hp(2) }} />
+              </View>
+            ) : null}
+
+          {/* Sized Box */}
+          <View style={{ height: hp(2.5) }} />
+
+          {/* Comment */}
+          <Text style={styles.feedbackDescription}>
+            Additional Comment
+          </Text>
+
+          {/* Sized Box */}
+          <View style={{ height: hp(1.5) }} />
+
+          <TextInput
+            multiline={true}
+            style={styles.feedbackComment}
+            placeholder="Type your comment here . . . . . ."
+            placeholderTextColor="#666666"
+            value={comment}
+            onChangeText={(text) => setComment(text)}
+            textAlignVertical="top"
+          />
+
+          {/* Sized Box */}
+          <View style={{ height: hp(3) }} />
         </View>
-        {/* Sized Box */}
-        <View style={{ height: hp(6) }} />
       </KeyboardAwareScrollView>
+
+      <View style={styles.bottomContainer}>
+        <Button
+          text="Submit"
+          loading={loading}
+          pressHandler={feedbackSubmitHandler}
+          containerStyle={styles.submitButton}
+          textStyle={styles.submitText}
+        />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F3EFFD",
     flex: 1,
   },
   feedbackHero: {
-    // backgroundColor: "red",
-    width: wp(90),
-    height: hp(24),
+    width: wp(72),
+    height: hp(22),
   },
   feedbackTitle: {
     fontSize: RFValue(24),
     fontFamily: "PoppinsBold",
+    color: "#111111",
+    textAlign: "left",
   },
   feedbackDescription: {
-    fontSize: RFValue(12),
+    fontSize: RFValue(13),
     fontFamily: "Poppins",
+    color: "#666666",
   },
-  feedbackButton: {
-    // backgroundColor: "yellow",
+  starRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-  },
-  feedbackFace: {
-    // backgroundColor: "red",
-    width: hp(6),
-    height: hp(4),
+    paddingHorizontal: wp(2),
   },
   feedbackComment: {
-    backgroundColor: "#fff",
-    paddingHorizontal: hp(2),
-    paddingVertical: hp(2),
-    borderRadius: 4,
-    height: hp(14),
-    fontSize: RFValue(12),
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  faceText: {
-    fontSize: RFValue(8),
+    borderColor: "#D6D6D6",
+    borderRadius: hp(2.5),
+    minHeight: hp(14),
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2.5),
+    fontSize: RFValue(13),
     fontFamily: "Poppins",
-    textAlign: "center",
+    color: "#222222",
+  },
+  submitButton: {
+    backgroundColor: "#E6DEFF",
+    height: hp(4.7),
+    borderRadius: hp(2.3),
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitText: {
+    color: "#222222",
+    fontFamily: "PoppinsSemiBold",
+  },
+  bottomContainer: {
+    paddingHorizontal: wp(3.8),
+    paddingBottom: hp(4),
+    paddingTop: hp(1.5),
   },
 });
 

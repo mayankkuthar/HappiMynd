@@ -22,18 +22,20 @@ const Button = (props) => {
     pressHandler,
     loading = false,
     disabled = false,
+    containerStyle = null,
+    textStyle = null,
   } = props;
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={pressHandler}
-      style={{ ...styles.buttonContainer, opacity: disabled ? 0.5 : 1 }}
+      style={{ ...styles.buttonContainer, opacity: disabled ? 0.5 : 1, ...containerStyle }}
       disabled={loading || disabled}
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.loaderColor} />
       ) : (
-        <Text style={styles.buttonText}>{text}</Text>
+        <Text style={[styles.buttonText, textStyle]}>{text}</Text>
       )}
     </TouchableOpacity>
   );

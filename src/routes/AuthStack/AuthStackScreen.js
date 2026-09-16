@@ -70,7 +70,7 @@ const AuthStackScreen = ({ navigation, route }) => {
       />
       <AuthStack.Screen
         options={{ headerShown: false }}
-        name="HappiGUIDE"
+        name="SOLV"
         component={HappiGUIDE}
       />
       <AuthStack.Screen

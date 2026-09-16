@@ -1,17 +1,18 @@
 import React from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import Modal from "react-native-modal";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-
-// Constants
-import { colors } from "../../assets/constants";
-
-// Components
-import InputField from "../../components/input/InputField";
+import { RFValue } from "react-native-responsive-fontsize";
 
 const CouponModal = (props) => {
   // Prop Destructuring
@@ -30,7 +31,7 @@ const CouponModal = (props) => {
       onBackButtonPress={() => setShowModal(false)}
       onBackdropPress={() => setShowModal(false)}
     >
-      <View style={styles.container}>
+      <View style={styles.mainPanel}>
         <Image
           source={require("../../assets/images/coupon_hero.png")}
           style={styles.heroImage}
@@ -38,77 +39,94 @@ const CouponModal = (props) => {
         />
 
         {/* Sized Box */}
-        <View style={{ height: hp(1) }} />
+        <View style={{ height: hp(2) }} />
 
-        <InputField
-          placeHolder="Enter Coupon Code"
-          value={value}
-          onChangeText={(text) => setValue(text)}
-        />
+        <View style={styles.inputBox}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Coupon Code"
+            placeholderTextColor="#A3A3A3"
+            value={value}
+            onChangeText={(text) => setValue(text)}
+            autoCapitalize="none"
+          />
+        </View>
 
         {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
         <TouchableOpacity
           disabled={isCouponApplied}
-          style={{ ...styles.modalButton, opacity: isCouponApplied ? 0.3 : 1 }}
+          style={{
+            ...styles.modalButton,
+            opacity: isCouponApplied ? 0.3 : 1,
+            backgroundColor: "#EAD5FF",
+          }}
           onPress={handleSubmit}
         >
           <Text style={styles.modalButtonText}>Apply</Text>
         </TouchableOpacity>
+
         {/* Sized Box */}
         <View style={{ height: hp(1.2) }} />
+
         <TouchableOpacity
-          style={{
-            ...styles.modalButton,
-            backgroundColor: colors.backgroundModal,
-            borderWidth: 1,
-            borderColor: colors.pageTitle,
-          }}
+          style={{ ...styles.modalButton, ...styles.cancelButton }}
           onPress={() => {
             setShowModal(false);
           }}
         >
-          <Text style={{ ...styles.modalButtonText, color: colors.pageTitle }}>
-            Cancel
-          </Text>
+          <Text style={styles.modalButtonText}>Cancel</Text>
         </TouchableOpacity>
       </View>
     </Modal>
   );
 };
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.backgroundModal,
-    width: wp(80),
-    // height: hp(20),
-    alignSelf: "center",
-    borderRadius: 6,
+  mainPanel: {
+    backgroundColor: "#F3F0FF",
+    borderRadius: 20,
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(5),
+    alignSelf: "stretch",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: hp(2),
-    paddingHorizontal: hp(2),
   },
   heroImage: {
-    // backgroundColor: "red",
     width: wp(50),
     height: hp(20),
   },
-  modalText: {
-    fontSize: RFValue(12),
+  inputBox: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D6D6D6",
+    borderWidth: 2,
+    borderRadius: 20,
+    height: hp(6),
+    justifyContent: "center",
+    paddingHorizontal: wp(4),
+  },
+  input: {
+    fontSize: RFValue(13),
+    color: "#111111",
     fontFamily: "Poppins",
-    textAlign: "center",
   },
   modalButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#EAD5FF",
     paddingVertical: hp(1.5),
     width: "100%",
-    borderRadius: hp(100),
+    borderRadius: hp(50),
+  },
+  cancelButton: {
+    backgroundColor: "#F3F0FF",
+    borderColor: "#111111",
+    borderWidth: 2,
   },
   modalButtonText: {
     textAlign: "center",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: "#111111",
   },
 });
 

@@ -88,11 +88,11 @@ const ExploreServicesStackScreen = ({ navigation, route }) => {
         name="HappiSPACE"
         component={HappiSPACE}
       />
-      {/* <ExploreServicesStack.Screen
+      <ExploreServicesStack.Screen
         options={{ headerShown: false }}
         name="SubscribedServices"
         component={SubscribedServices}
-      /> */}
+      />
       {/* <ExploreServicesStack.Screen
         options={{ headerShown: false }}
         name="HappiLIFEScreening"
@@ -185,7 +185,7 @@ const ExploreServicesStackScreen = ({ navigation, route }) => {
       />
       <ExploreServicesStack.Screen
         options={{ headerShown: false }}
-        name="HappiGUIDE"
+        name="SOLV"
         component={HappiGUIDE}
       />
       <ExploreServicesStack.Screen

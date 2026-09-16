@@ -618,17 +618,28 @@ export const Hprovider = (props) => {
     }
   };
 
+  const getPackages = async () => {
+    try {
+      const res = await apiClient.get("/api/v1/packages");
+      return res.data;
+    } catch (err) {
+      console.log("Get packages error:", err);
+      throw err;
+    }
+  };
+
   const payments = async ({ id, amount, couponId = 0 }) => {
   try {
-    const endpoint =
-      amount && Number(amount) > 0
-        ? "/api/v1/payment"
-        : "/api/v1/avail-free-services";
+    const isFree = !(amount && Number(amount) > 0);
+    const endpoint = isFree
+      ? "/api/v1/avail-free-services"
+      : "/api/v1/payment";
 
     const res = await apiClient.post(endpoint, {
       plan_id: id,
-      amount,
-      coupon_id: couponId,
+      ...(isFree
+        ? { coupen_id: couponId }
+        : { amount, coupon_id: couponId }),
     });
 
     return res.data;
@@ -1502,6 +1513,7 @@ export const Hprovider = (props) => {
         likePost,
         unlikePost,
         getBundles,
+        getPackages,
         payments,
         getSubscriptions,
         applyCoupon,

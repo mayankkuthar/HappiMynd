@@ -333,7 +333,7 @@ const HomeStackScreen = ({ navigation, route }) => {
       />
       <HomeStack.Screen
         options={{ headerShown: false }}
-        name="HappiGUIDE"
+        name="SOLV"
         component={HappiGUIDE}
       />
       <HomeStack.Screen

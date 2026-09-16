@@ -25,6 +25,7 @@ import Rate from "../../screens/shared/Rate";
 import Whatsapp from "../../screens/Individual/Whatsapp";
 import Terms from "../../screens/shared/Terms";
 import Feedback from "../../screens/shared/Feedback";
+import HappiPointsScreen from "../../screens/shared/HappiPointsScreen";
 import Moods from "../../screens/shared/Moods";
 import OfferUpdates from "../../screens/shared/OfferUpdates";
 import SettingStackScreen from "../Individual/SettingStackScreen";
@@ -43,6 +44,12 @@ const DrawerNavigation = () => {
     <Drawer.Navigator
       initialRouteName="HomeTab"
       drawerContent={(props) => <CustomDrawer {...props} />}
+      screenOptions={{
+        drawerActiveBackgroundColor: "#E0D3FF",
+        drawerActiveTintColor: "#31205A",
+        drawerInactiveTintColor: "#31205A",
+        drawerStyle: { backgroundColor: "#EDE6FF" },
+      }}
     >
       <Drawer.Screen
         options={{
@@ -61,6 +68,23 @@ const DrawerNavigation = () => {
         name="HomeTab"
         component={TabNavigation}
         initialParams={{ screen: "About" }}
+      />
+      <Drawer.Screen
+        options={{
+          headerShown: false,
+          drawerIcon: (color) => (
+            <Image
+              style={styles.icon}
+              source={require("../../assets/images/HappiPOINTS.png")}
+              resizeMode="contain"
+            />
+          ),
+          drawerLabel: (color, focused) => (
+            <Text style={styles.text}>HappiPOINTS</Text>
+          ),
+        }}
+        name="HappiPoints"
+        component={HappiPointsScreen}
       />
       <Drawer.Screen
         options={{
@@ -216,7 +240,7 @@ const DrawerNavigation = () => {
         name="Terms"
         component={Terms}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         options={{
           headerShown: false,
           drawerIcon: (color) => (
@@ -233,7 +257,7 @@ const DrawerNavigation = () => {
         name="Feedback"
         component={Feedback}
         // component={() => <Feedback screenType="Feedback" />}
-      />
+      /> */}
       <Drawer.Screen
         options={{
           headerShown: false,

@@ -19,10 +19,14 @@ const DropDown = (props) => {
     data = [],
     setSelectedData,
     search = null,
+    labelStyle = null,
+    containerStyle = null,
+    containerTextStyle = null,
+    dropDownContainerStyle = null,
   } = props;
   return (
     <View>
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, labelStyle]}>{title}</Text>
       <SelectDropdown
         data={data.map((item) => item.name)}
         onSelect={(selectedItem, index) => {
@@ -40,9 +44,9 @@ const DropDown = (props) => {
           return item;
         }}
         defaultButtonText={placeHolder}
-        buttonStyle={styles.container}
-        buttonTextStyle={styles.containerText}
-        dropdownStyle={styles.dropDownContainer}
+        buttonStyle={{ ...styles.container, ...containerStyle }}
+        buttonTextStyle={{ ...styles.containerText, ...containerTextStyle }}
+        dropdownStyle={{ ...styles.dropDownContainer, ...dropDownContainerStyle }}
         rowTextStyle={styles.rowText}
         renderDropdownIcon={() => (
           <FontAwesome5 name="chevron-down" size={hp(2)} color="black" />

@@ -24,18 +24,22 @@ const TextArea = (props) => {
     placeHolder = "",
     onChangeText = () => {},
     value = "",
+    labelStyle = null,
+    textAreaStyle = null,
+    placeholderColor = null,
   } = props;
   return (
     <View style={{ width: "100%" }}>
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, labelStyle]}>{title}</Text>
 
       <TextInput
-        style={styles.textArea}
+        style={[styles.textArea, textAreaStyle]}
         numberOfLines={10}
         multiline={true}
         onChangeText={onChangeText}
         value={value}
         placeholder={placeHolder}
+        placeholderTextColor={placeholderColor}
       />
     </View>
   );

@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsSemiBold",
   },
   editButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E9D5FF",
     height: hp(3.5),
     paddingHorizontal: wp(6),
     alignItems: "center",

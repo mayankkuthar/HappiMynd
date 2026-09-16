@@ -5,7 +5,6 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Alert,
   Share,
   Platform,
   Linking,
@@ -23,7 +22,6 @@ import {
   AntDesign,
   Entypo,
 } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -32,6 +30,7 @@ import { Hcontext } from "../../context/Hcontext";
 // Components
 import Header from "../../components/common/Header";
 import LogoutModal from "../../components/Modals/LogoutModal";
+import DeleteAccountModal from "../../components/Modals/DeleteAccountModal";
 
 const SettingCardButton = (props) => {
   // Prop Destructuring
@@ -60,16 +59,14 @@ const Setting = (props) => {
   // COntext Varaibles
   const {
     authState,
-    authDispatch,
     whiteLabelState,
-    deleteAccount,
-    userLogout,
     refferalCode,
     screenTrafficAnalytics,
   } = useContext(Hcontext);
 
   // State Variables
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Mounting
   useEffect(() => {
@@ -80,27 +77,27 @@ const Setting = (props) => {
     {
       id: 0,
       name: "Profile",
-      icon: <AntDesign name="user" size={hp(2.5)} color="#52B0AC" />,
+      icon: <AntDesign name="user" size={hp(2.5)} color="#A454FE" />,
       pressHandler: () => navigation.navigate("Profile"),
     },
     {
       id: 1,
       name: "Change Password",
-      icon: <Feather name="lock" size={hp(2.5)} color="#52B0AC" />,
+      icon: <Feather name="lock" size={hp(2.5)} color="#A454FE" />,
       pressHandler: () => navigation.navigate("ChangePassword"),
     },
     {
       id: 2,
       name: "Subscribed Services",
       icon: (
-        <MaterialIcons name="subscriptions" size={hp(2.5)} color="#52B0AC" />
+        <MaterialIcons name="subscriptions" size={hp(2.5)} color="#A454FE" />
       ),
       pressHandler: () => navigation.navigate("SubscribedServices"),
     },
     {
       id: 3,
       name: "Explore Services",
-      icon: <FontAwesome5 name="compass" size={hp(2.5)} color="#52B0AC" />,
+      icon: <FontAwesome5 name="compass" size={hp(2.5)} color="#A454FE" />,
       pressHandler: () => navigation.navigate("ExploreServices"),
     },
     {
@@ -110,48 +107,15 @@ const Setting = (props) => {
         <MaterialCommunityIcons
           name="delete-outline"
           size={hp(2.5)}
-          color="#52B0AC"
+          color="#A454FE"
         />
       ),
-      pressHandler: async () => {
-        Alert.alert(
-          "Account Deletion",
-          "Are you sure you really want to delete this account ?",
-          [
-            {
-              text: "Cancel",
-              onPress: () => console.log("Cancel Pressed"),
-              style: "cancel",
-            },
-            {
-              text: "OK",
-              onPress: async () => {
-                try {
-                  const response = await deleteAccount();
-                  console.log("The account deletion response - ", response);
-                  if (response.status === "success") {
-                    const userRes = await userLogout({
-                      token: authState.user.access_token,
-                    });
-                    await AsyncStorage.removeItem("USER");
-                    authDispatch({ type: "LOGOUT" });
-                  }
-                } catch (err) {
-                  console.log(
-                    "Some issue while account deletion (Settings.js) - ",
-                    err
-                  );
-                }
-              },
-            },
-          ]
-        );
-      },
+      pressHandler: () => setShowDeleteModal(true),
     },
     // {
     //   id: 5,
     //   name: "Recommend to Friends",
-    //   icon: <Entypo name="share" size={hp(2.5)} color="#52B0AC" />,
+    //   icon: <Entypo name="share" size={hp(2.5)} color="#A454FE" />,
     //   pressHandler: async () => {
     //     const { code } = await refferalCode();
     //     let shareObject;
@@ -174,7 +138,7 @@ const Setting = (props) => {
     // {
     //   id: 6,
     //   name: "Rate App",
-    //   icon: <MaterialIcons name="star-rate" size={hp(2.5)} color="#52B0AC" />,
+    //   icon: <MaterialIcons name="star-rate" size={hp(2.5)} color="#A454FE" />,
     //   pressHandler: () => {
     //     let url = "";
     //     if (Platform.OS === "ios")
@@ -188,7 +152,7 @@ const Setting = (props) => {
     {
       id: 7,
       name: "Logout",
-      icon: <Feather name="log-out" size={hp(2.5)} color="#52B0AC" />,
+      icon: <Feather name="log-out" size={hp(2.5)} color="#A454FE" />,
       pressHandler: () => setShowLogoutModal(true),
     },
   ];
@@ -200,6 +164,11 @@ const Setting = (props) => {
       <LogoutModal
         showModal={showLogoutModal}
         setShowModal={setShowLogoutModal}
+      />
+
+      <DeleteAccountModal
+        showModal={showDeleteModal}
+        setShowModal={setShowDeleteModal}
       />
 
       {/* Sized Box */}
@@ -236,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   cardContainer: {
-    backgroundColor: "#D7FAF9",
+    backgroundColor: "#EEDFFF",
     width: wp(80),
     flexDirection: "row",
     borderRadius: 6,
@@ -245,7 +214,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: hp(5),
     height: hp(5),
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6CFFF",
     alignItems: "center",
     justifyContent: "center",
   },
