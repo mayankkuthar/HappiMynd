@@ -43,13 +43,15 @@ const styles = StyleSheet.create({
   },
   checkContainer: {
     borderWidth: 2,
-    borderColor: colors.borderLight,
+    borderColor: "#9747FF",
+    backgroundColor: "#9747FF",
     padding: 2,
   },
   check: {
     // backgroundColor: "green",
     width: hp(1.5),
     height: hp(1.5),
+    tintColor: "#FFFFFF",
   },
   text: {
     fontSize: RFValue(12),

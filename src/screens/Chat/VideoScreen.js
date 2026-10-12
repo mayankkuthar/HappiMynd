@@ -45,7 +45,7 @@ const VideoScreen = (props) => {
                     onPress={() => {
                         navigation.goBack()
                     }}>
-                    <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+                    <Ionicons name="ios-chevron-back" size={22} color="black" />
 
                 </TouchableOpacity>
             </View>

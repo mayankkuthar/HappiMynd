@@ -22,11 +22,13 @@ const Capsule = (props) => {
 
 const styles = StyleSheet.create({
   capsuleContainer: {
-    backgroundColor: colors.primary,
+    backgroundColor: "transparent",
     height: hp(3),
     // width: wp(14),
     paddingHorizontal: hp(2),
-    borderRadius: hp(100),
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D4D4D4",
     alignItems: "center",
     justifyContent: "center",
   },

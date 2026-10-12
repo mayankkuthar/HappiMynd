@@ -1,20 +1,23 @@
-import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState, useContext } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { RFValue } from "react-native-responsive-fontsize";
+import { Feather } from "@expo/vector-icons";
 
-// COnstants
-import { colors } from "../../assets/constants";
+// Context
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
-import Header from "../../components/common/Header";
 import InputField from "../../components/input/InputField";
-import Button from "../../components/buttons/Button";
 
 const ForgotPassword = (props) => {
   // Prop Destructuring
@@ -27,6 +30,8 @@ const ForgotPassword = (props) => {
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const canSubmit = email.length > 0 || mobile.length > 0;
 
   const submitHandler = async () => {
     setLoading(true);
@@ -53,62 +58,145 @@ const ForgotPassword = (props) => {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} showLogo={false} showBack={true} />
-      <KeyboardAwareScrollView style={{ paddingHorizontal: wp(10) }}>
-        <Text style={styles.pageTitle}>Forgot Password</Text>
-        {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
+      {/* Header */}
+      <View style={styles.headerBlock}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.pop()}
+          style={styles.backButton}
+        >
+          <Feather name="chevron-left" size={22} color="#55545E" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Forgot Password</Text>
+      </View>
+
+      {/* Form */}
+      <View style={styles.formSection}>
         <InputField
-          title="Enter Email Address"
+          title="Email Address"
           placeHolder="Enter Email Address"
+          borderColor="#D8D8DE"
           value={email}
           onChangeText={(text) => setEmail(text)}
         />
-        {/* Sized Box */}
         <View style={{ height: hp(2) }} />
-        <Text style={styles.choiceText}>OR</Text>
-        {/* Sized Box */}
+
+        <View style={styles.separatorRow}>
+          <View style={styles.separatorLine} />
+          <Text style={styles.separatorText}>Or</Text>
+          <View style={styles.separatorLine} />
+        </View>
+
         <View style={{ height: hp(2) }} />
         <InputField
-          title="Enter Phone Number"
+          title="Phone Number"
           placeHolder="Enter Phone Number"
           keyboardType="phone-pad"
+          borderColor="#D8D8DE"
           value={mobile}
           onChangeText={(text) => setMobile(text)}
         />
-      </KeyboardAwareScrollView>
-      <View style={styles.buttonContainer}>
-        <Button
-          text="Send Verification Code"
-          pressHandler={submitHandler}
-          loading={loading}
-        />
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[
+            styles.submitButton,
+            canSubmit ? styles.submitEnabled : styles.submitDisabled,
+          ]}
+          disabled={!canSubmit || loading}
+          onPress={submitHandler}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#AAA7B3" />
+          ) : (
+            <Text
+              style={[
+                styles.submitText,
+                canSubmit ? styles.submitTextEnabled : styles.submitTextDisabled,
+              ]}
+            >
+              Send Verification Code
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#E3FDFE",
+    flex: 1,
+    backgroundColor: "#F8F7FF",
+    paddingHorizontal: 15,
+    paddingTop: 30,
+    paddingBottom: 30,
+  },
+  headerBlock: {
+    marginBottom: hp(3),
+  },
+  backButton: {
+    marginTop: hp(2.5),
+    marginBottom: hp(1.5),
+  },
+  title: {
+    fontSize: RFValue(24),
+    fontFamily: "PoppinsMedium",
+    color: "#9747FF",
+    alignSelf: "flex-start",
+  },
+  formSection: {
     flex: 1,
   },
-  pageTitle: {
-    fontSize: RFValue(24),
-    fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
+  separatorRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  choiceText: {
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E1E0E6",
+  },
+  separatorText: {
     fontSize: RFValue(12),
     fontFamily: "PoppinsMedium",
-    color: "#ABB6B6",
-    textAlign: "center",
+    color: "#88878D",
+    marginHorizontal: wp(3),
   },
-  buttonContainer: {
-    // backgroundColor: "red",
-    width: wp(100),
-    paddingHorizontal: wp(10),
-    position: "absolute",
-    bottom: hp(4),
+  footer: {
+    justifyContent: "flex-end",
+    marginBottom: hp(2),
+  },
+  submitButton: {
+    width: "100%",
+    height: hp(4.8),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 30,
+  },
+  submitDisabled: {
+    backgroundColor: "#E6DFFF",
+  },
+  submitEnabled: {
+    backgroundColor: "#E6DFFF",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  submitText: {
+    fontSize: RFValue(13),
+    fontFamily: "PoppinsMedium",
+  },
+  submitTextDisabled: {
+    color: "#AAA7B3",
+  },
+  submitTextEnabled: {
+    color: "#000",
   },
 });
 

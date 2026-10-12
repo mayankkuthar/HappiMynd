@@ -7,7 +7,7 @@ import {
   ImageBackground,
   Image,
   TouchableOpacity,
-  Linking,
+  ActivityIndicator,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -24,7 +24,6 @@ import { Hcontext } from "../../context/Hcontext";
 import InputField from "../../components/input/InputField";
 import DropDown from "../../components/input/DropDown";
 import Checkbox from "../../components/input/Checkbox";
-import Button from "../../components/buttons/Button";
 
 const RegisterWithCode = (props) => {
   // Prop Destructuring
@@ -40,6 +39,8 @@ const RegisterWithCode = (props) => {
   const [code, setCode] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const canSubmit = !!selectedSponsor?.id && code.length > 0 && agreeTerms;
 
   // Mount guard — prevents setState on unmounted component
   const isMounted = useIsMounted();
@@ -143,69 +144,84 @@ const RegisterWithCode = (props) => {
         {/* Form Section */}
         <View style={styles.formContainer}>
           <DropDown
-            title="Select Name of Sponsor"
-            placeHolder="Select a Sponsor"
+            title={
+              <Text style={styles.label}>
+                Select Name of Sponsor <Text style={styles.required}>*</Text>
+              </Text>
+            }
+            placeHolder="Name of Sponsor"
             data={sponsorList}
             setSelectedData={setSelectedSponsor}
             search="enabled"
+            containerStyle={styles.dropDownBox}
+            containerTextStyle={styles.dropDownText}
+            dropDownContainerStyle={styles.dropDownList}
+            selectedRowStyle={styles.dropDownSelectedRow}
+            searchInputStyle={styles.dropDownSearchInput}
           />
-          <View style={{ height: hp(1.5) }} />
+          <View style={{ height: hp(2) }} />
           <InputField
-            title="HappiMynd code"
-            placeHolder="Enter HappiMynd code"
+            title={
+              <Text style={styles.label}>
+                HappiMynd Code <Text style={styles.required}>*</Text>
+              </Text>
+            }
+            placeHolder="Enter HappiMynd Code"
+            borderColor="#D8D8DE"
+            titleSpacing={10}
             value={code}
             onChangeText={(text) => setCode(text)}
           />
-          <View style={{ height: hp(1.5) }} />
+          <View style={{ height: hp(2) }} />
 
-          <View style={{ flexDirection: "row" }}>
-            <View>
+          <View style={styles.termsRow}>
+            <View style={styles.checkboxWrapper}>
               <Checkbox
-                // title="By creating an account, you agree to our terms & conditions"
                 checked={agreeTerms}
                 setChecked={setAgreeTerms}
               />
             </View>
-            <View>
-              <Text>
-                By creating an account, you agree to our{" "}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => Linking.openURL("https://happimynd.com/terms")}
-                >
-                  <Text style={{ textDecorationLine: "underline" }}>
-                    Terms & Conditions
-                  </Text>
-                </TouchableOpacity>{" "}
-                and acknowledge that Happimynd's{" "}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() =>
-                    Linking.openURL("https://happimynd.com/privacy")
-                  }
-                >
-                  <Text style={{ textDecorationLine: "underline" }}>
-                    Privacy Policy
-                  </Text>
-                </TouchableOpacity>{" "}
-                applies to you.
-              </Text>
-            </View>
+            <Text style={styles.termsText}>
+              By creating an account, you agree to our terms & conditions.
+            </Text>
           </View>
 
           <View style={styles.buttonContainer}>
-            <Button
-              text="Continue"
-              pressHandler={handleSubmit}
-              loading={loading}
-            />
             <TouchableOpacity
-              activeOpacity={0.7}
-              style={{ paddingVertical: hp(2) }}
-              onPress={() => navigation.navigate("Login")}
+              activeOpacity={0.8}
+              style={[
+                styles.continueButton,
+                canSubmit
+                  ? styles.continueButtonEnabled
+                  : styles.continueButtonDisabled,
+              ]}
+              disabled={!canSubmit || loading}
+              onPress={handleSubmit}
             >
-              <Text style={styles.accountText}>Already have a account</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#A0A0A0" />
+              ) : (
+                <Text
+                  style={[
+                    styles.continueButtonText,
+                    canSubmit
+                      ? styles.continueTextEnabled
+                      : styles.continueTextDisabled,
+                  ]}
+                >
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
+
+            <View style={styles.accountContainer}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.accountText}>Already have an account?</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </KeyboardAwareScrollView>
@@ -262,14 +278,93 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: wp(10),
+    paddingTop: hp(1),
+    paddingBottom: hp(4),
+  },
+  label: {
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#191928",
+  },
+  required: {
+    color: "red",
+  },
+  dropDownBox: {
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#D8D8DE",
+    borderRadius: 6,
+    height: hp(6.5),
+  },
+  dropDownText: {
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#88878D",
+    textAlign: "left",
+  },
+  dropDownList: {
+    backgroundColor: "#F3EDFF",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#D8D8DE",
+  },
+  dropDownSelectedRow: {
+    backgroundColor: "#E0D3FF",
+  },
+  dropDownSearchInput: {
+    backgroundColor: "#E0D3FF",
+  },
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  checkboxWrapper: {
+    width: hp(4),
+    paddingTop: hp(0.3),
+  },
+  termsText: {
+    flex: 1,
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    color: "#88878D",
+    marginLeft: wp(1),
   },
   buttonContainer: {
-    paddingVertical: hp(4),
+    paddingTop: hp(4),
+  },
+  continueButton: {
+    width: "100%",
+    height: hp(5),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 30,
+  },
+  continueButtonDisabled: {
+    backgroundColor: "#E6DFFF",
+  },
+  continueButtonEnabled: {
+    backgroundColor: "#E6DFFF",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  continueButtonText: {
+    fontFamily: "PoppinsMedium",
+    fontSize: RFValue(14),
+  },
+  continueTextDisabled: { color: "#A0A0A0" },
+  continueTextEnabled: { color: "#000" },
+  accountContainer: {
+    paddingTop: hp(2),
+    alignItems: "center",
   },
   accountText: {
-    fontSize: RFValue(12),
-    fontFamily: "PoppinsMedium",
-    color: colors.primaryText,
+    fontSize: RFValue(13),
+    fontFamily: "Poppins",
+    color: "#895BF5",
     textAlign: "center",
   },
 });

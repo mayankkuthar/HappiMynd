@@ -70,12 +70,22 @@ const LeftPane = (props) => {
           key={filter.id}
           activeOpacity={0.7}
           style={{
-            ...styles.filterPaneButton,
-            backgroundColor: selected === filter.id ? "#FFFFFF" : "transparent",
+            ...styles.leftFilterButton,
+            backgroundColor:
+              selected === filter.id ? "#F2F0FE" : "#EBE7FD",
           }}
           onPress={() => setSelected(filter.id)}
         >
-          <Text style={styles.filterPaneButtonText}>{filter.text}</Text>
+          <Text
+            style={[
+              styles.filterPaneButtonText,
+              {
+                color: selected === filter.id ? "#000000" : "#48454E",
+              },
+            ]}
+          >
+            {filter.text}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -148,9 +158,9 @@ const RightPane = (props) => {
                 key={filter.id}
                 activeOpacity={0.7}
                 style={{
-                  ...styles.filterPaneButton,
+                  ...styles.rightFilterButton,
                   borderBottomWidth: 1,
-                  borderBottomColor: colors.borderDim,
+                  borderBottomColor: "#D3D1DA",
                   flexDirection: "row",
                   alignItems: "center",
                 }}
@@ -187,17 +197,20 @@ const RightPane = (props) => {
               >
                 <Ionicons
                   style={{
+                    width: 28,
                     opacity: selectedFilter.find((sf) => sf.id === filter.id)
                       ? 1
                       : 0,
                   }}
                   name="ios-checkmark"
                   size={hp(3)}
-                  color={colors.pageTitle}
+                  color="#48454E"
                 />
                 {/* Sized Box */}
                 <View style={{ width: hp(1) }} />
-                <Text style={styles.filterPaneButtonText}>{filter.text}</Text>
+                <Text style={[styles.filterPaneButtonText, { color: "#000000" }]}>
+                  {filter.text}
+                </Text>
               </TouchableOpacity>
             );
         }}
@@ -258,28 +271,21 @@ const Footer = (props) => {
     <View style={styles.footerContainer}>
       <TouchableOpacity
         activeOpacity={0.7}
-        style={{
-          ...styles.footerButton,
-          backgroundColor: "#fff",
-          borderWidth: 1,
-          borderColor: colors.primary,
-        }}
+        style={styles.cancelButton}
         onPress={() => navigation.goBack()}
       >
-        <Text style={{ ...styles.footerButtonText, color: colors.primary }}>
-          Cancel
-        </Text>
+        <Text style={styles.cancelButtonText}>Cancel</Text>
       </TouchableOpacity>
       <TouchableOpacity
         activeOpacity={0.7}
-        style={styles.footerButton}
+        style={styles.applyButton}
         onPress={filterHandler}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator size="small" color={colors.loaderColor} />
         ) : (
-          <Text style={styles.footerButtonText}>Apply</Text>
+          <Text style={styles.applyButtonText}>Apply</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -307,7 +313,7 @@ const Filters = (props) => {
   return (
     <View style={styles.container}>
       <Header navigation={navigation} setSelectedFilter={setSelectedFilter} />
-      <View style={{ flexDirection: "row" }}>
+      <View style={styles.filterContent}>
         <LeftPane
           selected={selectedCategory}
           setSelected={setSelectedCategory}
@@ -329,77 +335,123 @@ const Filters = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F6F3FE",
     flex: 1,
   },
   headerContainer: {
-    backgroundColor: "#E3FDFE",
-    // backgroundColor: "red",
+    backgroundColor: "#E5DFFD",
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingBottom: hp(1),
-    paddingHorizontal: wp(10),
-    height: hp(10),
-    width: wp(100),
+    paddingHorizontal: 21,
+    height: 101,
+    width: "100%",
+    shadowColor: "#77727F",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 6,
+    elevation: 4,
   },
   headerTitle: {
     fontSize: RFValue(22),
     fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
+    color: "#000000",
   },
   clearButton: {
     // backgroundColor: "green",
     paddingLeft: hp(4),
-    paddingBottom: hp(1),
   },
   clearButtonText: {
     fontSize: RFValue(10),
     fontFamily: "PoppinsMedium",
-    color: colors.primaryText,
+    color: "#111111",
+  },
+  filterContent: {
+    flexDirection: "row",
+    flex: 1,
+    backgroundColor: "#F6F3FE",
   },
   leftPaneContainer: {
-    backgroundColor: "#E3FDFE",
-    height: hp(70),
-    width: wp(40),
+    backgroundColor: "#EBE7FD",
+    width: wp(47),
+    shadowColor: "#4F4B57",
+    shadowOffset: { width: 3, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 7,
+    elevation: 5,
   },
   rightPaneContainer: {
-    backgroundColor: "#F9FEFE",
-    height: hp(70),
-    width: wp(60),
+    backgroundColor: "#F6F3FE",
+    flex: 1,
+    paddingLeft: 30,
+    paddingRight: 19,
   },
   footerContainer: {
-    backgroundColor: "#FAFAFA",
-    height: hp(10),
-    width: wp(100),
+    backgroundColor: "#FFFFFF",
+    height: 93,
+    width: "100%",
     flexDirection: "row",
-    paddingHorizontal: wp(10),
-    justifyContent: "space-between",
+    paddingLeft: 21,
+    paddingRight: 19,
+    paddingVertical: 10,
     alignItems: "center",
   },
-  footerButton: {
-    backgroundColor: colors.primary,
-    width: wp(38),
-    height: hp(4),
-    borderRadius: hp(100),
+  cancelButton: {
+    flex: 1,
+    height: 53,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6D6FC",
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#B7A8C7",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  footerButtonText: {
-    color: colors.borderDark,
+  cancelButtonText: {
+    color: "#111111",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
     textAlign: "center",
   },
-  filterPaneButton: {
-    paddingVertical: hp(3),
-    paddingHorizontal: hp(2),
+  applyButton: {
+    flex: 1,
+    height: 53,
+    marginLeft: 31,
+    backgroundColor: "#E6D6FC",
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#B7A8C7",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  applyButtonText: {
+    color: "#111111",
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    textAlign: "center",
+  },
+  leftFilterButton: {
+    height: 73,
+    paddingLeft: 34,
+    paddingRight: 20,
+    justifyContent: "center",
+  },
+  rightFilterButton: {
+    height: 62,
+    paddingHorizontal: 5,
   },
   filterPaneButtonText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
     // textAlign: "center",
-    color: "#8D999A",
+    color: "#48454E",
     textTransform: "capitalize",
   },
 });

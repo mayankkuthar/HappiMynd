@@ -7,9 +7,6 @@ import {
 } from "react-native-responsive-screen";
 import { RFValue } from "react-native-responsive-fontsize";
 
-// Constants
-import { colors } from "../../assets/constants";
-
 const ConfidentialModal = (props) => {
   // ─── Props ──────────────────────────────────────────────────────────────────
   const {
@@ -60,8 +57,8 @@ const ConfidentialModal = (props) => {
         <View style={{ height: hp(1) }} />
 
         <Text style={styles.modalText}>
-          All your information will be kept confidential and will not be shared
-          with anyone.
+          Your information will remain confidential and will not be shared with
+          anyone.
         </Text>
 
         {/* Sized Box */}
@@ -72,7 +69,7 @@ const ConfidentialModal = (props) => {
           onPress={pressHandler}
           activeOpacity={0.8}
         >
-          <Text style={styles.modalButtonText}>Confirm</Text>
+          <Text style={styles.modalButtonText}>Close</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -81,10 +78,10 @@ const ConfidentialModal = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundModal,
+    backgroundColor: "#F3EFFF",
     width: wp(80),
     alignSelf: "center",
-    borderRadius: 6,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: hp(2),
@@ -97,10 +94,11 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: "#111111",
     textAlign: "center",
   },
   modalButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6DEFF",
     paddingVertical: hp(1.5),
     width: "100%",
     borderRadius: hp(100),
@@ -109,6 +107,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: "#17141E",
   },
 });
 

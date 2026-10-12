@@ -54,7 +54,9 @@ const GettingStarted = (props) => {
           <WaveButton
             width={78}
             height={12}
-            text="Organisation/Institution Sponsored"
+            text="Organization"
+            textCenter
+            textSize={15}
             pressHandler={() => navigation.push("RegisterWithCode", {
               ...(route?.params?.mobile_verified_token ? {
                 mobile_verified_token: route.params.mobile_verified_token,
@@ -66,9 +68,25 @@ const GettingStarted = (props) => {
           <WaveButton
             width={78}
             height={12}
-            text="Self Sponsored"
+            text="Individual"
+            textCenter
+            textSize={15}
             pressHandler={() => navigation.push("PhoneRegistration", {
               signupType: "individual",
+              ...(route?.params?.mobile_verified_token ? {
+                mobile_verified_token: route.params.mobile_verified_token,
+                mobile: route.params.mobile,
+                country_code: route.params.country_code,
+              } : {}),
+            })}
+          />
+          <WaveButton
+            width={78}
+            height={12}
+            text="Institution Sponsored"
+            textCenter
+            textSize={15}
+            pressHandler={() => navigation.push("RegisterWithCode", {
               ...(route?.params?.mobile_verified_token ? {
                 mobile_verified_token: route.params.mobile_verified_token,
                 mobile: route.params.mobile,
@@ -103,18 +121,22 @@ const styles = StyleSheet.create({
   upperSection: {
     height: hp(50),
     width: wp(100),
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
   },
   upperSectionHero: {
     height: hp(22),
     width: wp(100),
     // backgroundColor: "red",
   },
+  heroContainer: {
+    marginTop: hp(1.7),
+  },
   logoContainer: {
     // backgroundColor: "yellow",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     flexDirection: "row",
     paddingTop: hp(8),
+    paddingRight: wp(4),
   },
   logo: {
     // backgroundColor: "green",
@@ -126,9 +148,10 @@ const styles = StyleSheet.create({
     height: hp(50),
     width: wp(100),
     alignItems: "center",
+    marginTop: -hp(4) - 50,
   },
   lowerSectionTitle: {
-    fontFamily: "PoppinsMedium",
+    fontFamily: "PoppinsSemiBold",
     fontSize: RFValue(20),
   },
   lowerSectionSubTitle: {
@@ -137,15 +160,15 @@ const styles = StyleSheet.create({
   },
   lowerSectionTextContainer: {
     // backgroundColor: "red",
-    height: hp(15),
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: hp(0.5),
   },
   lowerSectionButtonContainer: {
     // backgroundColor: "blue",
-    height: hp(25),
     alignItems: "center",
     justifyContent: "center",
+    marginTop: hp(2),
   },
   cloudOne: {
     // backgroundColor: "red",

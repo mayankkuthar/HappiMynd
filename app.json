@@ -29,7 +29,7 @@
       },
       "package": "com.happimynd",
       "permissions": ["RECORD_AUDIO"],
-      "versionCode": 8,
+      "versionCode": 53,
       "googleServicesFile": "./google-services.json",
       "useNextNotificationsApi": true
     },

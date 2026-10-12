@@ -23,15 +23,14 @@ import {
 import { RFValue } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
 import ImageView from "react-native-image-viewing";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Constants
 import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
-import BlogCard from "../../components/cards/BlogCard";
 import Button from "../../components/buttons/Button";
-import Capsule from "../../components/common/Capsule";
 
 // ─── Skeleton Block ───────────────────────────────────────────────────────────
 
@@ -76,7 +75,7 @@ const SkeletonBlock = ({ width = "100%", height = 14, style }) => {
 // ─── Skeleton Body ────────────────────────────────────────────────────────────
 
 const SkeletonBody = () => (
-  <View style={{ paddingHorizontal: wp(10) }}>
+  <View style={{ paddingHorizontal: 15 }}>
     {/* Description */}
     <SkeletonBlock height={14} width="40%" style={{ marginBottom: hp(1) }} />
     <SkeletonBlock height={12} style={{ marginBottom: hp(0.6) }} />
@@ -85,18 +84,20 @@ const SkeletonBody = () => (
 
     {/* Profile */}
     <SkeletonBlock height={14} width="25%" style={{ marginBottom: hp(1) }} />
-    <View style={{ flexDirection: "row", gap: wp(2), marginBottom: hp(3) }}>
-      <SkeletonBlock height={30} width={wp(22)} style={{ borderRadius: 20 }} />
-      <SkeletonBlock height={30} width={wp(28)} style={{ borderRadius: 20 }} />
-      <SkeletonBlock height={30} width={wp(18)} style={{ borderRadius: 20 }} />
+    <View style={{ flexDirection: "row", marginBottom: hp(3) }}>
+      <SkeletonBlock height={29} width={70} style={{ borderRadius: 7 }} />
+      <View style={{ width: 10 }} />
+      <SkeletonBlock height={29} width={90} style={{ borderRadius: 7 }} />
+      <View style={{ width: 10 }} />
+      <SkeletonBlock height={29} width={60} style={{ borderRadius: 7 }} />
     </View>
 
     {/* Keywords */}
     <SkeletonBlock height={14} width="30%" style={{ marginBottom: hp(1) }} />
-    <View style={{ flexDirection: "row", gap: wp(2), marginBottom: hp(3) }}>
-      <SkeletonBlock height={30} width={wp(20)} style={{ borderRadius: 20 }} />
-      <SkeletonBlock height={30} width={wp(25)} style={{ borderRadius: 20 }} />
-      <SkeletonBlock height={30} width={wp(15)} style={{ borderRadius: 20 }} />
+    <View style={{ flexDirection: "row", marginBottom: hp(3) }}>
+      <SkeletonBlock height={29} width={70} style={{ borderRadius: 7 }} />
+      <View style={{ width: 10 }} />
+      <SkeletonBlock height={29} width={90} style={{ borderRadius: 7 }} />
     </View>
 
     {/* Credit */}
@@ -122,14 +123,13 @@ const CapsuleRow = React.memo(({ rawString }) => {
   if (!items.length) return null;
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
       {items.map((element, index) => (
-        <View key={`${element}-${index}`} style={{ flexDirection: "row" }}>
-          <Capsule title={element} />
-          <View style={{ width: wp(2) }} />
+        <View key={`${element}-${index}`} style={styles.tagChip}>
+          <Text style={styles.tagChipText}>{element}</Text>
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 });
 
@@ -137,22 +137,52 @@ const RelatedArticles = React.memo(({ articles, navigation }) => {
   if (!articles?.length) return null;
 
   return (
-    <View>
-      <View style={{ paddingHorizontal: wp(10) }}>
-        <Text
-          style={[styles.bodyContentText, { fontFamily: "PoppinsSemiBold" }]}
-        >
-          Related Articles
-        </Text>
-      </View>
-      <ScrollView horizontal style={styles.relatedContainer}>
-        <View style={{ width: wp(10) }} />
-        {articles.map((article, index) => (
-          <View key={article.id ?? index} style={{ flexDirection: "row" }}>
-            <BlogCard navigation={navigation} data={article} />
-            <View style={{ width: wp(4) }} />
-          </View>
-        ))}
+    <View style={styles.relatedSection}>
+      <Text style={[styles.bodyHeading, { marginBottom: 14 }]}>
+        Related Articles
+      </Text>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {articles.map((article, index) => {
+          const locked = article?.status === "paid" && !article?.is_subscribe;
+
+          return (
+            <TouchableOpacity
+              key={article.id ?? index}
+              activeOpacity={0.8}
+              style={styles.relatedItem}
+              onPress={() => {
+                if (locked) return;
+                navigation.push("Blog", {
+                  data: article,
+                  readBlog: article?.type === "blog",
+                  infographics: article?.type === "infographics",
+                  video: article?.type === "video",
+                  image: article?.type === "image",
+                });
+              }}
+            >
+              <ImageBackground
+                source={{ uri: article?.thumbnail }}
+                style={styles.relatedCard}
+                resizeMode="cover"
+              >
+                <View style={styles.relatedOverlay} />
+                <View style={styles.relatedCardContent}>
+                  <Text style={styles.relatedTitle} numberOfLines={2}>
+                    {article?.title}
+                  </Text>
+                </View>
+                <View style={styles.readMoreButton}>
+                  <Text style={styles.readMoreButtonText}>Read More</Text>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -162,6 +192,7 @@ const RelatedArticles = React.memo(({ articles, navigation }) => {
 
 const Blog = (props) => {
   const { navigation } = props;
+  const insets = useSafeAreaInsets();
   const routeParams = props.route?.params ?? {};
   const {
     data = {},
@@ -286,77 +317,69 @@ const Blog = (props) => {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <View style={styles.headerRow}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.pop()}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={22} color="#4B4854" />
+        </TouchableOpacity>
+
+        {readBlog ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.likeButton}
+            onPress={handleLikeToggle}
+          >
+            <Ionicons
+              name={liked ? "heart-sharp" : "heart-outline"}
+              size={20}
+              color={liked ? "#E04E39" : "#4B4854"}
+            />
+            <Text style={styles.blogLikeText}>{likesCount}</Text>
+          </TouchableOpacity>
+        ) : null}
+        </View>
+      </View>
+
       {/* Hero Section */}
-      <View style={styles.heroSection}>
+      <View style={styles.hero}>
         <ImageBackground
           source={{ uri: thumbnail }}
           style={styles.heroBackground}
           resizeMode="cover"
         >
-          <ImageBackground
-            source={require("../../assets/images/gradient.png")}
-            style={{ flex: 1 }}
-            resizeMode="cover"
-          >
-            <View style={{ height: hp(6) }} />
+          <View style={styles.heroOverlay} />
 
-            {/* Back + Like row */}
-            <View style={styles.heroNav}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => navigation.pop()}
-                style={{ paddingLeft: hp(1.5) }}
-              >
-                <Ionicons name="ios-chevron-back" size={hp(4)} color="white" />
-              </TouchableOpacity>
-
-              {readBlog ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={{ paddingRight: hp(2), alignItems: "center" }}
-                  onPress={handleLikeToggle}
-                >
-                  <Ionicons
-                    name={liked ? "heart-sharp" : "heart-outline"}
-                    size={hp(3)}
-                    color={liked ? "red" : "white"}
-                  />
-                  <Text style={styles.blogLikeText}>{likesCount}</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            <View style={{ height: hp(2) }} />
-
-            {/* Hero title + type badge */}
-            <View style={{ width: wp(80), paddingHorizontal: hp(3) }}>
-              {displayTitle ? (
-                <Text style={styles.heroTitle}>{displayTitle}</Text>
-              ) : (
-                // Skeleton for title in case route data has no title either
-                <SkeletonBlock
-                  height={22}
-                  width="90%"
-                  style={{ marginBottom: hp(1), backgroundColor: "#ffffff55" }}
-                />
-              )}
-              <View style={{ height: hp(1) }} />
-              {content.type ? (
-                <View style={styles.blogButton}>
-                  <Text style={styles.blogButtonText}>{content.type}</Text>
-                </View>
-              ) : (
-                <SkeletonBlock
-                  height={hp(3)}
-                  width={wp(18)}
-                  style={{
-                    borderRadius: hp(100),
-                    backgroundColor: "#ffffff55",
-                  }}
-                />
-              )}
-            </View>
-          </ImageBackground>
+          <View style={styles.heroContent}>
+            {displayTitle ? (
+              <Text style={styles.heroTitle}>{displayTitle}</Text>
+            ) : (
+              <SkeletonBlock
+                height={22}
+                width="90%"
+                style={{ marginBottom: hp(1), backgroundColor: "#ffffff55" }}
+              />
+            )}
+            <View style={{ height: hp(1) }} />
+            {content.type ? (
+              <View style={styles.categoryButton}>
+                <Text style={styles.categoryButtonText}>{content.type}</Text>
+              </View>
+            ) : (
+              <SkeletonBlock
+                height={34}
+                width={48}
+                style={{
+                  borderRadius: 7,
+                  backgroundColor: "#ffffff55",
+                }}
+              />
+            )}
+          </View>
         </ImageBackground>
       </View>
 
@@ -368,170 +391,248 @@ const Blog = (props) => {
           <SkeletonBody />
         ) : (
           <View style={styles.bodyContent}>
-            <Text
-              style={[
-                styles.bodyContentText,
-                { fontFamily: "PoppinsSemiBold" },
-              ]}
-            >
-              Description:
-            </Text>
-            <Text style={styles.bodyContentText}>{content.summary}</Text>
+            <Text style={styles.bodyHeading}>Description</Text>
+            <Text style={styles.descriptionText}>{content.summary}</Text>
 
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={[
-                styles.bodyContentText,
-                { fontFamily: "PoppinsSemiBold" },
-              ]}
-            >
-              Profile:
-            </Text>
-            <View style={{ height: hp(1) }} />
+            <Text style={styles.bodyHeading}>Profile</Text>
             <CapsuleRow rawString={content.profile} />
 
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={[
-                styles.bodyContentText,
-                { fontFamily: "PoppinsSemiBold" },
-              ]}
-            >
-              Keywords:
-            </Text>
-            <View style={{ height: hp(1) }} />
+            <Text style={styles.bodyHeading}>Keywords</Text>
             <CapsuleRow rawString={content.keywords} />
 
-            <View style={{ height: hp(3) }} />
-            <Text
-              style={[
-                styles.bodyContentText,
-                { fontFamily: "PoppinsSemiBold" },
-              ]}
-            >
-              Credit:
-            </Text>
-            <View style={{ height: hp(1) }} />
-            <Text style={styles.bodyContentText}>{content.credit}</Text>
+            <Text style={styles.bodyHeading}>Credit</Text>
+            <Text style={styles.descriptionText}>{content.credit}</Text>
           </View>
         )}
 
-        <View style={{ height: hp(2.5) }} />
         <RelatedArticles articles={relatedArticles} navigation={navigation} />
-      </ScrollView>
 
-      {/* CTA Buttons */}
-      {readBlog && (
-        <>
-          <View style={{ height: wp(5) }} />
-          <View style={{ paddingHorizontal: wp(6) }}>
-            <Button text="Read Blog" pressHandler={handleReadBlog} />
-          </View>
-        </>
-      )}
+        {/* CTA Buttons */}
+        <View style={styles.ctaWrap}>
+          {readBlog && (
+            <Button text="Read Blog" pressHandler={handleReadBlog} containerStyle={styles.ctaButton} textStyle={styles.ctaButtonText} />
+          )}
 
-      {infographics && (
-        <>
-          <View style={{ height: wp(5) }} />
-          <View style={{ paddingHorizontal: wp(6) }}>
-            <Button
-              text="View Infographics"
-              pressHandler={() => setOpenImage(true)}
-            />
-          </View>
-          <ImageView
-            images={[{ uri: link }]}
-            imageIndex={0}
-            visible={openImage}
-            onRequestClose={() => setOpenImage(false)}
-            swipeToCloseEnabled={false}
-            doubleTapToZoomEnabled
-          />
-        </>
-      )}
+          {infographics && (
+            <>
+              <Button
+                text="View Infographics"
+                pressHandler={() => setOpenImage(true)}
+                containerStyle={styles.ctaButton}
+                textStyle={styles.ctaButtonText}
+              />
+              <View style={{ height: 10 }} />
+            </>
+          )}
 
-      {video && (
-        <>
-          <View style={{ height: wp(5) }} />
-          <View style={{ paddingHorizontal: wp(6) }}>
+          {video && (
             <Button
               text="View Video"
               pressHandler={() => navigation.push("BlogVideo", { ...data })}
+              containerStyle={styles.ctaButton}
+              textStyle={styles.ctaButtonText}
             />
-          </View>
-        </>
-      )}
+          )}
 
-      {showImage && (
-        <>
-          <View style={{ height: wp(5) }} />
-          <View style={{ paddingHorizontal: wp(6) }}>
+          {showImage && (
             <Button
               text="View Image"
               pressHandler={() => navigation.push("BlogImage", { ...data })}
+              containerStyle={styles.ctaButton}
+              textStyle={styles.ctaButtonText}
             />
-          </View>
-        </>
-      )}
+          )}
+        </View>
+      </ScrollView>
 
-      <View style={{ height: wp(22) }} />
+      <ImageView
+        images={[{ uri: link }]}
+        imageIndex={0}
+        visible={openImage}
+        onRequestClose={() => setOpenImage(false)}
+        swipeToCloseEnabled={false}
+        doubleTapToZoomEnabled
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: hp(100),
-    backgroundColor: colors.background,
+    flex: 1,
+    backgroundColor: "#F9F7FE",
   },
-  heroSection: {},
-  heroBackground: {
-    width: wp(100),
-    height: hp(35),
+  header: {
+    backgroundColor: "#F9F7FE",
   },
-  heroNav: {
+  headerRow: {
+    height: 60,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 17,
   },
-  heroTitle: {
-    fontSize: RFValue(22),
-    fontFamily: "PoppinsMedium",
-    color: "#fff",
+  backButton: {
+    height: 20,
+    justifyContent: "center",
   },
-  blogButton: {
-    backgroundColor: colors.primary,
-    height: hp(3),
-    width: wp(18),
-    borderRadius: hp(100),
+  likeButton: {
     alignItems: "center",
     justifyContent: "center",
   },
-  blogButtonText: {
-    fontSize: RFValue(8),
+  hero: {
+    backgroundColor: "#C97BD8",
+  },
+  heroBackground: {
+    width: "100%",
+    height: hp(24),
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.18)",
+  },
+  heroContent: {
+    position: "absolute",
+    left: 34,
+    right: 25,
+    bottom: 37,
+    justifyContent: "flex-end",
+  },
+  heroTitle: {
+    fontSize: RFValue(20),
+    fontFamily: "PoppinsSemiBold",
+    color: "#FFFFFF",
+    fontWeight: "600",
+    lineHeight: 30,
+    maxWidth: 315,
+  },
+  categoryButton: {
+    minWidth: 48,
+    height: 34,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    alignSelf: "flex-start",
+  },
+  categoryButtonText: {
+    fontSize: RFValue(11),
     fontFamily: "PoppinsMedium",
-    textAlign: "center",
-    color: colors.primaryText,
+    color: "#FFFFFF",
   },
   bodySection: {
-    backgroundColor: colors.background,
-    width: wp(100),
-    height: hp(66),
+    flex: 1,
+    backgroundColor: "#F9F7FE",
   },
   bodyContent: {
-    paddingHorizontal: wp(10),
+    paddingHorizontal: 15,
   },
-  bodyContentText: {
+  bodyHeading: {
+    fontSize: RFValue(14),
+    fontFamily: "PoppinsSemiBold",
+    color: "#111111",
+    fontWeight: "600",
+    marginTop: 27,
+    marginBottom: 14,
+  },
+  descriptionText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: "#66646A",
+    lineHeight: 18,
   },
-  relatedContainer: {
-    paddingVertical: hp(2),
+  tagChip: {
+    height: 29,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: "#CFCBD5",
+    backgroundColor: "#F9F7FE",
+    paddingHorizontal: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  tagChipText: {
+    fontSize: RFValue(11),
+    fontFamily: "PoppinsMedium",
+    color: "#55515C",
+  },
+  relatedSection: {
+    marginTop: 40,
+    paddingHorizontal: 15,
+  },
+  relatedItem: {
+    width: 237,
+    height: 130,
+    borderRadius: 19,
+    overflow: "hidden",
+    marginRight: 20,
+  },
+  relatedCard: {
+    width: "100%",
+    height: "100%",
+  },
+  relatedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.52)",
+  },
+  relatedCardContent: {
+    paddingHorizontal: 29,
+    paddingTop: 16,
+  },
+  relatedTitle: {
+    fontSize: RFValue(13),
+    fontFamily: "PoppinsSemiBold",
+    color: "#FFFFFF",
+    fontWeight: "600",
+    lineHeight: 25,
+  },
+  readMoreButton: {
+    position: "absolute",
+    left: 29,
+    bottom: 12,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.20)",
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  readMoreButtonText: {
+    fontSize: RFValue(9),
+    fontFamily: "PoppinsMedium",
+    color: "#FFFFFF",
+  },
+  ctaWrap: {
+    paddingHorizontal: 15,
+    marginTop: 22,
+    marginBottom: 27,
+  },
+  ctaButton: {
+    backgroundColor: "#E5DFFD",
+    borderRadius: 20,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#A9A2B5",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  ctaButtonText: {
+    color: "#111111",
   },
   blogLikeText: {
     fontSize: RFValue(10),
     fontFamily: "PoppinsMedium",
-    color: "#fff",
+    color: "#4B4854",
   },
 });
 

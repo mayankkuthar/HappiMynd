@@ -1,9 +1,7 @@
 import React, {
   useState,
-  useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import {
   StyleSheet,
@@ -12,7 +10,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  FlatList,
+  ImageBackground,
+  Share,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -21,12 +20,7 @@ import {
 import { RFValue } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
 import YoutubePlayer from "react-native-youtube-iframe";
-
-// Constants
-import { colors } from "../../assets/constants";
-
-// Components
-import Capsule from "../../components/common/Capsule";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ─── Utility ────────────────────────────────────────────────────────────────
 
@@ -43,73 +37,11 @@ const extractYoutubeId = (url) => {
   }
 };
 
-// ─── Sub-components (defined outside to avoid re-creation on parent render) ──
-
-const Header = React.memo(({ navigation, likesCount }) => {
-  const [liked, setLiked] = useState(false);
-
-  const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
-
-  return (
-    <View style={styles.headerContainer}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => navigation.pop()}
-        style={styles.backButton}
-      >
-        <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.7}
-        style={styles.likeButton}
-        onPress={toggleLike}
-      >
-        <Ionicons
-          name={liked ? "heart-sharp" : "heart-outline"}
-          size={hp(3)}
-          color={liked ? "red" : "black"}
-        />
-        <Text style={styles.blogLikeText}>{likesCount}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-});
-
-// Stable renderItem for profile/keyword capsule FlatLists
-const renderCapsule = ({ item }) => (
-  <View style={styles.capsuleWrapper}>
-    <Capsule title={item} />
-  </View>
-);
-
-const TagRow = React.memo(({ label, raw }) => {
-  // Split once, memoised
-  const items = useMemo(() => raw?.split(" ").filter(Boolean) ?? [], [raw]);
-
-  return (
-    <>
-      <Text style={styles.sectionLabel}>{label}:</Text>
-      <View style={{ height: hp(1) }} />
-      <FlatList
-        data={items}
-        renderItem={renderCapsule}
-        keyExtractor={(item, index) => `${label}-${index}`}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        initialNumToRender={6}
-        maxToRenderPerBatch={6}
-        windowSize={3}
-        removeClippedSubviews
-      />
-      <View style={{ height: hp(3) }} />
-    </>
-  );
-});
-
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 const BlogVideo = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   const {
     title = "",
     summary = "",
@@ -127,66 +59,166 @@ const BlogVideo = ({ navigation, route }) => {
     [link],
   );
 
+  // YouTube thumbnail for the poster frame
+  const thumbnailUri = useMemo(
+    () => (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null),
+    [videoId],
+  );
+
+  const [playing, setPlaying] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [liked, setLiked] = useState(false);
+
   const onReady = useCallback(() => setVideoReady(true), []);
+
+  const handlePlay = useCallback(() => {
+    if (videoId) setPlaying(true);
+  }, [videoId]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `${title}\n${link || "Watch on HappiMynd"}`,
+        title: title || "HappiMynd",
+      });
+    } catch (err) {
+      console.error("share error:", err);
+    }
+  }, [title, link]);
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} likesCount={likes_count} />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.pop()}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={22} color="#4B4854" />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews
       >
-        {/* Title */}
-        <Text style={styles.heroTitle}>{title}</Text>
-        <View style={{ height: hp(1) }} />
-
-        {/* Type badge */}
-        <View style={styles.blogButton}>
-          <Text style={styles.blogButtonText}>{type}</Text>
-        </View>
-        <View style={{ height: hp(2) }} />
-
-        {/* YouTube player */}
-        {videoId ? (
-          <View style={styles.playerWrapper}>
-            <YoutubePlayer
-              webViewStyle={styles.webView}
-              webViewProps={{ renderToHardwareTextureAndroid: true }}
-              height={hp(22)}
-              videoId={videoId}
-              play={false} // don't autoplay — saves bandwidth & feels faster
-              onReady={onReady}
-            />
-            {!videoReady && (
-              <View style={styles.loaderOverlay}>
-                <ActivityIndicator size="small" color={colors.loaderColor} />
-              </View>
-            )}
+        {/* Article header */}
+        <View style={styles.articleHeader}>
+          <Text style={styles.heroTitle}>{title}</Text>
+          <View style={styles.blogButton}>
+            <Text style={styles.blogButtonText}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Text>
           </View>
-        ) : null}
+        </View>
 
-        <View style={{ height: hp(2) }} />
+        {/* Video player */}
+        <View style={styles.playerWrapper}>
+          {!playing || !videoId ? (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.playerTouchable}
+              onPress={handlePlay}
+            >
+              <ImageBackground
+                source={{ uri: thumbnailUri || link }}
+                style={styles.playerImage}
+                resizeMode="cover"
+              >
+                <View style={styles.playButton}>
+                  <Ionicons name="play" size={30} color="#FFFFFF" />
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.playerVideo}>
+              <YoutubePlayer
+                webViewStyle={styles.webView}
+                webViewProps={{ renderToHardwareTextureAndroid: true }}
+                height={hp(29)}
+                videoId={videoId}
+                play={true}
+                onReady={onReady}
+              />
+              {!videoReady && (
+                <View style={styles.loaderOverlay}>
+                  <ActivityIndicator size="small" color="#4B4854" />
+                </View>
+              )}
+            </View>
+          )}
+        </View>
 
-        {/* Description */}
-        <Text style={styles.sectionLabel}>Description:</Text>
-        <Text style={styles.bodyContentText}>{summary}</Text>
-        <View style={{ height: hp(3) }} />
+        {/* Video actions */}
+        <View style={styles.videoActions}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.actionButton}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-social-outline" size={23} color="#4B4854" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.actionButton}
+            onPress={() => setLiked((prev) => !prev)}
+          >
+            <Ionicons
+              name={liked ? "heart-sharp" : "heart-outline"}
+              size={24}
+              color={liked ? "#E04E39" : "#4B4854"}
+            />
+          </TouchableOpacity>
+        </View>
 
-        {/* Profile tags */}
-        <TagRow label="Profile" raw={profile} />
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Description */}
+          <Text style={styles.descriptionHeading}>Description</Text>
+          <Text style={styles.descriptionBody}>{summary}</Text>
 
-        {/* Keyword tags */}
-        <TagRow label="Keywords" raw={keywords} />
+          {/* Profile */}
+          <Text style={styles.sectionLabel}>Profile</Text>
+          <View style={styles.tagsContainer}>
+            {profile
+              ? profile
+                  .split(/[,]+/)
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map((item, index) => (
+                    <View key={`profile-${index}`} style={styles.tagChip}>
+                      <Text style={styles.tagChipText}>{item}</Text>
+                    </View>
+                  ))
+              : null}
+          </View>
 
-        {/* Credit */}
-        <Text style={styles.sectionLabel}>Credit:</Text>
-        <View style={{ height: hp(1) }} />
-        <Text style={styles.bodyContentText}>{credit}</Text>
+          {/* Keywords */}
+          <Text style={[styles.sectionLabel, styles.keywordsHeading]}>
+            Keywords
+          </Text>
+          <View style={styles.tagsContainer}>
+            {keywords
+              ? keywords
+                  .split(/[,]+/)
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map((item, index) => (
+                    <View key={`keywords-${index}`} style={styles.tagChip}>
+                      <Text style={styles.tagChipText}>{item}</Text>
+                    </View>
+                  ))
+              : null}
+          </View>
 
-        <View style={{ height: hp(10) }} />
+          {/* Credit */}
+          <Text style={[styles.sectionLabel, styles.creditHeading]}>Credit</Text>
+          <Text style={styles.creditBody}>{credit}</Text>
+        </View>
+
+        <View style={{ height: hp(6) }} />
       </ScrollView>
     </View>
   );
@@ -196,53 +228,74 @@ const BlogVideo = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: wp(10),
-  },
-  headerContainer: {
-    width: wp(100),
-    height: hp(12),
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    paddingBottom: hp(2),
+  header: {
+    backgroundColor: "#F9F7FF",
   },
   backButton: {
-    paddingLeft: hp(1.5),
+    width: 22,
+    height: 22,
+    marginLeft: 16,
+    marginTop: 22,
   },
-  likeButton: {
-    paddingRight: hp(2),
-    alignItems: "center",
+  scrollContent: {
+    paddingBottom: hp(4),
   },
-  blogLikeText: {
-    fontSize: RFValue(10),
-    fontFamily: "Poppins",
+  articleHeader: {
+    paddingHorizontal: 15,
   },
   heroTitle: {
-    fontSize: RFValue(22),
-    fontFamily: "PoppinsMedium",
-    color: colors.borderDark,
+    marginTop: 14,
+    color: "#111111",
+    fontSize: RFValue(20),
+    fontFamily: "Poppins",
+    lineHeight: RFValue(28),
+    maxWidth: 335,
   },
   blogButton: {
-    backgroundColor: colors.primary,
-    height: hp(3),
-    width: wp(14),
-    borderRadius: hp(100),
+    marginTop: 21,
+    width: 54,
+    height: 29,
+    backgroundColor: "#F9F7FF",
+    borderColor: "#CFCBD5",
+    borderWidth: 1,
+    borderRadius: 7,
     alignItems: "center",
     justifyContent: "center",
   },
   blogButtonText: {
-    fontSize: RFValue(8),
+    fontSize: RFValue(11),
     fontFamily: "PoppinsMedium",
-    textAlign: "center",
-    color: colors.primaryText,
+    color: "#55515C",
   },
   playerWrapper: {
-    width: wp(80),
-    height: hp(22),
+    marginTop: 21,
+    marginHorizontal: 15,
+    backgroundColor: "#DCEAF0",
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  playerTouchable: {
+    width: "100%",
+  },
+  playerImage: {
+    width: "100%",
+    aspectRatio: 336 / 227,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playButton: {
+    width: 44,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playerVideo: {
+    width: "100%",
+    height: hp(29),
+    backgroundColor: "#DCEAF0",
   },
   webView: {
     opacity: 0.99,
@@ -251,18 +304,76 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
+    backgroundColor: "#DCEAF0",
   },
-  sectionLabel: {
-    fontSize: RFValue(12),
+  videoActions: {
+    height: 47,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 15,
+  },
+  actionButton: {
+    marginLeft: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    paddingHorizontal: 15,
+  },
+  descriptionHeading: {
+    marginTop: 12,
+    marginBottom: 13,
+    color: "#111111",
+    fontSize: RFValue(14),
     fontFamily: "PoppinsSemiBold",
   },
-  bodyContentText: {
+  descriptionBody: {
+    color: "#66646A",
+    fontSize: RFValue(12),
+    fontFamily: "Poppins",
+    lineHeight: 17,
+    marginBottom: 27,
+  },
+  sectionLabel: {
+    color: "#111111",
+    fontSize: RFValue(14),
+    fontFamily: "PoppinsSemiBold",
+    marginBottom: 14,
+  },
+  keywordsHeading: {
+    marginTop: 27,
+  },
+  creditHeading: {
+    marginTop: 27,
+    marginBottom: 14,
+  },
+  creditBody: {
+    color: "#66646A",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
   },
-  capsuleWrapper: {
-    marginRight: wp(2),
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 27,
+  },
+  tagChip: {
+    height: 29,
+    backgroundColor: "#F9F7FF",
+    borderColor: "#CFCBD5",
+    borderWidth: 1,
+    borderRadius: 7,
+    paddingHorizontal: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  tagChipText: {
+    fontSize: RFValue(11),
+    fontFamily: "PoppinsMedium",
+    color: "#55515C",
   },
 });
 

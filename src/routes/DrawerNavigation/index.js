@@ -299,8 +299,8 @@ const DrawerNavigation = () => {
 
 const styles = StyleSheet.create({
   icon: {
-    width: hp(3),
-    height: hp(3),
+    width: hp(2),
+    height: hp(2),
   },
   text: {
     fontSize: RFValue(12),

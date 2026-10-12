@@ -104,9 +104,11 @@ const DiaryNotifies = (props) => {
       style={{ display: !message ? "none" : "flex" }}
       activeOpacity={0.7}
       // style={{ display: assignedPsy ? "block" : "none" }}
-      //   onPress={() => {
-      //     navigation.push("ManageBookings");
-      //   }}
+      onPress={() => {
+        if (message === HAPPILIFE_ASSESSMENT && navigation) {
+          navigation.push("HappiLifeIntroduction");
+        }
+      }}
     >
       <ImageBackground
         source={require("../../assets/images/session_background.png")}
@@ -151,7 +153,8 @@ const styles = StyleSheet.create({
     height: hp(8),
     width: wp(90),
     alignSelf: "center",
-    borderRadius: hp(4),
+    borderRadius: 12,
+    overflow: "hidden",
     // alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: wp(6),

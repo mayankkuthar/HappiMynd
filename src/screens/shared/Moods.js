@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  ScrollView,
+  NativeModules,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -32,8 +34,11 @@ const Moods = (props) => {
     moodEmojiList,
     userMood,
     snackDispatch,
+    rewardList,
     selectedMood,
     setSelectedMood,
+    isMoodOMeterDue,
+    setMoodTimestamp,
   } = useContext(Hcontext);
 
   // State variables
@@ -46,7 +51,29 @@ const Moods = (props) => {
 
   // Mounting
   useEffect(() => {
-    fetchMoodList();
+    (async () => {
+      const moodDue = await isMoodOMeterDue();
+      if (!moodDue) {
+        snackDispatch({
+          type: "SHOW_SNACK",
+          payload:
+            "Mood already recorded. The Mood O Meter will open again after 24 hours.",
+        });
+        if (navigation?.pop) navigation.pop();
+        else if (navigation?.goBack) navigation.goBack();
+        else if (isMounted.current) setMoodList([]);
+        return;
+      }
+      fetchMoodList();
+    })();
+  }, []);
+
+  // Hide system bottom navigation bar while on this screen
+  useEffect(() => {
+    NativeModules.SystemBars.hideNavigationBar();
+    return () => {
+      NativeModules.SystemBars.showNavigationBar();
+    };
   }, []);
 
   const fetchMoodList = async () => {
@@ -83,10 +110,27 @@ const Moods = (props) => {
       const moodRes = await userMood({ id, name });
       if (!isMounted.current) return;
       if (moodRes.status === "success") {
+        await setMoodTimestamp();
         snackDispatch({ type: "SHOW_SNACK", payload: moodRes?.message });
-        // authDispatch({ type: "FEEDBACK", paload: true });
+        let points = 50;
+        try {
+          const rewards = await rewardList();
+          if (rewards.status === "success") {
+            const moodReward = rewards.list.find((entry) => entry.id == 7);
+            if (moodReward) {
+              const pts = Number(moodReward.points_to_be_given);
+              if (!isNaN(pts)) points = pts;
+            }
+          }
+        } catch (err) {
+          console.log(
+            "Some issue while fetching reward points (Moods.js) - ",
+            err
+          );
+        }
         navigation.pop();
-        navigation.navigate("Home");
+        navigation.navigate("HomeScreen", { pointsToast: points });
+        navigation.navigate("Home", { pointsToast: points });
       }
     } catch (err) {
       console.log("Some issue while submitting user mood (Moods.js) - ", err);
@@ -108,25 +152,23 @@ const Moods = (props) => {
     return str[0].toUpperCase() + str.slice(1);
   }
 
-  // Group moods into 3 rows: 4 + 4 + remaining (last 2)
-  const moodRows = [];
-  for (let i = 0; i < moodList.length; i += 4) {
-    moodRows.push(moodList.slice(i, i + 4));
-  }
-
   return (
     <ImageBackground
-      source={require("../../assets/images/language_background.png")}
+      source={require("../../assets/images/contact_background.png")}
+      resizeMode="cover"
       style={styles.container}
     >
-      {/* Sized Box */}
-      <View style={{ height: hp(15) }} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.mainSection}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ height: hp(4) }} />
 
-      <View style={styles.mainSection}>
-        <Text style={styles.title}>How are you feeling today?</Text>
+        <Text style={styles.title}>How are you feeling Today?</Text>
 
         {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
+        <View style={{ height: hp(2) }} />
 
         <View style={{ justifyContent: "center", alignItems: "center" }}>
           {selectedMood ? (
@@ -144,56 +186,55 @@ const Moods = (props) => {
             <Image
               source={require("../../assets/images/mood_indicator_mascot.png")}
               resizeMode="contain"
-              style={styles.feedbackFaceHero}
+              style={styles.feedbackFaceMascot}
             />
           )}
         </View>
 
         {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
+        <View style={{ height: hp(1) }} />
 
         <View style={styles.moodGrid}>
-          {moodRows.map((row, rowIndex) => (
-            <View key={rowIndex} style={styles.moodRow}>
-              {row.map((mood) => {
-                const isSelected = selectedMood && selectedMood.id === mood.id;
-                return (
-                  <TouchableOpacity
-                    key={mood?.id}
-                    activeOpacity={0.7}
-                    onPress={() => setSelectedMood(mood)}
-                    style={styles.feedbackButton}
-                  >
-                    <View
-                      style={[
-                        styles.moodBox,
-                        isSelected ? styles.moodBoxSelected : null,
-                      ]}
-                    >
-                      <Image
-                        source={{ uri: mood?.image }}
-                        resizeMode="contain"
-                        style={styles.feedbackFace}
-                      />
-                    </View>
-                    <Text
-                      style={{
-                        ...styles.feedbackFaceText,
-                        fontFamily: isSelected ? "PoppinsBold" : "Poppins",
-                        color: isSelected
-                          ? colors.primaryText
-                          : colors.borderDark,
-                      }}
-                    >
-                      {capitalize(mood?.name)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
+          {moodList.map((mood) => {
+            const isSelected = selectedMood && selectedMood.id === mood.id;
+            return (
+              <TouchableOpacity
+                key={mood?.id}
+                activeOpacity={0.7}
+                onPress={() => setSelectedMood(mood)}
+                style={styles.feedbackButton}
+              >
+                <View
+                  style={[
+                    styles.moodBox,
+                    isSelected ? styles.moodBoxSelected : null,
+                  ]}
+                >
+                  <Image
+                    source={{ uri: mood?.image }}
+                    resizeMode="contain"
+                    style={styles.feedbackFace}
+                  />
+                </View>
+                <Text
+                  style={{
+                    ...styles.feedbackFaceText,
+                    fontFamily: isSelected ? "PoppinsBold" : "Poppins",
+                    color: isSelected
+                      ? colors.primaryText
+                      : colors.borderDark,
+                  }}
+                >
+                  {capitalize(mood?.name)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      </View>
+
+        {/* Sized Box */}
+        <View style={{ height: hp(14) }} />
+      </ScrollView>
       <View style={styles.submitButton}>
         <TouchableOpacity
           activeOpacity={0.8}
@@ -240,18 +281,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   mainSection: {
-    // backgroundColor: "red",
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    // paddingHorizontal: wp(10),
   },
   title: {
     fontSize: RFValue(26),
     fontFamily: "PoppinsBold",
+    textAlign: "center",
   },
   feedbackFaceHero: {
-    width: hp(22),
-    height: hp(22),
+    width: hp(25),
+    height: hp(25),
+  },
+  feedbackFaceMascot: {
+    width: hp(30),
+    height: hp(30),
   },
   feedbackHeroText: {
     fontSize: RFValue(28),
@@ -260,31 +305,30 @@ const styles = StyleSheet.create({
   feedbackButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: wp(20),
+    width: "25%",
+    marginBottom: hp(1.5),
   },
   moodGrid: {
-    width: "100%",
-  },
-  moodRow: {
+    width: wp(92),
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginBottom: hp(2),
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   moodBox: {
-    width: wp(19),
-    height: wp(19),
+    width: wp(13),
+    height: wp(13),
     borderRadius: 11,
     backgroundColor: "#EDE6FF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   moodBoxSelected: {
     backgroundColor: "#A38AF2",
   },
   feedbackFace: {
-    width: hp(6.5),
-    height: hp(6.5),
+    width: "90%",
+    height: "90%",
   },
   feedbackFaceText: {
     fontSize: RFValue(9),

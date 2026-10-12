@@ -5,7 +5,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   Image,
   ActivityIndicator,
 } from "react-native";
@@ -22,7 +21,6 @@ import { Hcontext } from "../../context/Hcontext";
 
 // Components
 import Header from "../../components/common/Header";
-import WaveButton from "../../components/buttons/WaveButton";
 import ConfidentialModal from "../../components/Modals/ConfidentialModal";
 import LanguageModal from "../../components/Modals/LanguageModal";
 import ComingSoon from "../../components/Modals/ComingSoon";
@@ -161,11 +159,7 @@ const HappiBuddyConnect = (props) => {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header showLogo={false} showBack={true} navigation={navigation} />
 
       {comingSoon ? (
@@ -228,14 +222,12 @@ const HappiBuddyConnect = (props) => {
 
           <View style={styles.heroContentContainer}>
             <Text
-              style={{ fontSize: RFValue(16), fontFamily: "PoppinsMedium" }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              style={{ fontSize: RFValue(13), fontFamily: "PoppinsMedium" }}
             >
-              A Friend in Need is
-            </Text>
-            <Text
-              style={{ fontSize: RFValue(16), fontFamily: "PoppinsMedium" }}
-            >
-              a Friend Indeed
+              A Friend in Need is a Friend Indeed
             </Text>
 
             {/* Sized Box */}
@@ -265,7 +257,7 @@ const HappiBuddyConnect = (props) => {
               {loading ? (
                 <ActivityIndicator size="small" color={colors.loaderColor} />
               ) : (
-                <Text style={styles.connectText}>Connect Now</Text>
+                <Text style={styles.connectText}>Chat Now</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -275,29 +267,15 @@ const HappiBuddyConnect = (props) => {
         </View>
 
         {/* Sized Box */}
-        <View style={{ height: hp(2) }} />
-
-        <Text style={styles.choiceText}>Not comfortable chatting ?</Text>
-
-        {/* Sized Box */}
-        <View style={{ height: hp(2) }} />
-
-        <WaveButton
-          text="Explore other services"
-          width={80}
-          pressHandler={() => navigation.goBack()}
-        />
-
-        {/* Sized Box */}
         <View style={{ height: hp(4) }} />
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
     flex: 1,
   },
   pageTitle: {
@@ -306,7 +284,7 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   heroContainer: {
-    backgroundColor: "#C2F3F1",
+    backgroundColor: "#E7E3FF",
     borderRadius: 10,
     alignItems: "center",
     shadowColor: colors.borderLight,
@@ -339,19 +317,15 @@ const styles = StyleSheet.create({
   connectButton: {
     backgroundColor: "#fff",
     borderRadius: hp(100),
+    borderWidth: 1,
+    borderColor: "#D4D4D4",
     paddingVertical: hp(1.5),
     width: "100%",
   },
   connectText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
-    color: colors.pageTitle,
-    textAlign: "center",
-  },
-  choiceText: {
-    fontSize: RFValue(12),
-    fontFamily: "Poppins",
-    color: colors.borderLight,
+    color: "#000000",
     textAlign: "center",
   },
 });

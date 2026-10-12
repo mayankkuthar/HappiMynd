@@ -26,6 +26,11 @@ const InputField = (props) => {
     onChangeText,
     value = "",
     editable = true,
+    onBlur,
+    placeholderTextColor = "#B3B3B3",
+    borderColor = colors.borderLight,
+    iconColor = "black",
+    titleSpacing = 4,
   } = props;
 
   // State variables
@@ -33,16 +38,18 @@ const InputField = (props) => {
 
   return (
     <View style={{ width: "100%" }}>
-      <Text style={styles.text}>{title}</Text>
-      <View style={styles.inputBox}>
+      <Text style={[styles.text, { paddingBottom: titleSpacing }]}>{title}</Text>
+      <View style={[styles.inputBox, { borderColor }]}>
         <TextInput
           style={styles.input}
           placeholder={placeHolder}
+          placeholderTextColor={placeholderTextColor}
           value={value}
           secureTextEntry={password ? !showPassword : false}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           editable={editable}
+          onBlur={onBlur}
           autoCapitalize="none"
         />
         {password ? (
@@ -51,9 +58,9 @@ const InputField = (props) => {
             onPress={() => setShowPassword((prevState) => !prevState)}
           >
             {showPassword ? (
-              <Feather name="eye" size={hp(2)} color="black" />
+              <Feather name="eye" size={hp(2)} color={iconColor} />
             ) : (
-              <Feather name="eye-off" size={hp(2)} color="black" />
+              <Feather name="eye-off" size={hp(2)} color={iconColor} />
             )}
           </TouchableOpacity>
         ) : null}

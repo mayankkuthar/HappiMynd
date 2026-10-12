@@ -102,7 +102,12 @@ const ScreeningCard = (props) => {
   }, []);
 
   return (
-    <View style={{ ...styles.container, opacity: item.disabled ? 0.3 : 1 }}>
+    <View
+      style={[
+        styles.container,
+        item.disabled ? styles.containerDisabled : styles.containerActive,
+      ]}
+    >
       <Text style={styles.cardText}>{item?.question || "Loading question..."}</Text>
 
       {/* Sized Box */}
@@ -148,15 +153,29 @@ const styles = StyleSheet.create({
     paddingVertical: hp(2.5),
     borderRadius: 10,
   },
+  containerDisabled: {
+    opacity: 0.3,
+  },
+  containerActive: {
+    borderWidth: 1,
+    borderColor: "#D4D4D4",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   cardText: {
     fontSize: RFValue(13),
     fontFamily: "Poppins",
     color: "#3E3A3A",
   },
   cardButtonTrue: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6DFFF",
     paddingVertical: hp(1),
     borderRadius: hp(100),
+    borderWidth: 1.5,
+    borderColor: "#DCD2FF",
   },
   cardButtonFalse: {
     backgroundColor: "#fff",
@@ -164,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: hp(100),
     borderWidth: 1.5,
     // borderColor: "#EEEEEE",
-    borderColor: colors.borderLight,
+    borderColor: "#DCD2FF",
   },
   cardButtonText: {
     fontSize: RFValue(12),

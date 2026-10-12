@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { LogBox, View, Text, ActivityIndicator } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import JailMonkey from "jail-monkey";
 // Firebase - Initialize before any Firebase usage
 import "./src/context/Firebase";
@@ -55,8 +56,10 @@ const App = () => {
         </View>
       ) : (
         <Hprovider>
-          <StatusBar backgroundColor="white" style="dark" />
-          <Main />
+          <SafeAreaProvider>
+            <StatusBar backgroundColor="white" style="dark" />
+            <Main />
+          </SafeAreaProvider>
           {/* <Snack /> */}
         </Hprovider>
       )}

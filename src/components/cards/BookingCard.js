@@ -57,7 +57,7 @@ const BookingCard = (props) => {
           style={styles.profileImage}
           // source={require("../../assets/images/credits_image.png")}
           source={{ uri: user?.psy_profile }}
-          resizeMode="contain"
+          resizeMode="cover"
         />
         <View style={styles.cardProfileDetails}>
           <View>
@@ -140,7 +140,7 @@ const BookingCard = (props) => {
             style={styles.bookButton}
           >
             <Text style={styles.bookButtonText}>
-              {userDetail?.user_from === "individual" ? "Book a Slot" : "Book"}
+              {userDetail?.user_from === "individual" ? "Book Now" : "Book Now"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -213,11 +213,14 @@ const BookingCard = (props) => {
                 }
                 style={styles.bookButton}
               >
-                <Text style={styles.bookButtonText}>Add</Text>
+                <Text style={styles.bookButtonText}>Book Now</Text>
               </TouchableOpacity>
             </View>
           </>
         ))}
+
+        {/* Sized Box — keeps last button's shadow from being cut */}
+        <View style={{ height: hp(2) }} />
       </Collapsible>
     </TouchableOpacity>
   );
@@ -231,8 +234,9 @@ const styles = StyleSheet.create({
   },
   profileImage: {
     // backgroundColor: "red",
-    height: hp(10),
-    width: hp(8),
+    height: hp(9),
+    width: hp(9),
+    borderRadius: hp(4.5),
   },
   cardProfileDetails: {
     paddingLeft: hp(2),
@@ -245,12 +249,12 @@ const styles = StyleSheet.create({
   profileProfession: {
     fontSize: RFValue(12),
     fontFamily: "PoppinsMedium",
-    color: colors.pageTitle,
+    color: "#000000",
   },
   profileSpecializationText: {
     fontSize: RFValue(10),
     fontFamily: "Poppins",
-    color: colors.borderLight,
+    color: "#000000",
   },
   profileSpecialization: {
     fontSize: RFValue(10),
@@ -262,12 +266,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bookButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6DFFF",
     borderRadius: hp(100),
     width: wp(30),
     height: hp(5),
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   bookButtonText: {
     fontSize: RFValue(12),
@@ -280,7 +289,7 @@ const styles = StyleSheet.create({
   profilePrice: {
     fontSize: RFValue(12),
     fontFamily: "PoppinsMedium",
-    color: colors.pageTitle,
+    color: "#000000",
   },
   specializationText: {
     fontSize: RFValue(12),
@@ -294,7 +303,7 @@ const styles = StyleSheet.create({
   sessionPriceTitle: {
     fontSize: RFValue(14),
     fontFamily: "PoppinsMedium",
-    color: colors.pageTitle,
+    color: "#000000",
   },
   sessionPrice: {
     fontSize: RFValue(10),

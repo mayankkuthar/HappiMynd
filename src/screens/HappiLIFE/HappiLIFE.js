@@ -13,6 +13,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { hasHappiLIFEAccess } from "../../utils/Util";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -50,9 +51,7 @@ const HappiLIFE = (props) => {
       const mySub = await getSubscriptions();
       if (!isMounted.current) return;
       if (mySub.status === "success") {
-        const isSub = mySub.data.find(
-          (sub) => sub.name === "HappiLIFE Screening",
-        );
+        const isSub = mySub.data.find((sub) => hasHappiLIFEAccess(sub));
         if (isSub) setIsSubscribed(true);
       }
     } catch (err) {
@@ -119,6 +118,8 @@ const HappiLIFE = (props) => {
                   : "Get Awareness Report"
                 : "HappiLIFE Awareness Tool"
             }
+            containerStyle={styles.lifeButton}
+            textStyle={{ color: "#17131F" }}
             // pressHandler={() => navigation.push("Pricing")}
             pressHandler={() => {
               if (authState.user) {
@@ -127,7 +128,7 @@ const HappiLIFE = (props) => {
                     navigation.navigate("HomeScreen");
                   } else navigation.goBack();
                 } else {
-                  navigation.navigate("HappiLIFEScreening");
+                  navigation.navigate("HappiLifeIntroduction");
                 }
               } else navigation.navigate("WelcomeScreen");
             }}
@@ -158,6 +159,14 @@ const styles = StyleSheet.create({
     // backgroundColor: "yellow",
     width: wp(80),
     height: hp(30),
+  },
+  lifeButton: {
+    backgroundColor: "#E6DFFF",
+    shadowColor: "#8E66F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   detailSection: {
     backgroundColor: "#FAFFFF",

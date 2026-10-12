@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from "react";
 import { StyleSheet, TouchableOpacity, Image, View, Text } from "react-native";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Snack from "../components/common/Snack";
+// import Snack from "../components/common/Snack";
 import AuthStackScreen from "../routes/AuthStack/AuthStackScreen";
 import DrawerNavigation from "../routes/DrawerNavigation";
 import Moods from "./shared/Moods";
@@ -12,10 +12,11 @@ import Draggable from "react-native-draggable";
 
 const Main = (props) => {
   const ref = React.useRef(null);
-  const { authState, authDispatch, snackState, botVisible, setBotVisible } =
+  const { authState, authDispatch, botVisible, setBotVisible } =
     useContext(Hcontext);
   const { getSubscriptions, getUserProfile, screenTrafficAnalytics } =
     useContext(Hcontext);
+  const { isMoodOMeterDue } = useContext(Hcontext);
 
   const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -23,6 +24,7 @@ const Main = (props) => {
 
   const [loading, setLoading] = useState(false);
   const [isEnable, setIsEnable] = useState(false);
+  const [moodDue, setMoodDue] = useState(true);
 
   // Mounting
   useEffect(() => {
@@ -54,6 +56,14 @@ const Main = (props) => {
         authDispatch({ type: "LANGUAGE_SELECTION", payload: languageAdded });
       if (userRes)
         authDispatch({ type: "LOGIN", payload: JSON.parse(userRes) });
+
+      // Mood O Meter only re-opens once 24 hours pass since last recording
+      try {
+        const isDue = await isMoodOMeterDue();
+        setMoodDue(isDue);
+      } catch (err) {
+        console.log("Some issue while checking mood due (Main.js) - ", err);
+      }
     } catch (err) {
       console.log("Some issue while validating user - ", err);
     }
@@ -98,7 +108,11 @@ const Main = (props) => {
       <NavigationContainer ref={ref}>
         {authState.isGuest && authState.isOnBoarded ? (
           !authState.feedbackSubmitted && authState.user ? (
-            <Moods />
+            moodDue ? (
+              <Moods />
+            ) : (
+              <DrawerNavigation />
+            )
           ) : authState.user ? (
             <DrawerNavigation />
           ) : (
@@ -109,7 +123,6 @@ const Main = (props) => {
         ) : (
           <AuthStackScreen />
         )}
-        {snackState.visible ? <Snack /> : null}
         {/* <FloatingAction
           floatingIcon={require('../assets/images/ChatBot_Logo.png')}
           iconHeight={45}

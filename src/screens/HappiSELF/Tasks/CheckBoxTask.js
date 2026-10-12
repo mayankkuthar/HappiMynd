@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsMedium",
   },
   questionContainer: {
-    backgroundColor: "#F3FEFE",
+    backgroundColor: "#E7E3FF",
     paddingHorizontal: hp(2),
     paddingVertical: hp(2),
     borderRadius: hp(2),

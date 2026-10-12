@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   ScrollView,
 } from "react-native";
 import {
@@ -55,11 +54,7 @@ const LibrarySub = (props) => {
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header showLogo={false} showBack={true} navigation={navigation} />
 
       {/* Body Section */}
@@ -84,13 +79,13 @@ const LibrarySub = (props) => {
           </>
         ))}
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
   },
   pageTitle: {
     fontSize: RFValue(24),

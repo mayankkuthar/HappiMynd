@@ -55,29 +55,31 @@ const CouponModal = (props) => {
         {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
-        <TouchableOpacity
-          disabled={isCouponApplied}
-          style={{
-            ...styles.modalButton,
-            opacity: isCouponApplied ? 0.3 : 1,
-            backgroundColor: "#EAD5FF",
-          }}
-          onPress={handleSubmit}
-        >
-          <Text style={styles.modalButtonText}>Apply</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            disabled={isCouponApplied}
+            style={{
+              ...styles.modalButton,
+              opacity: isCouponApplied ? 0.3 : 1,
+              backgroundColor: "#EAD5FF",
+            }}
+            onPress={handleSubmit}
+          >
+            <Text style={styles.modalButtonText}>Apply</Text>
+          </TouchableOpacity>
 
-        {/* Sized Box */}
-        <View style={{ height: hp(1.2) }} />
+          {/* Sized Box */}
+          <View style={{ width: wp(3) }} />
 
-        <TouchableOpacity
-          style={{ ...styles.modalButton, ...styles.cancelButton }}
-          onPress={() => {
-            setShowModal(false);
-          }}
-        >
-          <Text style={styles.modalButtonText}>Cancel</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={{ ...styles.modalButton, ...styles.cancelButton }}
+            onPress={() => {
+              setShowModal(false);
+            }}
+          >
+            <Text style={styles.modalButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -114,8 +116,13 @@ const styles = StyleSheet.create({
   modalButton: {
     backgroundColor: "#EAD5FF",
     paddingVertical: hp(1.5),
-    width: "100%",
+    flex: 1,
     borderRadius: hp(50),
+  },
+  buttonRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
   },
   cancelButton: {
     backgroundColor: "#F3F0FF",

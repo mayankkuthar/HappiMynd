@@ -17,6 +17,7 @@ import SubscribedServices from "../../screens/Individual/SubscribedServices";
 import Blog from "../../screens/Individual/Blog";
 import HappiSELF from "../../screens/HappiSELF/HappiSELF";
 import HappiLIFE from "../../screens/HappiLIFE/HappiLIFE";
+import HappiLifeIntroduction from "../../screens/HappiLIFE/HappiLifeIntroduction";
 import HappiBUDDY from "../../screens/HappyBUDDY/HappiBUDDY";
 import HappiTALK from "../../screens/HappiTALK/HappiTALK";
 import HappiSPACE from "../../screens/Individual/HappiSPACE";
@@ -42,7 +43,7 @@ import SubCourses from "../../screens/HappiSELF/SubCourses";
 import TaskScreen from "../../screens/HappiSELF/TaskScreen";
 import MakeBooking from "../../screens/HappiTALK/MakeBooking";
 import Credits from "../../screens/HappiTALK/Credits";
-import HappiGUIDE from "../../screens/HappiGUIDE/HappiGUIDE";
+import SolvIntro from "../../screens/SOLV/SolvIntro";
 import HappiLEARNDescription from "../../screens/HappiLEARN/HappiLEARNDescription";
 import Moods from "../../screens/shared/Moods";
 import BookingConfirm from "../../screens/Individual/BookingConfirm";
@@ -73,6 +74,7 @@ import BotAssessment from "../../screens/Chat/BotAssessment";
 import VideoScreen from "../../screens/Chat/VideoScreen";
 import WelcomeScreen from "../../screens/shared/WelcomeScreen";
 import ResultScreen from "../../screens/Chat/ResultScreen";
+import RewardsScreen from "../../screens/shared/RewardsScreen";
 
 
 
@@ -218,6 +220,11 @@ const HomeStackScreen = ({ navigation, route }) => {
       />
       <HomeStack.Screen
         options={{ headerShown: false }}
+        name="HappiLifeIntroduction"
+        component={HappiLifeIntroduction}
+      />
+      <HomeStack.Screen
+        options={{ headerShown: false }}
         name="HappiLEARN"
         component={HappiLEARN}
       />
@@ -334,7 +341,7 @@ const HomeStackScreen = ({ navigation, route }) => {
       <HomeStack.Screen
         options={{ headerShown: false }}
         name="SOLV"
-        component={HappiGUIDE}
+        component={SolvIntro}
       />
       <HomeStack.Screen
         options={{ headerShown: false }}
@@ -370,6 +377,11 @@ const HomeStackScreen = ({ navigation, route }) => {
         options={{ headerShown: false }}
         name="WelcomeScreen"
         component={WelcomeScreen}
+      />
+      <HomeStack.Screen
+        options={{ headerShown: false }}
+        name="RewardsScreen"
+        component={RewardsScreen}
       />
       <HomeStack.Screen
         options={{ headerShown: false }}

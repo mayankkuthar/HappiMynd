@@ -10,14 +10,15 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Share
+  Share,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Svg, Path } from "react-native-svg";
 import * as FileSystem from "expo-file-system";
 
 // Constants
@@ -25,11 +26,19 @@ import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
-import Header from "../../components/common/Header";
+const DownloadIcon = ({ size = hp(3), color = "#111111" }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M8 12L3 7L4.4 5.55L7 8.15V0H9V8.15L11.6 5.55L13 7L8 12ZM2 16C1.45 16 0.979167 15.8042 0.5875 15.4125C0.195833 15.0208 0 14.55 0 14V11H2V14H14V11H16V14C16 14.55 15.8042 15.0208 15.4125 15.4125C15.0208 15.8042 14.55 16 14 16H2Z"
+      fill={color}
+    />
+  </Svg>
+);
 
 const AllReports = ({ navigation }) => {
   // Context Variables
-  const { authState, screenTrafficAnalytics, getAllReport } = useContext(Hcontext);
+  const { authState, screenTrafficAnalytics, getAllReport, getReport } =
+    useContext(Hcontext);
 
   // State Variables
   const [reports, setReports] = useState([]);
@@ -44,17 +53,59 @@ const AllReports = ({ navigation }) => {
   }, []);
 
   /**
+   * Extract the reports list from a response object
+   * @param {Object} response - The API response
+   * @returns {Array|null} The reports array or null if not found
+   */
+  const extractReports = (response) =>
+    Array.isArray(response)
+      ? response
+      : Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response?.reports)
+      ? response.reports
+      : Array.isArray(response?.result)
+      ? response.result
+      : null;
+
+  /**
    * Fetch all reports from the API
    * Sets the reports state and handles loading states
    */
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await getAllReport();
-      if (response && response.status === "success") {
-        setReports(response.data);
+      let response = await getAllReport();
+      console.log("All reports response:", response);
+      let list = extractReports(response);
+      if (!list || list.length === 0) {
+        console.log("No reports found, attempting to generate...");
+        try {
+          const genRes = await getReport();
+          console.log("getReport response:", genRes);
+          if (genRes?.status === "success") {
+            const reportUrl = genRes?.url || genRes?.data?.url;
+            response = await getAllReport();
+            list = extractReports(response);
+            if ((!list || list.length === 0) && reportUrl) {
+              list = [
+                {
+                  id: Date.now(),
+                  report: reportUrl,
+                  created_at:
+                    genRes?.created_at || new Date().toISOString(),
+                },
+              ];
+            }
+          }
+        } catch (genErr) {
+          console.error("Error generating report:", genErr);
+        }
+      }
+      if (list) {
+        setReports(list);
       } else {
-        createOneButtonAlert("Failed to fetch reports");
+        createOneButtonAlert(response?.message || "Failed to fetch reports");
       }
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -78,36 +129,25 @@ const AllReports = ({ navigation }) => {
    * Display an alert with a single OK button
    * @param {string} message - The message to display in the alert
    */
-  const createOneButtonAlert = (message) => 
+  const createOneButtonAlert = (message) =>
     Alert.alert("Report Status", message, [
       { text: "OK", onPress: () => console.log("OK Pressed") },
     ]);
 
   /**
-   * Format a date string to a more readable format (e.g. Jan 1, 2025)
+   * Format a date string to the requested timestamp format (e.g. 03/23/26 at 10:59:35)
    * @param {string} dateString - The date string to format
-   * @returns {string} The formatted date
+   * @returns {string} The formatted timestamp
    */
-  const formatDate = (dateString) => {
+  const formatTimestamp = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  /**
-   * Format a date string to display only the time (e.g. 12:30 PM)
-   * @param {string} dateString - The date string to format
-   * @returns {string} The formatted time
-   */
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yy = String(date.getFullYear()).slice(-2);
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${mm}/${dd}/${yy} at ${hh}:${min}:${ss}`;
   };
 
   /**
@@ -199,39 +239,23 @@ const AllReports = ({ navigation }) => {
    */
   const renderReportItem = ({ item, index }) => {
     return (
-      <View 
-        style={[
-          styles.reportItem, 
-          index % 2 === 0 ? styles.evenRow : styles.oddRow
-        ]}
-      >
+      <View style={styles.reportItem}>
         <View style={styles.reportInfo}>
-          <Text style={styles.reportId}>Report #{index+1}</Text>
-          <Text style={styles.reportDate}>
-            {formatDate(item.created_at)} at {formatTime(item.created_at)}
+          <Text style={styles.reportTitle}>Report #{index + 1}</Text>
+          <Text style={styles.reportTimestamp}>
+            {formatTimestamp(item.created_at)}
           </Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.downloadButton}
           activeOpacity={0.7}
           onPress={() => handleDownload(item.report)}
         >
-          <MaterialIcons name="file-download" size={hp(3.5)} color={colors.primary} />
+          <DownloadIcon size={hp(2.2)} color="#111111" />
         </TouchableOpacity>
       </View>
     );
   };
-
-  /**
-   * Render the header for the reports list
-   * @returns {JSX.Element} The header component
-   */
-  const ListHeader = () => (
-    <View style={styles.tableHeader}>
-      <Text style={styles.headerText}>Report Details</Text>
-      <Text style={styles.headerText}>Download</Text>
-    </View>
-  );
 
   /**
    * Render an empty state when no reports are available
@@ -246,8 +270,17 @@ const AllReports = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Header title="HappiLIFE Reports" navigation={navigation} showBackButton />
-      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="chevron-left" size={22} color="#494650" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Report Details</Text>
+      </View>
+
       {loading && !refreshing ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -257,8 +290,7 @@ const AllReports = ({ navigation }) => {
         <FlatList
           data={reports}
           renderItem={renderReportItem}
-          keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={reports.length > 0 ? ListHeader : null}
+          keyExtractor={(item, index) => String(item?.id ?? index)}
           ListEmptyComponent={EmptyList}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
@@ -278,68 +310,58 @@ const AllReports = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F8F7FF",
+    paddingTop: hp(6),
+  },
+  header: {
+    width: wp(100),
+    paddingHorizontal: wp(4),
+    paddingBottom: hp(2),
+  },
+  headerTitle: {
+    fontSize: RFValue(26),
+    fontFamily: "Poppins",
+    fontWeight: "400",
+    color: "#9747FF",
+    marginTop: hp(1),
   },
   listContainer: {
     paddingHorizontal: wp(4),
     paddingBottom: hp(2),
     flexGrow: 1,
   },
-  tableHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(3),
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    marginVertical: hp(2),
-  },
-  headerText: {
-    color: "white",
-    fontFamily: "PoppinsSemiBold",
-    fontSize: RFValue(14),
-  },
   reportItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: hp(2),
-    paddingHorizontal: wp(3),
-    borderRadius: 8,
-    marginBottom: hp(1.5),
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  evenRow: {
-    backgroundColor: "#fff",
-  },
-  oddRow: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#EBD9FF",
+    borderColor: "#D8CDE4",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    marginBottom: 8,
   },
   reportInfo: {
     flex: 1,
   },
-  reportId: {
-    fontFamily: "PoppinsSemiBold",
+  reportTitle: {
+    fontFamily: "Poppins",
+    fontWeight: "400",
     fontSize: RFValue(14),
-    color: "#333",
+    color: "#111111",
     marginBottom: hp(0.5),
   },
-  reportDate: {
-    fontFamily: "PoppinsRegular",
+  reportTimestamp: {
+    fontFamily: "Poppins",
+    fontWeight: "400",
     fontSize: RFValue(12),
-    color: "#666",
+    color: "#111111",
   },
   downloadButton: {
-    width: hp(5),
-    height: hp(5),
-    borderRadius: hp(2.5),
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f8ff",
+    marginLeft: hp(2),
   },
   loaderContainer: {
     flex: 1,

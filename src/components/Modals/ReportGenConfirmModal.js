@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  TouchableOpacity,
-  Linking,
-  Touchable,
-} from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import Modal from "react-native-modal";
 import {
   widthPercentageToDP as wp,
@@ -15,17 +7,14 @@ import {
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 
-// Constants
-import { colors } from "../../assets/constants";
-
 const ReportGenConfirmModal = (props) => {
   // Prop Destructuring
   const {
-    navigation,
     showModal = false,
     setShowModal = () => {},
     pressHandler = () => {},
   } = props;
+
   return (
     <Modal
       isVisible={showModal}
@@ -42,79 +31,96 @@ const ReportGenConfirmModal = (props) => {
         {/* Sized Box */}
         <View style={{ height: hp(1) }} />
 
-        <Text style={styles.modalText}>
+        <Text style={styles.modalText} numberOfLines={2}>
           Your report has been generated, please continue to view.
         </Text>
 
         {/* Sized Box */}
-        <View style={{ height: hp(2) }} />
+        <View style={{ height: hp(3) }} />
 
-        <TouchableOpacity
-          style={styles.modalButton}
-          onPress={() => {
-            setShowModal(false);
-          }}
-        >
-          <Text style={styles.modalButtonText}>Continue</Text>
-        </TouchableOpacity>
-        {/* Sized Box */}
-        <View style={{ height: hp(1) }} />
-        <TouchableOpacity
-          style={styles.outlineModalButton}
-          onPress={() => {
-            setShowModal(false);
-          }}
-        >
-          <Text style={styles.modalButtonText}>Cancel</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.cancelButton]}
+            onPress={() => {
+              setShowModal(false);
+            }}
+          >
+            <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.confirmButton]}
+            onPress={() => {
+              setShowModal(false);
+              pressHandler();
+            }}
+          >
+            <Text style={[styles.modalButtonText, styles.confirmButtonText]}>
+              Yes
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundModal,
-    width: wp(90),
-    // height: hp(20),
+    backgroundColor: "#F1EFFF",
+    width: wp(86),
     alignSelf: "center",
-    borderRadius: 6,
+    borderRadius: 60,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: hp(2),
+    paddingVertical: hp(3),
     paddingHorizontal: hp(2),
   },
   heroImage: {
-    // backgroundColor: "red",
     width: wp(50),
     height: hp(20),
   },
   modalText: {
-    fontSize: RFValue(12),
+    color: "#191919",
+    fontSize: RFValue(13),
     fontFamily: "Poppins",
-    textAlign: "justify",
+    fontWeight: "400",
+    textAlign: "center",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
   modalButton: {
-    backgroundColor: colors.primary,
     paddingVertical: hp(1.5),
-    width: "100%",
-    borderRadius: hp(100),
+    width: wp(33),
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  outlineModalButton: {
-    // backgroundColor: colors.primary,
-    paddingVertical: hp(1.5),
-    width: "100%",
-    borderRadius: hp(100),
-    borderWidth: hp(0.2),
-    borderColor: colors.primary,
+  cancelButton: {
+    backgroundColor: "#F1EFFF",
+    borderWidth: 2,
+    borderColor: "#A34BFF",
+    marginRight: wp(8),
+  },
+  cancelButtonText: {
+    color: "#191919",
+  },
+  confirmButton: {
+    backgroundColor: "#EAD5FF",
+    borderWidth: 0,
+  },
+  confirmButtonText: {
+    color: "#191919",
   },
   modalButtonText: {
     textAlign: "center",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
-  },
-  hyperlinkText: {
-    color: colors.pageTitle,
-    textDecorationLine: "underline",
   },
 });
 

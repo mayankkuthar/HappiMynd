@@ -23,6 +23,7 @@ import { colors } from "../../assets/constants";
 import Header from "../../components/common/Header";
 import TaskSelector from "./Tasks/TaskSelector";
 import CourseComplete from "./Tasks/CourseComplete";
+import PointsToast from "../../components/Modals/PointsToast";
 
 const TaskScreen = (props) => {
   // Prop Destructuring
@@ -36,6 +37,7 @@ const TaskScreen = (props) => {
     happiSelfDispatch,
     completeCourse,
     saveHappiSelfContentAnswer,
+    rewardList,
   } = useContext(Hcontext);
 
   // State Variables
@@ -43,6 +45,27 @@ const TaskScreen = (props) => {
   const [isCorrectOption, setIsCorrectOption] = useState(false);
   const [courseComplete, setCourseComplete] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [rewardPoint, setRewardPoint] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (courseComplete) fetchRewardPoint();
+  }, [courseComplete]);
+
+  const fetchRewardPoint = async () => {
+    try {
+      const rewards = await rewardList();
+      console.log("chek teh rewasrd - ", rewards);
+      if (rewards.status === "success") {
+        const score = rewards.list.find((entry) => entry.id == 9);
+        const pts = Number(score.points_to_be_given);
+        setRewardPoint(pts);
+        if (pts) setShowToast(true);
+      }
+    } catch (err) {
+      console.log("Some issue while fetching reward-list - ", err);
+    }
+  };
 
   // Mounting
   useEffect(() => {
@@ -167,10 +190,15 @@ const TaskScreen = (props) => {
   if (courseComplete) {
     return (
       <ImageBackground
-        source={require("../../assets/images/language_background.png")}
+        source={require("../../assets/images/contact_background.png")}
         resizeMode="cover"
         style={styles.container}
       >
+        <PointsToast
+          showToast={showToast}
+          setShowToast={setShowToast}
+          points={rewardPoint}
+        />
         <Header showLogo={false} showBack={true} navigation={navigation} />
 
         <CourseComplete
@@ -182,11 +210,7 @@ const TaskScreen = (props) => {
   }
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header showLogo={false} showBack={true} navigation={navigation} />
 
       {console.log("chehc the wuestion - ", happiSelfState.questionsList)}
@@ -221,14 +245,14 @@ const TaskScreen = (props) => {
           </TouchableOpacity>
         </View>
       ) : null}
-    </ImageBackground>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
   },
   taskActionButtonContainer: {
     alignItems: "center",
@@ -238,16 +262,23 @@ const styles = StyleSheet.create({
     bottom: hp(4),
   },
   taskActionButton: {
-    backgroundColor: colors.pageTitle,
-    paddingVertical: hp(1.5),
+    backgroundColor: "#E8DEFF",
+    height: hp(6),
     width: wp(80),
-    borderRadius: hp(100),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 50,
+    shadowColor: "#8E66F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   taskActionButtonText: {
     fontSize: RFValue(14),
-    fontFamily: "PoppinsMedium",
+    fontFamily: "PoppinsSemiBold",
+    color: "#000000",
     textAlign: "center",
-    color: "#fff",
   },
   noContentText: {
     fontSize: RFValue(20),

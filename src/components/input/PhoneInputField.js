@@ -25,12 +25,13 @@ const PhoneInputField = (props) => {
     onChangeText,
     value = "",
     editable = true,
+    borderColor = colors.borderLight,
   } = props;
 
   return (
     <View style={{ width: "100%" }}>
       <Text style={styles.text}>{title}</Text>
-      <View style={styles.inputBox}>
+      <View style={[styles.inputBox, { borderColor }]}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
           <Text
             style={{ fontSize: RFValue(12), fontFamily: "Poppins", color: "#999" }}

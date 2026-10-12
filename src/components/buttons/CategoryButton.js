@@ -56,12 +56,14 @@ const styles = StyleSheet.create({
     // backgroundColor: "yellow",
     alignItems: "center",
     justifyContent: "center",
-    width: wp(20),
+    width: wp(26),
     height: hp(12),
   },
   text: {
     fontSize: RFValue(9),
     fontFamily: "Poppins",
+    textAlign: "center",
+    marginTop: -hp(1),
   },
 });
 

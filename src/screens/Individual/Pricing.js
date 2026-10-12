@@ -874,10 +874,10 @@ const Pricing = (props) => {
               setPaymentLoading(false);
             }
             else {
-              if (params?.isFrom == undefined) {
+if (params?.isFrom == undefined) {
                 setPaymentLoading(false);
-                console.log("user subscribe -----",amount);
-                navigation.replace("SubscribedServices");
+                console.log("user subscribe -----", amount);
+                navigation.navigate("SubscribedServices");
               } else
                 Linking.openURL(payRes?.link);
   

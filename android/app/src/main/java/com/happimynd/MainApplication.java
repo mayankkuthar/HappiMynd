@@ -39,6 +39,7 @@ public class MainApplication extends Application implements ReactApplication {
       List<ReactPackage> packages = new PackageList(this).getPackages();
       // Expo autolinking handles all packages
       // Packages that cannot be autolinked or require manual setup can be added here
+      packages.add(new SystemBarsPackage());
       return packages;
     }
 

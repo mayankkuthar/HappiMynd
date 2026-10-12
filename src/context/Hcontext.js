@@ -250,6 +250,7 @@ export const Hprovider = (props) => {
       happimyndCode: data.happimyndCode,
       country_code: data.country_code,
       mobile: data.mobile,
+      mobile_verified_token: data.mobile_verified_token,
       language: data.language,
       device_token: deviceToken,
       referral_code: data.refferalCode,
@@ -1352,6 +1353,28 @@ export const Hprovider = (props) => {
       throw err;
     }
   };
+  const MOOD_TIMESTAMP_KEY = "MOOD_TIMESTAMP";
+  const setMoodTimestamp = async () => {
+    try {
+      await AsyncStorage.setItem(MOOD_TIMESTAMP_KEY, String(Date.now()));
+    } catch (err) {
+      console.log("Error while saving mood timestamp - ", err);
+    }
+  };
+  const getMoodTimestamp = async () => {
+    try {
+      const ts = await AsyncStorage.getItem(MOOD_TIMESTAMP_KEY);
+      return ts ? Number(ts) : 0;
+    } catch (err) {
+      console.log("Error while reading mood timestamp - ", err);
+      return 0;
+    }
+  };
+  const isMoodOMeterDue = async () => {
+    const ts = await getMoodTimestamp();
+    if (!ts) return true;
+    return Date.now() - ts >= 24 * 60 * 60 * 1000;
+  };
   const totalRewardPoints = async () => {
     try {
       const res = await apiClient.get("/api/v1/total-reward-points-user");
@@ -1562,6 +1585,9 @@ export const Hprovider = (props) => {
         rescheduleGuideBooking,
         moodEmojiList,
         userMood,
+        setMoodTimestamp,
+        getMoodTimestamp,
+        isMoodOMeterDue,
         referralCode,
         screenTrafficAnalytics,
         phoneLogin,

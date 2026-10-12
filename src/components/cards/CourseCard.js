@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   TouchableOpacity,
 } from "react-native";
 import {
@@ -41,43 +40,18 @@ const OpenSection = (props) => {
     <View style={styles.openSectionContainer}>
       <TouchableOpacity
         activeOpacity={0.7}
-        style={{
-          flexDirection: "row",
-          alignSelf: "flex-end",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+        style={styles.likeButton}
         onPress={isLiked == "yes" ? unLikeHandler : likeHandler}
       >
-        <Text style={{ fontSize: RFValue(11.5), fontFamily: "Poppins" }}>
-          {likesCount}
-        </Text>
-        {/* Sized Box */}
-        <View style={{ width: hp(0.5) }} />
         {isLiked == "yes" ? (
           <Ionicons name="heart" size={hp(2)} color="red" />
         ) : (
           <Ionicons name="heart-outline" size={hp(2)} color="red" />
         )}
+        {/* Sized Box */}
+        <View style={{ width: hp(0.5) }} />
+        <Text style={styles.likeCountText}>{likesCount}</Text>
       </TouchableOpacity>
-      <View
-        style={{
-          flexDirection: "row",
-          flex: 1,
-          alignItems: "flex-end",
-        }}
-      >
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={pressHandler}
-          style={styles.moduleButton}
-        >
-          <Text style={styles.moduleButtonText}>View Module</Text>
-          {/* Sized Box */}
-          <View style={{ width: hp(0.5) }} />
-          <AntDesign name="arrowright" size={hp(1.8)} color="black" />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -87,7 +61,7 @@ const VideoSection = (props) => {
   const {} = props;
   return (
     <View style={styles.iconContainer}>
-      <FontAwesome name="play-circle" size={hp(3.5)} color="#58C4CB" />
+      <AntDesign name="arrowright" size={hp(2)} color="black" />
     </View>
   );
 };
@@ -191,10 +165,11 @@ const CourseCard = (props) => {
       // onPress={pressHandler}
       // disabled={type === "locked" || "completed"}
     >
-      <ImageBackground
-        source={require("../../assets/images/course_background.png")}
-        resizeMode="cover"
-        style={styles.container}
+      <View
+        style={[
+          styles.container,
+          type === "locked" && styles.lockedContainer,
+        ]}
       >
         <View style={styles.firstHalf}>
           <Text style={styles.cardTitle}>{title}</Text>
@@ -220,15 +195,14 @@ const CourseCard = (props) => {
             )}
           </View>
         ) : null}
-      </ImageBackground>
+      </View>
       {disabled ? <View style={styles.disabledContainer} /> : null}
     </TouchableOpacity>
   );
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F3FEFE",
-    // backgroundColor: "red",
+    backgroundColor: "#FFFFFF",
     height: hp(10),
     width: wp(80),
     borderRadius: 10,
@@ -240,11 +214,14 @@ const styles = StyleSheet.create({
     shadowRadius: hp(1.5),
     // elevation: 5,
   },
+  lockedContainer: {
+    backgroundColor: "#F3F3F3",
+  },
   firstHalf: {
     flex: 1,
     // backgroundColor: "red",
-    paddingLeft: hp(4),
-    // alignItems: "center",
+    paddingLeft: hp(3),
+    paddingRight: hp(2),
     justifyContent: "center",
   },
   secondHalf: {
@@ -258,6 +235,7 @@ const styles = StyleSheet.create({
     fontSize: RFValue(13),
     fontFamily: "PoppinsSemiBold",
     color: colors.borderDark,
+    textAlign: "left",
   },
   iconContainer: {
     alignItems: "center",
@@ -267,20 +245,16 @@ const styles = StyleSheet.create({
   openSectionContainer: {
     // backgroundColor: "yellow",
     flex: 1,
+    justifyContent: "center",
   },
-  moduleButton: {
-    backgroundColor: colors.primary,
+  likeButton: {
     flexDirection: "row",
-    alignItems: "center",
+    alignSelf: "flex-end",
     justifyContent: "center",
-    height: hp(3.3),
-    width: wp(28),
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: hp(100),
   },
-  moduleButtonText: {
-    fontSize: RFValue(10),
+  likeCountText: {
+    fontSize: RFValue(11.5),
     fontFamily: "Poppins",
   },
   disabledContainer: {

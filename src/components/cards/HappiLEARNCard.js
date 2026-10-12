@@ -15,7 +15,6 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
 
 // Constants
-import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
 const HappiLEARNCard = (props) => {
@@ -153,18 +152,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   blogButton: {
-    backgroundColor: colors.primary,
-    height: hp(4),
-    paddingHorizontal: hp(2),
-    borderRadius: hp(100),
+    backgroundColor: "#DCBEFF",
+    height: hp(4.4),
+    paddingHorizontal: hp(2.4),
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   blogButtonText: {
-    fontSize: RFValue(10),
+    fontSize: RFValue(13),
     fontFamily: "PoppinsMedium",
     textAlign: "center",
-    color: colors.primaryText,
+    color: "#A454FE",
+    textTransform: "capitalize",
   },
   heartCount: {
     // color: "#fff",

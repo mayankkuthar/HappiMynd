@@ -72,8 +72,11 @@ const BookingList = (props) => {
         image={require("../../assets/images/confidential_hero.png")}
       />
       {/* Body Section */}
-      <ScrollView style={{ paddingHorizontal: wp(10) }}>
-        <Text style={styles.pageTitle}>HappiTALK</Text>
+      <ScrollView
+        style={{ paddingHorizontal: wp(10) }}
+        contentContainerStyle={{ paddingBottom: hp(4) }}
+      >
+        <Text style={styles.pageTitle}>Expert Panel</Text>
 
         {/* Sized Box */}
         <View style={{ height: hp(2) }} />

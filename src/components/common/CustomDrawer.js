@@ -18,7 +18,6 @@ import {
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 
 // Constats
-import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
 const avatarImages = {
@@ -40,7 +39,7 @@ const CustomDrawer = (props) => {
   const {} = props;
 
   // Context variables
-  const { authState, whiteLabelState } = useContext(Hcontext);
+  const { authState } = useContext(Hcontext);
 
   const user = authState?.user?.user;
 
@@ -68,23 +67,13 @@ const CustomDrawer = (props) => {
       <View style={{ height: hp(4) }} />
 
       <View style={styles.poweredContainer}>
-        {authState.userType ===
-        "individual" ? null : whiteLabelState.footer ? (
-          <Text style={styles.poweredText}>Powered by HappiMynd</Text>
-        ) : null}
-        <Text style={styles.poweredText}>
-          Version {Platform.OS == "ios" ? "V.10.0" : "V.12.0"}
-        </Text>
+        <Text style={styles.poweredTextDark}>Powered by HappiMynd</Text>
 
         {/* Sized Box */}
         <View style={{ height: hp(1) }} />
 
-        <Text
-          style={{
-            ...styles.poweredText,
-          }}
-        >
-          Copyright © 2026 HappiMynd
+        <Text style={styles.poweredTextDark}>
+          Version {Platform.OS == "ios" ? "V.10.0" : "V.12.0"}
         </Text>
       </View>
     </View>
@@ -117,10 +106,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: hp(4),
   },
-  poweredText: {
+  poweredTextDark: {
     fontSize: RFValue(10),
     fontFamily: "Poppins",
-    color: colors.borderLight,
+    color: "#000000",
   },
 });
 

@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
@@ -87,11 +86,7 @@ const SubCourses = (props) => {
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header showLogo={false} showBack={true} navigation={navigation} />
 
       <CourseLockModal
@@ -142,13 +137,13 @@ const SubCourses = (props) => {
           ))
         )}
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
   },
   pageTitle: {
     fontSize: RFValue(24),

@@ -23,6 +23,11 @@ const DropDown = (props) => {
     containerStyle = null,
     containerTextStyle = null,
     dropDownContainerStyle = null,
+    rowStyle = null,
+    selectedRowStyle = null,
+    searchInputStyle = null,
+    iconColor = "black",
+    iconSize = hp(2),
   } = props;
   return (
     <View>
@@ -47,12 +52,14 @@ const DropDown = (props) => {
         buttonStyle={{ ...styles.container, ...containerStyle }}
         buttonTextStyle={{ ...styles.containerText, ...containerTextStyle }}
         dropdownStyle={{ ...styles.dropDownContainer, ...dropDownContainerStyle }}
+        rowStyle={{ ...styles.rowStyle, ...rowStyle }}
+        selectedRowStyle={{ ...styles.selectedRowStyle, ...selectedRowStyle }}
         rowTextStyle={styles.rowText}
         renderDropdownIcon={() => (
-          <FontAwesome5 name="chevron-down" size={hp(2)} color="black" />
+          <FontAwesome5 name="chevron-down" size={iconSize} color={iconColor} />
         )}
         search={search}
-        searchInputStyle={styles.searchInputStyleStyle}
+        searchInputStyle={{ ...styles.searchInputStyleStyle, ...searchInputStyle }}
         searchPlaceHolder={"Search here"}
         searchPlaceHolderColor={colors.borderDark}
         renderSearchInputLeftIcon={() => {
@@ -103,6 +110,8 @@ const styles = StyleSheet.create({
     color: colors.borderDark,
     textAlign: "left",
   },
+  rowStyle: {},
+  selectedRowStyle: {},
   searchInputStyleStyle: {
     backgroundColor: "#EFFEFE",
     borderBottomWidth: 1,

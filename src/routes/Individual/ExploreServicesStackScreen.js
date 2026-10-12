@@ -22,6 +22,7 @@ import HappiBUDDY from "../../screens/HappyBUDDY/HappiBUDDY";
 import HappiTALK from "../../screens/HappiTALK/HappiTALK";
 import HappiSPACE from "../../screens/Individual/HappiSPACE";
 import HappiLIFEScreening from "../../screens/HappiLIFE/HappiLIFEScreening";
+import HappiLifeIntroduction from "../../screens/HappiLIFE/HappiLifeIntroduction";
 import HappiLEARN from "../../screens/HappiLEARN/HappiLEARN";
 import HappiBuddyConnect from "../../screens/HappyBUDDY/HappiBuddyConnect";
 import HappiBUDDYChat from "../../screens/HappyBUDDY/HappiBUDDYChat";
@@ -43,7 +44,7 @@ import SubCourses from "../../screens/HappiSELF/SubCourses";
 import TimerScreen from "../../screens/Individual/TimerScreen";
 import MakeBooking from "../../screens/HappiTALK/MakeBooking";
 import Credits from "../../screens/HappiTALK/Credits";
-import HappiGUIDE from "../../screens/HappiGUIDE/HappiGUIDE";
+import SolvIntro from "../../screens/SOLV/SolvIntro";
 import HappiLEARNDescription from "../../screens/HappiLEARN/HappiLEARNDescription";
 import Moods from "../../screens/shared/Moods";
 import BookingConfirm from "../../screens/Individual/BookingConfirm";
@@ -98,6 +99,16 @@ const ExploreServicesStackScreen = ({ navigation, route }) => {
         name="HappiLIFEScreening"
         component={HappiLIFEScreening}
       /> */}
+      <ExploreServicesStack.Screen
+        options={{ headerShown: false }}
+        name="HappiLifeIntroduction"
+        component={HappiLifeIntroduction}
+      />
+      <ExploreServicesStack.Screen
+        options={{ headerShown: false }}
+        name="HappiLIFEScreening"
+        component={HappiLIFEScreening}
+      />
       {/* <ExploreServicesStack.Screen
         options={{ headerShown: false }}
         name="HappiLEARN"
@@ -186,7 +197,7 @@ const ExploreServicesStackScreen = ({ navigation, route }) => {
       <ExploreServicesStack.Screen
         options={{ headerShown: false }}
         name="SOLV"
-        component={HappiGUIDE}
+        component={SolvIntro}
       />
       <ExploreServicesStack.Screen
         options={{ headerShown: false }}

@@ -126,7 +126,7 @@ const BotAssessment = (props) => {
           }}
         >
           <View style={styles.backContainer}>
-            <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+            <Ionicons name="ios-chevron-back" size={22} color="black" />
           </View>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Assessment</Text>

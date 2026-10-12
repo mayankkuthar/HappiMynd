@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   Image,
 } from "react-native";
 import {
@@ -20,6 +19,9 @@ import { colors } from "../../assets/constants";
 
 // Components
 import WaveButton from "../../components/buttons/WaveButton";
+
+// Hcontext
+import { Hcontext } from "../../context/Hcontext";
 import ConfidentialModal from "../../components/Modals/ConfidentialModal";
 import LanguageModal from "../../components/Modals/LanguageModal";
 import ComingSoon from "../../components/Modals/ComingSoon";
@@ -40,6 +42,9 @@ const bulletPoints = [
 ];
 
 const HappiTALKBook = (props) => {
+  // Hcontext
+  const { authState } = useContext(Hcontext);
+
   // Prop Destructuring
   const { navigation } = props;
 
@@ -47,12 +52,14 @@ const HappiTALKBook = (props) => {
   const [showConfidentialModal, setShowConfidentialModal] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
+  // Sessions left (from login API), default 0
+  const sessionsLeft =
+    authState?.user?.sessions_left?.happitalk_sessions_left ??
+    authState?.user?.user?.sessions_left?.happitalk_sessions_left ??
+    0;
+
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header showLogo={false} showBack={true} navigation={navigation} />
 
       {showComingSoon ? (
@@ -132,7 +139,7 @@ const HappiTALKBook = (props) => {
               // }}
               style={styles.connectButton}
             >
-              <Text style={styles.connectText}>Book Now</Text>
+              <Text style={styles.connectText}>Proceed</Text>
             </TouchableOpacity>
           </View>
 
@@ -149,13 +156,13 @@ const HappiTALKBook = (props) => {
         <View style={{ height: hp(2) }} />
 
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <WaveButton
+              text="Manage Your Sessions"
+              width={38}
+              pressHandler={() => navigation.push("ManageBookings")}
+            />
           <WaveButton
-            text="Manage Bookings"
-            width={38}
-            pressHandler={() => navigation.push("ManageBookings")}
-          />
-          <WaveButton
-            text="Session Balance"
+            text={`${sessionsLeft} Session Balance`}
             width={38}
             pressHandler={() => navigation.push("Credits")}
           />
@@ -164,12 +171,12 @@ const HappiTALKBook = (props) => {
         {/* Sized Box */}
         <View style={{ height: hp(4) }} />
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
     flex: 1,
   },
   pageTitle: {
@@ -178,7 +185,7 @@ const styles = StyleSheet.create({
     color: colors.pageTitle,
   },
   heroContainer: {
-    backgroundColor: "#C2F3F1",
+    backgroundColor: "#E7E3FF",
     borderRadius: 10,
     alignItems: "center",
     shadowColor: colors.borderLight,
@@ -212,13 +219,15 @@ const styles = StyleSheet.create({
   connectButton: {
     backgroundColor: "#fff",
     borderRadius: hp(100),
+    borderWidth: 1,
+    borderColor: "#D4D4D4",
     paddingVertical: hp(1.5),
     width: "100%",
   },
   connectText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
-    color: colors.pageTitle,
+    color: "#000000",
     textAlign: "center",
   },
   choiceText: {

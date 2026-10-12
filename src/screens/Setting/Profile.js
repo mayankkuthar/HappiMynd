@@ -212,6 +212,7 @@ const Profile = (props) => {
             value={nickName}
             onChangeText={(text) => setNickName(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* Sized Box */}
@@ -223,6 +224,7 @@ const Profile = (props) => {
             value={userName}
             onChangeText={(text) => setUserName(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* Sized Box */}
@@ -234,6 +236,7 @@ const Profile = (props) => {
             value={email}
             onChangeText={(text) => setEmail(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* Sized Box */}
@@ -244,6 +247,7 @@ const Profile = (props) => {
             value={phone}
             onChangeText={(text) => setPhone(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* <InputField
@@ -263,6 +267,7 @@ const Profile = (props) => {
             value={gender}
             onChangeText={(text) => setGender(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* Sized Box */}
@@ -275,6 +280,7 @@ const Profile = (props) => {
             value={age}
             onChangeText={(text) => setAge(text)}
             editable={editMode}
+            borderColor="#D4D4D4"
           />
 
           {/* Sized Box */}
@@ -296,6 +302,7 @@ const Profile = (props) => {
             pressHandler={submitHandler}
             loading={loading}
             disabled={age <= 18 ? !otpVerified : false}
+            containerStyle={styles.saveButton}
           />
         ) : null}
 
@@ -309,6 +316,15 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  saveButton: {
+    backgroundColor: "#E6DFFF",
+    height: hp(5.5),
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   profileImageContainer: {
     // backgroundColor: "red",

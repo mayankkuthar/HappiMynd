@@ -11,16 +11,17 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
+import { MaterialIcons } from "@expo/vector-icons";
 
-// Constants
-import { colors } from "../../assets/constants";
+// Context
 import { Hcontext } from "../../context/Hcontext";
 
+// Utils
+import { hasHappiSELFAccess } from "../../utils/Util";
+
 // Components
-import Header from "../../components/common/Header";
 import Button from "../../components/buttons/Button";
-import ComingSoon from "../../components/Modals/ComingSoon";
 
 const HappiSELF = (props) => {
   // Prop destructuring
@@ -31,7 +32,6 @@ const HappiSELF = (props) => {
     useContext(Hcontext);
 
   // STate variables
-  const [showModal, setShowModal] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +47,7 @@ const HappiSELF = (props) => {
       const mySub = await getSubscriptions();
 
       if (mySub.status === "success") {
-        const isSub = mySub.data.find((sub) => sub.name === "HappiSELF");
+        const isSub = mySub.data.find((sub) => hasHappiSELFAccess(sub));
         if (isSub) setIsSubscribed(true);
       }
     } catch (err) {
@@ -58,114 +58,157 @@ const HappiSELF = (props) => {
 
   return (
     <View style={styles.container}>
-      <Header showBack={true} navigation={navigation} />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="chevron-left" size={22} color="#494650" />
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView style={{ paddingHorizontal: wp(10) }}>
-        {/* Sized Box */}
-        <View style={{ height: hp(3) }} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Heading */}
+        <Text style={styles.heading}>HappiSELF</Text>
 
-        <View>
-          <Text style={styles.title}>HappiSELF</Text>
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>Daily practices for inner strength.</Text>
 
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
-          <Text style={styles.subTitle}>
-            Tune up your emotions anytime anywhere
-          </Text>
-
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
+        {/* Illustration */}
+        <View style={styles.illustrationContainer}>
           <Image
             source={require("../../assets/images/happiAPP.png")}
             resizeMode="contain"
             style={styles.banner}
           />
+        </View>
 
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
-          <View style={styles.detailSection}>
-            <Text style={styles.detail}>
-              Lift up your emotional wellbeing or build positive habits into
-              your daily schedule with globally validated, interactive, research
-              and evidence based self-help tools. Engage yourself in a self -
-              reflection journey, mind-soothing content, socialising activities,
-              and gamified exercises or empower yourself by setting daily goals
-              to meet your mental wellness targets. We aim to help you develop
-              the faculties of self-management and emotional resilience by
-              enabling you to bring about positive and constructive changes in
-              your life. This program is embedded in the most powerful technique
-              of Cognitive Behaviour Therapy, which has a similar therapeutic
-              impact as personal interaction.
-            </Text>
-          </View>
-
-          {/* Sized Box */}
-          <View style={{ height: hp(2) }} />
-
-          <Button
-            text={isSubscribed ? "Subscribed" : "Get HappiSELF Now"}
-            // pressHandler={() => {
-            //   if (authState.user) {
-            //     navigation.push("HappiSELFTab");
-            //     // setShowModal(true);
-            //   } else {
-            //     navigation.push("WelcomeScreen");
-            //   }
-            // }}
-            pressHandler={() => {
-              if (authState.user) {
-                if (isSubscribed) {
-                  navigation.navigate("SubscribedServices");
-                } else {
-                  navigation.push("Pricing", { selectedPlan: "HappiSELF" });
-                }
-              } else {
-                navigation.push("WelcomeScreen");
-              }
-            }}
-          />
-
-          {/* Sized Box */}
-          <View style={{ height: hp(4) }} />
+        {/* Description Card */}
+        <View style={styles.descriptionCard}>
+          <Text style={styles.paragraph}>
+            Build meaningful daily habits through interactive tools and guided
+            practices designed to strengthen awareness, balance, and inner
+            resilience in everyday life.
+          </Text>
+          <View style={{ height: 24 }} />
+          <Text style={styles.paragraph}>
+            It helps you create positive, sustainable routines that support
+            conscious personal growth.
+          </Text>
+          <View style={{ height: 24 }} />
+          <Text style={styles.paragraph}>
+            Rooted in scientifically backed behavioural methods, the experience
+            is designed to make self-development practical, engaging, and easy
+            to integrate into daily life.
+          </Text>
         </View>
       </ScrollView>
-      <ComingSoon showModal={showModal} setShowModal={setShowModal} />
+
+      {/* Bottom Button */}
+      <View style={styles.bottomButton}>
+        <Button
+          text="Start Now"
+          pressHandler={() => {
+            if (authState.user) {
+              if (isSubscribed) {
+                navigation.navigate("HappiSELFTab");
+              } else {
+                navigation.navigate("ExploreServices");
+              }
+            } else {
+              navigation.push("WelcomeScreen");
+            }
+          }}
+          loading={loading}
+          containerStyle={styles.startButton}
+          textStyle={styles.startButtonText}
+        />
+      </View>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
     flex: 1,
+    backgroundColor: "#F8F7FF",
+    paddingTop: hp(6),
   },
-  title: {
-    fontSize: RFValue(24),
-    fontFamily: "PoppinsSemiBold",
-    color: colors.primaryText,
+  header: {
+    width: wp(100),
+    paddingHorizontal: wp(4),
   },
-  subTitle: {
-    fontSize: RFValue(22),
-    fontFamily: "PoppinsMedium",
+  scrollContent: {
+    paddingHorizontal: wp(4.4),
+    paddingBottom: hp(17),
+  },
+  heading: {
+    fontSize: RFValue(30),
+    fontFamily: "Poppins",
+    fontWeight: "400",
+    color: "#9747FF",
+    textAlign: "left",
+  },
+  subtitle: {
+    fontSize: RFValue(20),
+    fontFamily: "Poppins",
+    fontWeight: "400",
+    color: "#111111",
+    textAlign: "left",
+    marginTop: hp(1.5),
+  },
+  illustrationContainer: {
+    alignItems: "center",
+    backgroundColor: "#F8F7FF",
+    borderRadius: 28,
+    marginTop: hp(3),
+    paddingVertical: hp(2),
   },
   banner: {
-    // backgroundColor: "yellow",
-    width: wp(80),
-    height: hp(30),
+    width: wp(70),
+    height: hp(28),
   },
-  detailSection: {
-    backgroundColor: "#FAFFFF",
-    paddingHorizontal: hp(2.5),
-    paddingVertical: hp(1.5),
-    borderRadius: 10,
+  descriptionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    paddingHorizontal: 32,
+    paddingVertical: 32,
+    marginTop: hp(2),
   },
-  detail: {
-    fontSize: RFValue(12),
-    fontFamily: "PoppinsMedium",
-    lineHeight: hp(3),
-    textAlign: "justify",
+  paragraph: {
+    fontSize: RFValue(13),
+    fontFamily: "Poppins",
+    fontWeight: "400",
+    color: "#606060",
+    lineHeight: RFValue(21),
+  },
+  bottomButton: {
+    position: "absolute",
+    bottom: hp(5),
+    left: 14,
+    right: 14,
+  },
+  startButton: {
+    backgroundColor: "#E8DEFF",
+    borderRadius: 50,
+    height: hp(6),
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#8E66F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  startButtonText: {
+    fontSize: RFValue(14),
+    fontFamily: "PoppinsSemiBold",
+    color: "#191919",
   },
 });
 

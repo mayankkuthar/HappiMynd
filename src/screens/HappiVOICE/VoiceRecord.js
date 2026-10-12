@@ -134,7 +134,7 @@ const VoiceRecord = (props) => {
         activeOpacity={0.7}
         onPress={() => navigation.navigate("HomeScreen")}
       >
-        <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+        <Ionicons name="ios-chevron-back" size={22} color="black" />
       </TouchableOpacity>
       <View style={{ height: hp(6) }} />
       <Image

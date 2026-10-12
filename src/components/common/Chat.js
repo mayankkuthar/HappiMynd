@@ -3,6 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
   TouchableOpacity,
   Linking,
   FlatList,
@@ -21,9 +22,6 @@ import {
   Send,
 } from "react-native-gifted-chat"; // Chat Module
 
-// Constants
-import { colors } from "../../assets/constants";
-
 // Components
 import AudioCard from "../cards/AudioCard";
 import DocumentCard from "../cards/DocumentCard";
@@ -33,14 +31,11 @@ import DocumentCard from "../cards/DocumentCard";
 export const _renderChatBubble = (props) => {
   const { navigation } = props;
 
-
-
-
   // console.log('_renderChatBubble__ ', props)
   // Prop Destructuring
-  const { currentMessage } = props;
+  const { currentMessage, position = "right" } = props;
 
-  
+  const isSent = position === "right";
 
   if (currentMessage.user.fileType === "audio") {
     const { user } = currentMessage;
@@ -52,39 +47,54 @@ export const _renderChatBubble = (props) => {
     return <DocumentCard user={user} />;
   }
 
-
-
-
   return (
-    <Bubble
-      {...props}
-      wrapperStyle={{
-        right: {
-          backgroundColor: colors.senderBubble,
-          shadowColor: colors.borderLight,
-          shadowOffset: { width: wp(0.5), height: hp(0.1) },
-          shadowRadius: hp(1),
-          shadowOpacity: 0.5,
-          paddingHorizontal: hp(1),
-          marginBottom: hp(1),
-          elevation: 5,
-        },
-        left: {
-          backgroundColor: colors.receiverBubble,
-          shadowColor: colors.borderLight,
-          shadowOffset: { width: wp(0.5), height: hp(0.1) },
-          shadowRadius: hp(1),
-          shadowOpacity: 0.5,
-          paddingHorizontal: hp(1),
-          marginBottom: hp(1),
-          elevation: 5,
-        },
-      }}
-      textStyle={{
-        right: { color: "#2B2E2E", fontFamily: "Poppins", fontSize: RFValue(12), },
-        left: { color: "#fff", fontFamily: "Poppins", fontSize: RFValue(12),},
-      }}
-    />
+    <View
+      style={[
+        styles.bubbleWrapper,
+        isSent ? styles.bubbleWrapperSent : styles.bubbleWrapperReceived,
+      ]}
+    >
+      <Image
+        source={
+          isSent
+            ? require("../../assets/images/sent_message.png")
+            : require("../../assets/images/received_message.png")
+        }
+        resizeMode="cover"
+        style={[
+          styles.bubbleBgImage,
+          isSent ? styles.bubbleBgImageSent : styles.bubbleBgImageReceived,
+        ]}
+      />
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          right: {
+            backgroundColor: "#E6DFFF",
+            marginLeft: "22%",
+            borderRadius: 12,
+            paddingHorizontal: hp(1.5),
+            paddingTop: hp(1.2),
+            paddingBottom: hp(1),
+            marginBottom: hp(1),
+          },
+          left: {
+            backgroundColor: "#FFFFFF",
+            marginRight: "14%",
+            borderRadius: 12,
+            paddingHorizontal: hp(1.5),
+            paddingTop: hp(1.2),
+            paddingBottom: hp(1),
+            marginBottom: hp(1),
+          },
+        }}
+        textStyle={{
+          right: { color: "#17151D", fontFamily: "Poppins", fontSize: RFValue(12), },
+          left: { color: "#17151D", fontFamily: "Poppins", fontSize: RFValue(12),},
+        }}
+        tickStyle={{ color: "#17151D" }}
+      />
+    </View>
   );
 };
 
@@ -105,6 +115,28 @@ export const _renderBubbleTime = (props) => {
 };
 
 const styles = StyleSheet.create({
+  bubbleWrapper: {
+    position: "relative",
+  },
+  bubbleWrapperSent: {
+    marginRight: "8%",
+  },
+  bubbleWrapperReceived: {
+    marginLeft: "8%",
+  },
+  bubbleBgImage: {
+    position: "absolute",
+    top: 0,
+    width: hp(4.5),
+    height: hp(3),
+    resizeMode: "cover",
+  },
+  bubbleBgImageSent: {
+    right: -20,
+  },
+  bubbleBgImageReceived: {
+    left: -20,
+  },
   chatAddButton: {
     backgroundColor: "#4CA6A8",
     width: hp(6),

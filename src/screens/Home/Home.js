@@ -24,6 +24,7 @@ import { Feather, AntDesign } from "@expo/vector-icons";
 // import RecordScreen from "react-native-record-screen";
 import * as FileSystem from "expo-file-system";
 import * as Analytics from "expo-firebase-analytics";
+import { hasHappiLIFEAccess } from "../../utils/Util";
 
 // Components
 import Header from "../../components/common/Header";
@@ -36,6 +37,7 @@ import DiaryNotifies from "../../components/notifiers/DiaryNotifies";
 import MessageNotifies from "../../components/notifiers/MessageNotifies";
 import SessionNotifies from "../../components/notifiers/SessionNotifies";
 import MoodNotifies from "../../components/notifiers/MoodNotofies";
+import PointsToast from "../../components/Modals/PointsToast";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -94,9 +96,7 @@ const UserPane = (props) => {
       const mySub = await getSubscriptions();
 
       if (mySub?.status === "success") {
-        const isSub = mySub.data.find(
-          (sub) => sub.name === "HappiLIFE Screening",
-        );
+        const isSub = mySub.data.find((sub) => hasHappiLIFEAccess(sub));
         if (isSub) setIsSubscribed(true);
       }
     } catch (err) {
@@ -232,11 +232,15 @@ const UserPane = (props) => {
       <View>
         {authState.user ? (
           <Text style={styles.userPaneTitle}>
-            Hello {authState?.user?.user ? authState?.user?.user.username : ""},
+            Hi,{" "}
+            {authState?.user?.user
+              ? (authState?.user?.user?.username || "").split(" ")[0]
+              : ""}
+            ,
           </Text>
         ) : null}
         <Text style={styles.userPaneDesc}>
-          Continue Your Mental Wellbeing Journey
+           Your Conscious Growth Ecosystem
         </Text>
       </View>
       <View style={styles.userPaneButtons}>
@@ -261,6 +265,7 @@ const UserPane = (props) => {
               text={isSubscribed ? "Download" : "Get"}
               subText="Awareness Report"
               isSubscribed={isSubscribed}
+              downloadBadge
               width={42}
               icon={require("../../assets/images/waveicon_progress.png")}
               // pressHandler={async () => {
@@ -281,7 +286,7 @@ const UserPane = (props) => {
               pressHandler={async () => {
                 if (Platform.OS == "android") {
                   if (!isSubscribed) {
-                    return navigation.push("Pricing");
+                    return navigation.push("ExploreServices");
                   }
 
                   return navigation.push("AllReports");
@@ -306,7 +311,7 @@ const UserPane = (props) => {
                     return;
                   }
                   if (!isSubscribed) {
-                    return navigation.push("Pricing");
+                    return navigation.push("ExploreServices");
                   }
                 }
                 // return navigation.push("ContactVerification");
@@ -315,12 +320,12 @@ const UserPane = (props) => {
           )
         ) : (
           <WaveIconButton
-            text="HappiLIFE"
-            subText="Awareness Tool"
+            text="Start Your"
+            subText="HappiLIFE"
             width={42}
             icon={require("../../assets/images/waveicon_progress.png")}
             pressHandler={() => {
-              if (authState.user) navigation.push("HappiLIFEScreening");
+              if (authState.user) navigation.push("HappiLifeIntroduction");
               else navigation.push("WelcomeScreen");
             }}
           />
@@ -343,9 +348,6 @@ const UserPane = (props) => {
 const ServiceSection = (props) => {
   // Prop Destructuring
   const { navigation } = props;
-
-  // Context Variabels
-  const { authState } = useContext(Hcontext);
 
   // const startRecording = async () => {
   //   RecordScreen.startRecording().catch((error) => console.error(error));
@@ -376,7 +378,7 @@ const ServiceSection = (props) => {
           width: wp(100),
           height: hp(16),
           position: "absolute",
-          bottom: hp(6.5),
+          bottom: hp(10),
         }}
       />
       <View style={{ paddingHorizontal: wp(6) }}>
@@ -384,31 +386,25 @@ const ServiceSection = (props) => {
         <View>
           <Text style={styles.serviceTitle}>Our Services</Text>
           <Text style={styles.serviceDesc}>
-            Help you to take care of your mind
+            Choose to Begin
           </Text>
         </View>
         {/* Icon Section */}
         <View style={styles.serviceIconContainer}>
           <CategoryButton
-            text="HappiLIFE"
-            icon={require("../../assets/images/category_people.png")}
+            text={"Happi\nLIFE"}
+            icon={require("../../assets/images/category_game.png")}
             iconSize={4.5}
-            pressHandler={() => navigation.push("HappiLIFE")}
+            pressHandler={() => navigation.push("HappiLifeIntroduction")}
           />
           <CategoryButton
-            text="SOLV"
-            icon={require("../../assets/images/category_report.png")}
-            iconSize={4}
-            pressHandler={() => navigation.push("SOLV")}
-          />
-          <CategoryButton
-            text="HappiLEARN"
+            text={"Happi\nLEARN"}
             icon={require("../../assets/images/category_book.png")}
             iconSize={3.5}
             pressHandler={() => navigation.push("HappiLEARNDescription")}
           />
           <CategoryButton
-            text="HappiBUDDY"
+            text={"Happi\nBUDDY"}
             icon={require("../../assets/images/category_chat.png")}
             iconSize={3.5}
             pressHandler={() => navigation.push("HappiBUDDY")}
@@ -416,39 +412,22 @@ const ServiceSection = (props) => {
         </View>
         <View style={styles.serviceIconContainer}>
           <CategoryButton
-            text="HappiSELF"
-            icon={require("../../assets/images/category_mobile.png")}
-            iconSize={3.5}
+            text={"Happi\nSELF"}
+            icon={require("../../assets/images/category_add.png")}
+            iconSize={4.5}
             pressHandler={() => navigation.push("HappiSELF")}
           />
           <CategoryButton
-            text="HappiTALK"
-            icon={require("../../assets/images/category_talk.png")}
-            iconSize={3.5}
+            text={"Happi\nTALK"}
+            icon={require("../../assets/images/category_happitalk.png")}
+            iconSize={7.5}
             pressHandler={() => navigation.push("HappiTALK")}
           />
-          {/*<CategoryButton
-            text="HappiVOICE"
-            icon={require("../../assets/images/microphone2.png")}
-            iconSize={4.5}
-            pressHandler={() => navigation.push("HappiVoice")}
-          />*/}
-
-          {/* <CategoryButton
-            text="Join Community"
-            icon={require("../../assets/images/category_add.png")}
-            iconSize={4.5}
-            pressHandler={() => {}}
-          /> */}
           <CategoryButton
-            text="Extra Services"
-            icon={require("../../assets/images/category_game.png")}
-            iconSize={3.5}
-            pressHandler={() =>
-              authState.user
-                ? navigation.push("SubscribedServices")
-                : navigation.push("WelcomeScreen")
-            }
+            text="SOLV"
+            icon={require("../../assets/images/category_solv.png")}
+            iconSize={5}
+            pressHandler={() => navigation.push("SOLV")}
           />
         </View>
       </View>
@@ -497,7 +476,7 @@ const BlogSection = (props) => {
         showModal={showUpgradeModal}
         setShowModal={setShowUpgradeModal}
       />
-      <Text style={styles.blogSectionTitle}>Happi Blogs</Text>
+      <Text style={styles.blogSectionTitle}>Blogs For You</Text>
       <ScrollView horizontal={true} style={{ paddingVertical: hp(2) }}>
         {/* <LockedBlogCard
           navigation={navigation}
@@ -532,16 +511,28 @@ const Home = (props) => {
     myBookingUsers,
     totalRewardPoints,
     screenTrafficAnalytics,
+    isMoodOMeterDue,
   } = useContext(Hcontext);
 
   // Prop Destructuring
-  const { navigation } = props;
+  const { navigation, route } = props;
 
   // State Varibales
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(0);
+  const [toastPoints, setToastPoints] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+
+  // Show the "Congratulations you earned X points" toast once after mood submission
+  useEffect(() => {
+    if (route?.params?.pointsToast) {
+      setToastPoints(route.params.pointsToast);
+      setShowToast(true);
+      navigation.setParams({ pointsToast: undefined });
+    }
+  }, [route?.params?.pointsToast]);
 
   // Mounting
   useEffect(() => {
@@ -552,7 +543,14 @@ const Home = (props) => {
 
     // Record user mood at every app open (only for authenticated users)
     if (authState?.user) {
-      navigation.push("Moods");
+      (async () => {
+        try {
+          const moodDue = await isMoodOMeterDue();
+          if (moodDue) navigation.push("Moods");
+        } catch (err) {
+          console.log("Some issue while checking mood due (Home.js) - ", err);
+        }
+      })();
     }
 
     screenTrafficAnalytics({ screenName: "Home" });
@@ -618,6 +616,11 @@ const Home = (props) => {
 
   return (
     <View style={styles.container}>
+      <PointsToast
+        showToast={showToast}
+        setShowToast={setShowToast}
+        points={toastPoints}
+      />
       <Header
         navigation={navigation}
         showNav={authState.user}
@@ -702,7 +705,8 @@ const styles = StyleSheet.create({
   },
   serviceIconContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: hp(1.5),
   },
   blogSection: {
     paddingTop: hp(6),

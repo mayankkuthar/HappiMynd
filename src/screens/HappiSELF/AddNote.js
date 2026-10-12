@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
@@ -107,11 +106,7 @@ const AddNote = (props) => {
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <KeyboardAwareScrollView>
         <Header showLogo={false} showBack={true} navigation={navigation} />
 
@@ -137,7 +132,9 @@ const AddNote = (props) => {
               onChangeText={(text) => setNoteTitle(text)}
             /> */}
             <TextArea
-              placeHolder="Add your Note here ..."
+              placeHolder="Add your note here..."
+              placeholderColor="#808080"
+              textAreaStyle={styles.noteTextArea}
               value={note}
               onChangeText={(text) => setNote(text)}
             />
@@ -157,6 +154,8 @@ const AddNote = (props) => {
                     text="Update"
                     pressHandler={updateHandler}
                     loading={loading}
+                    containerStyle={styles.saveButton}
+                    textStyle={styles.saveButtonText}
                   />
                   {/* Sized Box */}
                   <View style={{ height: hp(2) }} />
@@ -172,27 +171,52 @@ const AddNote = (props) => {
                 text="Save"
                 pressHandler={submitAnswer}
                 loading={loading}
+                containerStyle={styles.saveButton}
+                textStyle={styles.saveButtonText}
               />
             )}
           </View>
         </View>
       </KeyboardAwareScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F9F7FF",
   },
   pageTitle: {
     fontSize: RFValue(24),
     fontFamily: "PoppinsSemiBold",
     color: colors.pageTitle,
   },
+  noteTextArea: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D4D4D4",
+    borderRadius: hp(1.8),
+  },
+  saveButton: {
+    backgroundColor: "#E6DFFF",
+    borderRadius: 50,
+    height: hp(5.5),
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#8E66F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  saveButtonText: {
+    fontSize: RFValue(14),
+    fontFamily: "PoppinsSemiBold",
+    color: "#191919",
+  },
   saveButtonContainer: {
     // position: "relative",
     // bottom: hp(-35),
+    paddingBottom: hp(1),
   },
 });
 

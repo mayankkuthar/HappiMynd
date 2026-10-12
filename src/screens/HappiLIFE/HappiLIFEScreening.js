@@ -43,7 +43,7 @@ const Header = (props) => {
           onPress={backHandler}
           // style={{ backgroundColor: "red" }}
         >
-          <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+          <Ionicons name="ios-chevron-back" size={22} color="black" />
         </TouchableOpacity>
       </View>
     </View>

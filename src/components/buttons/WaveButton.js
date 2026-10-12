@@ -13,7 +13,7 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 
 const WaveButton = (props) => {
   // Prop Destructuring
-  const { width = 78, height = 12, text = "Wave", pressHandler } = props;
+  const { width = 78, height = 12, text = "Wave", pressHandler, textCenter = false, textSize } = props;
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -26,11 +26,20 @@ const WaveButton = (props) => {
           width: wp(width),
           height: hp(height),
           paddingHorizontal: hp(4),
-          paddingVertical: hp(3),
+          alignItems: textCenter ? "center" : "stretch",
+          justifyContent: "center",
         }}
         resizeMode="cover"
       >
-        <Text style={styles.buttonText}>{text}</Text>
+        <Text
+          style={[
+            styles.buttonText,
+            textCenter && styles.buttonTextCenter,
+            textSize && { fontSize: RFValue(textSize) },
+          ]}
+        >
+          {text}
+        </Text>
       </ImageBackground>
     </TouchableOpacity>
   );
@@ -47,6 +56,10 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: RFValue(13),
     fontFamily: "PoppinsMedium",
+  },
+  buttonTextCenter: {
+    textAlign: "center",
+    width: "100%",
   },
 });
 

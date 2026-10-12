@@ -98,7 +98,8 @@ const Setting = (props) => {
       id: 3,
       name: "Explore Services",
       icon: <FontAwesome5 name="compass" size={hp(2.5)} color="#A454FE" />,
-      pressHandler: () => navigation.navigate("ExploreServices"),
+      pressHandler: () =>
+        navigation.navigate("HomeTab", { screen: "ExploreServices" }),
     },
     {
       id: 4,

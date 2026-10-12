@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: hp(4),
   },
   questionContainer: {
-    // backgroundColor: "#F3FEFE",
+    backgroundColor: "#E7E3FF",
     paddingHorizontal: hp(2),
     paddingVertical: hp(2),
     borderRadius: hp(2),

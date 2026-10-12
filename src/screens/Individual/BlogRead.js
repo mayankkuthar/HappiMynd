@@ -38,7 +38,7 @@ const Header = memo(({ navigation, likesCount }) => {
         onPress={handleBack}
         style={styles.backButton}
       >
-        <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+        <Ionicons name="ios-chevron-back" size={22} color="black" />
       </TouchableOpacity>
 
       <TouchableOpacity

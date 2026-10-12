@@ -41,7 +41,7 @@ const Header = (props) => {
           }
         >
           {showBack ? (
-            <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+            <Ionicons name="ios-chevron-back" size={22} color="black" />
           ) : showNav ? (
             <Feather name="align-left" size={hp(3)} color="black" />
           ) : null}
@@ -60,7 +60,7 @@ const Header = (props) => {
         {showPoints ? (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => navigation.push("Moods")}
+            onPress={() => navigation.push("RewardsScreen")}
             style={styles.pointsContainer}
           >
             <Text style={styles.pointsText}>HappiPoints</Text>
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   },
   headerLogo: {
     // backgroundColor: "green",
-    width: wp(28),
-    height: hp(7),
+    width: wp(22),
+    height: hp(5.5),
   },
   pointsContainer: {
     position: "absolute",

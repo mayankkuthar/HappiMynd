@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import Modal from "react-native-modal";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
+import { RFValue } from "react-native-responsive-fontsize";
 
-// Constants
-import { colors } from "../../assets/constants";
+// Context
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
@@ -16,10 +15,10 @@ import DropDown from "../input/DropDown";
 
 const LanguageModal = (props) => {
   // Context Variables
-  const { snackDispatch, getLanguages } = useContext(Hcontext);
+  const { getLanguages } = useContext(Hcontext);
 
   // Prop Destructuring
-  const { navigation, showModal, setShowModal, fetchPsycologist } = props;
+  const { showModal, setShowModal, fetchPsycologist } = props;
 
   //State varibales
   const [selectedLanguage, setSelectedLanguage] = useState({});
@@ -68,12 +67,19 @@ const LanguageModal = (props) => {
       }}
     >
       <View style={styles.container}>
-        <Text style={styles.modalText}>Select a language to continue</Text>
+        <Text style={styles.modalText}>Select A Language to Continue</Text>
+
+        {/* Sized Box */}
+        <View style={{ height: hp(2) }} />
 
         <DropDown
-          placeHolder="Select language"
+          placeHolder="English"
           data={languages}
           setSelectedData={setSelectedLanguage}
+          containerStyle={styles.dropdownButton}
+          containerTextStyle={styles.dropdownButtonText}
+          dropDownContainerStyle={styles.dropdownList}
+          iconColor="#45424D"
         />
 
         {/* Sized Box */}
@@ -88,28 +94,35 @@ const LanguageModal = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundModal,
+    backgroundColor: "#F3EFFF",
     width: wp(80),
-    // height: hp(20),
     alignSelf: "center",
-    borderRadius: 6,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: hp(2),
     paddingHorizontal: hp(2),
   },
-  heroImage: {
-    // backgroundColor: "red",
-    width: wp(50),
-    height: hp(20),
-  },
   modalText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
-    textAlign: "center",
+    color: "#111111",
+    textAlign: "left",
+    alignSelf: "stretch",
+  },
+  dropdownButton: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D5D5D5",
+  },
+  dropdownButtonText: {
+    color: "#111111",
+  },
+  dropdownList: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D5D5D5",
   },
   modalButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6DEFF",
     paddingVertical: hp(1.5),
     width: "100%",
     borderRadius: hp(100),
@@ -118,6 +131,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: RFValue(12),
     fontFamily: "Poppins",
+    color: "#17141E",
   },
 });
 

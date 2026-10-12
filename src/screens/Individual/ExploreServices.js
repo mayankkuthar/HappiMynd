@@ -72,7 +72,6 @@ const growthPlanFeatures = {
     personalized_reports: true,
     conscious_growth_blueprint: true,
     "24x7_expert_chat": { name: "HappiBuddy", included: true },
-    one_on_one_growth_conversations: { name: "SOLV", count: 1 },
     therapist_led_counselling_sessions: { name: "HappiTalk", count: 0 },
     smart_growth_reminders: false,
     live_growth_webinars: false,
@@ -232,7 +231,11 @@ const PlanCard = (props) => {
   // State Variables
   const [expanded, setExpanded] = useState(false);
 
-  const planName = plan?.name || plan?.expert_level || packageName;
+  const planName =
+    String(plan?.name || packageName || plan?.expert_level || "").toUpperCase() ===
+    "HAPPIGUIDE"
+      ? "SOLV"
+      : plan?.name || packageName || plan?.expert_level;
   const hasOffer = plan.offer && Number(plan.offer.discount) > 0;
   const validity =
     validityMap[planName?.toUpperCase?.()] || plan.duration?.name || "";
@@ -383,7 +386,7 @@ const ExploreServices = (props) => {
     setLoading(false);
   };
 
-  // Flatten packages into individual plan cards, keeping only Growth Plans
+  // Flatten packages into plan cards: only Growth Plans
   const planCards =
     packages?.reduce?.((acc, pkg) => {
       const plans = pkg.plans || [];
@@ -463,7 +466,7 @@ const ExploreServices = (props) => {
             type: "SHOW_SNACK",
             payload: "Subscription activated successfully",
           });
-          navigation.replace("SubscribedServices");
+          navigation.navigate("SubscribedServices");
         } else if (payRes?.link) {
           Linking.openURL(payRes.link);
         } else if (Platform.OS === "ios" && payRes?.payment) {

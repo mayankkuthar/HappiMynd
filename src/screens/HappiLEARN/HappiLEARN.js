@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
   Image,
   TouchableOpacity,
   ScrollView,
@@ -115,11 +114,7 @@ const HappiLEARN = (props) => {
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/language_background.png")}
-      resizeMode="cover"
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <Header navigation={navigation} showLogo={false} showBack={true} />
 
       {console.log("chekc the listing here - ", recentlyViewed)}
@@ -221,12 +216,12 @@ const HappiLEARN = (props) => {
           </>
         )}
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F2F0FF",
     flex: 1,
   },
   pageTitle: {

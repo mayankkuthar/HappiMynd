@@ -19,7 +19,7 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 // Constants
 import { colors } from "../../assets/constants";
 
-const timeSlotList = [
+export const timeSlotList = [
   // { id: 1, time: "12:00 AM - 12:30 AM" },
   // { id: 2, time: "12:30 AM - 1:00 AM" },
   // { id: 3, time: "1:00 AM - 1:30 AM" },

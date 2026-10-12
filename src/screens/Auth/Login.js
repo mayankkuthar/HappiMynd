@@ -19,7 +19,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CountryPicker } from "react-native-country-codes-picker";
 
 import InputField from "../../components/input/InputField";
-import Button from "../../components/buttons/Button";
 import { colors } from "../../assets/constants";
 import { Hcontext } from "../../context/Hcontext";
 
@@ -37,6 +36,7 @@ const Login = (props) => {
   const [activeTab, setActiveTab] = useState("phone");
 
   const [countryCode, setCountryCode] = useState("+91");
+  const [countryCodeIso, setCountryCodeIso] = useState("IN");
   const [showCountry, setShowCountry] = useState(false);
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
@@ -61,6 +61,7 @@ const Login = (props) => {
   const isOtpValidLength = otp.length === 6;
   const canSend = isPhoneValid && !otpSent;
   const canSubmit = isPhoneValid && otpSent && isOtpValidLength;
+  const canPasswordLogin = userName.length > 0 && password.length > 0;
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -221,23 +222,24 @@ const Login = (props) => {
 
           {activeTab === "phone" ? (
             <View style={styles.phoneTabContent}>
+              <Text style={styles.inputLabel}>Mobile number</Text>
               <View style={styles.phoneInputBox}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => setShowCountry(true)}
                   style={styles.countryCodeBtn}
                 >
-                  <Text style={styles.countryCodeText}>{countryCode}</Text>
-                  <Image
-                    source={require("../../assets/images/downArrow.png")}
-                    style={styles.countryArrow}
-                  />
+                  <Text style={styles.countryCodeText}>
+                    {countryCodeIso} {countryCode}
+                  </Text>
                 </TouchableOpacity>
+                <View style={styles.codeDivider} />
                 <CountryPicker
                   show={showCountry}
                   initialState={countryCode}
                   pickerButtonOnPress={(item) => {
                     setCountryCode(item.dial_code);
+                    setCountryCodeIso(item.code);
                     setShowCountry(false);
                   }}
                   onBackdropPress={() => setShowCountry(false)}
@@ -246,7 +248,8 @@ const Login = (props) => {
                 <TextInput
                   keyboardType="number-pad"
                   maxLength={10}
-                  placeholder="Enter 10-digit mobile number"
+                  placeholder="Enter Mobile Number"
+                  placeholderTextColor="#B3B3B3"
                   value={mobile}
                   onChangeText={(text) => setMobile(text.replace(/[^0-9]/g, ""))}
                   style={styles.phoneInput}
@@ -324,13 +327,20 @@ const Login = (props) => {
           ) : (
             <View style={styles.passwordTabContent}>
               <InputField
-                title="Username"
+                title="User Name"
+                placeHolder="Enter User Name"
+                placeholderTextColor="#B3B3B3"
+                borderColor="#D4D4D4"
                 value={userName}
                 onChangeText={(text) => setUserName(text)}
               />
               <View style={{ height: hp(1.5) }} />
               <InputField
                 title="Password"
+                placeHolder="Enter Password"
+                placeholderTextColor="#B3B3B3"
+                borderColor="#D4D4D4"
+                iconColor="#999999"
                 password
                 value={password}
                 onChangeText={(text) => setPassword(text)}
@@ -347,11 +357,32 @@ const Login = (props) => {
 
               <View style={{ flex: 1 }} />
 
-              <Button
-                text="Log into my account"
-                pressHandler={loginHandler}
-                loading={loading}
-              />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[
+                  styles.continueButton,
+                  canPasswordLogin
+                    ? styles.continueButtonEnabled
+                    : styles.continueButtonDisabled,
+                ]}
+                disabled={!canPasswordLogin || loading}
+                onPress={loginHandler}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <Text
+                    style={[
+                      styles.continueButtonText,
+                      canPasswordLogin
+                        ? styles.continueTextEnabled
+                        : styles.continueTextDisabled,
+                    ]}
+                  >
+                    Log In
+                  </Text>
+                )}
+              </TouchableOpacity>
 
               <View style={styles.loginNewUserContainer}>
                 <TouchableOpacity
@@ -389,14 +420,14 @@ const styles = StyleSheet.create({
     height: hp(9),
     alignSelf: "flex-start",
   },
-  loginHeadTitle: { paddingHorizontal: wp(10) },
+  loginHeadTitle: { paddingHorizontal: 16, top: 4 },
   loginHeadTitleText: {
-    fontSize: RFValue(33),
+    fontSize: RFValue(24),
     fontFamily: "PoppinsBold",
   },
   loginBodyContainer: {
     width: wp(100),
-    paddingHorizontal: wp(10),
+    paddingHorizontal: 16,
     paddingTop: hp(2),
     flex: 1,
   },
@@ -424,8 +455,14 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
     fontFamily: "PoppinsSemiBold",
   },
-  phoneTabContent: { paddingTop: hp(3), flex: 1 },
-  passwordTabContent: { paddingTop: hp(3), flex: 1 },
+  phoneTabContent: { paddingTop: hp(3), flex: 1, paddingBottom: hp(3) },
+  passwordTabContent: { paddingTop: hp(3), flex: 1, paddingBottom: hp(3) },
+  inputLabel: {
+    fontSize: RFValue(13),
+    fontFamily: "PoppinsMedium",
+    color: "#191928",
+    marginBottom: hp(1),
+  },
   phoneInputBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -437,27 +474,29 @@ const styles = StyleSheet.create({
     height: hp(6.5),
   },
   countryCodeBtn: {
-    flexDirection: "row",
+    width: "20%",
     alignItems: "center",
-    paddingRight: wp(2),
+    justifyContent: "center",
   },
   countryCodeText: {
-    fontSize: RFValue(14),
+    fontSize: RFValue(12),
     fontFamily: "Poppins",
     color: "#191928",
   },
-  countryArrow: {
-    height: 12,
-    width: 12,
-    marginLeft: 4,
-    tintColor: "grey",
+  codeDivider: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "#D4D4D4",
+    marginHorizontal: wp(1),
   },
   phoneInput: {
     flex: 1,
-    fontSize: RFValue(14),
+    fontSize: RFValue(12),
     fontFamily: "Poppins",
     color: "#191928",
     paddingVertical: 0,
+    paddingLeft: 7,
+    letterSpacing: 1,
   },
   otpBox: {
     backgroundColor: "#fff",
@@ -469,7 +508,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(3),
   },
   otpInput: {
-    fontSize: RFValue(14),
+    fontSize: RFValue(12),
     fontFamily: "Poppins",
     color: "#191928",
     paddingVertical: 0,
@@ -482,24 +521,24 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: RFValue(11),
     fontFamily: "Poppins",
-    color: "#895BF5",
+    color: "#999999",
   },
   continueButton: {
     width: "100%",
-    height: hp(6),
+    height: hp(5),
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 100,
     marginTop: hp(2),
   },
   continueButtonDisabled: {
-    backgroundColor: "#EEDFFF",
+    backgroundColor: "#E6DFFF",
   },
   continueButtonEnabled: {
-    backgroundColor: "#EBDAFF",
-    shadowColor: "rgba(0,0,0,0.16)",
+    backgroundColor: "#E6DFFF",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.16,
     shadowRadius: 4,
     elevation: 4,
   },
@@ -511,7 +550,7 @@ const styles = StyleSheet.create({
   continueTextEnabled: { color: "#000" },
   loginForgotText: {
     alignSelf: "flex-end",
-    color: colors.primaryText,
+    color: "#999999",
     fontFamily: "PoppinsMedium",
     fontSize: RFValue(11),
   },

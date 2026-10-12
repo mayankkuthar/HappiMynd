@@ -167,12 +167,17 @@ const Library = (props) => {
       <View style={{ height: hp(2) }} />
 
       {list.map((item) => (
-        <CourseCard
-          type="video"
-          title={item.library_name}
-          showIcon={false}
-          pressHandler={() => navigation.push("LibrarySub", { item })}
-        />
+        <>
+          <CourseCard
+            key={item.id}
+            type="video"
+            title={item.library_name}
+            showIcon={false}
+            pressHandler={() => navigation.push("LibrarySub", { item })}
+          />
+          {/* Sized Box */}
+          <View style={{ height: hp(2) }} />
+        </>
       ))}
       {/* <CourseCard
         type="video"
@@ -188,6 +193,7 @@ const Tab = createMaterialTopTabNavigator();
 
 const tabCommon = {
   tabBarStyle: { backgroundColor: "transparent", elevation: 0 },
+  tabBarLabelStyle: { textTransform: "none" },
   tabBarActiveTintColor: "#000",
   tabBarInactiveTintColor: colors.borderDim,
   tabBarIndicatorStyle: {
@@ -206,8 +212,16 @@ const HappiSELFTab = (props) => {
       <Header navigation={navigation} showBack={true} />
 
       <Tab.Navigator screenOptions={tabCommon}>
-        <Tab.Screen name="Modules" component={Courses} />
-        <Tab.Screen name="Library" component={Library} />
+        <Tab.Screen
+          name="Modules"
+          component={Courses}
+          options={{ tabBarLabel: "Self Help" }}
+        />
+        <Tab.Screen
+          name="Library"
+          component={Library}
+          options={{ tabBarLabel: "Self Care" }}
+        />
       </Tab.Navigator>
     </View>
   );

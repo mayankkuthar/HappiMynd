@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -88,15 +88,22 @@ const ChangePassword = (props) => {
               title="Old Password"
               placeHolder="Enter Old Password"
               password
+              borderColor="#D4D4D4"
+              iconColor="#999999"
               value={oldPassword}
               onChangeText={(text) => setOldPassword(text)}
             />
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.push("ForgotPassword")}>
+              <Text style={styles.forgotText}>Forgot Password ?</Text>
+            </TouchableOpacity>
             {/* Sized Box */}
             <View style={{ height: hp(2) }} />
             <InputField
               title="Enter New Password"
               placeHolder="Enter New Password"
               password
+              borderColor="#D4D4D4"
+              iconColor="#999999"
               value={newPassword}
               onChangeText={(text) => setNewPassword(text)}
             />
@@ -106,6 +113,8 @@ const ChangePassword = (props) => {
               title="Confirm New Password"
               placeHolder="Re-Enter New Password"
               password
+              borderColor="#D4D4D4"
+              iconColor="#999999"
               value={confirmPassword}
               onChangeText={(text) => setConfirmPassword(text)}
             />
@@ -116,6 +125,7 @@ const ChangePassword = (props) => {
             text="Save Changes"
             loading={loading}
             pressHandler={submitHandler}
+            containerStyle={styles.saveButton}
           />
         </View>
       </KeyboardAwareScrollView>
@@ -132,12 +142,27 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsSemiBold",
     color: colors.pageTitle,
   },
+  forgotText: {
+    alignSelf: "flex-end",
+    color: "#999999",
+    fontFamily: "PoppinsMedium",
+    fontSize: RFValue(11),
+  },
   buttonContainer: {
     // backgroundColor: "green",
     // position: "absolute",
     width: wp(80),
     alignSelf: "center",
     bottom: hp(3),
+  },
+  saveButton: {
+    backgroundColor: "#E6DFFF",
+    height: hp(5.5),
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 

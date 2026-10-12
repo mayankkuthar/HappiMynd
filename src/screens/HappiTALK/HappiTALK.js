@@ -5,7 +5,6 @@ import {
   View,
   ScrollView,
   Image,
-  TouchableOpacity,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -13,8 +12,7 @@ import {
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 
-// Constants
-import { colors } from "../../assets/constants";
+// Context
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
@@ -31,7 +29,6 @@ const HappiTALK = (props) => {
 
   // STate variables
   const [showModal, setShowModal] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -53,7 +50,7 @@ const HappiTALK = (props) => {
 
       if (mySub.status === "success") {
         const isSub = mySub.data.find((sub) => sub.name === "HappiTALK");
-        if (isSub) setIsSubscribed(true);
+        if (isSub) console.log("User is subscribed to HappiTALK");
       }
     } catch (err) {
       console.log("Some issue while checking subscription - ", err);
@@ -85,9 +82,19 @@ const HappiTALK = (props) => {
     }
   };
 
+  const navigateToExperts = () => {
+    if (authState.user) {
+      console.log("isEmailVerified", isEmailVerified);
+      console.log("isPhoneVerified", isPhoneVerified);
+      navigation.push("HappiTALKBook");
+    } else {
+      navigation.push("WelcomeScreen");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Header showBack={true} navigation={navigation} />
+      <Header showBack={true} showLogo={false} navigation={navigation} />
 
       <ScrollView style={{ paddingHorizontal: wp(10) }}>
         {/* Sized Box */}
@@ -100,7 +107,7 @@ const HappiTALK = (props) => {
           <View style={{ height: hp(2) }} />
 
           <Text style={styles.subTitle}>
-            Guidance of an Expert but touch of a Friend
+            Sometimes a conversation changes everything
           </Text>
 
           {/* Sized Box */}
@@ -117,17 +124,18 @@ const HappiTALK = (props) => {
 
           <View style={styles.detailSection}>
             <Text style={styles.detail}>
-              Discuss your life, ambitions, personal issues, relationships,
-              success, failures, or anything under the sun with a highly
-              qualified and experienced therapist. It is a fully confidential,
-              reliable, and cost-effective way to avail one-to-one expert advice
-              and guidance from the comfort of your home via our digital
-              platform. Our therapists are among the best in the country, chosen
-              after rigorous screening and multiple levels of interviews. We
-              strive to provide you with the best therapeutic counselling
-              experience that is aimed at ensuring peace of mind, building life
-              direction, and supporting your journey towards emotional, mental,
-              and overall wellness.
+              Are you feeling stuck, confused, overwhelmed, or simply looking
+              for direction? HappiTalk connects you with experienced experts for
+              therapeutic one-on-one conversations that help you overcome
+              difficult situations with confidence.
+            </Text>
+
+            {/* Sized Box */}
+            <View style={styles.paragraphGap} />
+
+            <Text style={styles.detail}>
+              Talk now and move forward with stronger self-awareness and
+              practical guidance for everyday life.
             </Text>
           </View>
 
@@ -137,22 +145,14 @@ const HappiTALK = (props) => {
           <Button
             text="Talk with Experts"
             loading={loadingButton}
-            pressHandler={() => {
-              if (authState.user) {
-                // navigation.push("HappiTALKBook");
-
-                console.log("isEmailVerified", isEmailVerified);
-                console.log("isPhoneVerified", isPhoneVerified);
-                navigation.push("HappiTALKBook");
-              } else {
-                navigation.push("WelcomeScreen");
-              }
-            }}
+            containerStyle={styles.expertsButton}
+            textStyle={styles.expertsButtonText}
+            pressHandler={navigateToExperts}
           />
-
-          {/* Sized Box */}
-          <View style={{ height: hp(4) }} />
         </View>
+
+        {/* Sized Box */}
+        <View style={{ height: hp(4) }} />
       </ScrollView>
       <ComingSoon showModal={showModal} setShowModal={setShowModal} />
     </View>
@@ -160,34 +160,57 @@ const HappiTALK = (props) => {
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F8F7FF",
     flex: 1,
   },
   title: {
-    fontSize: RFValue(24),
+    fontSize: RFValue(22),
     fontFamily: "PoppinsSemiBold",
-    color: colors.primaryText,
+    fontWeight: "400",
+    color: "#9747FF",
+    textAlign: "left",
   },
   subTitle: {
-    fontSize: RFValue(22),
+    fontSize: RFValue(18),
     fontFamily: "PoppinsMedium",
+    fontWeight: "400",
+    color: "#111111",
+    textAlign: "left",
   },
   banner: {
-    // backgroundColor: "yellow",
+    alignSelf: "center",
     width: wp(80),
-    height: hp(30),
+    height: hp(28),
   },
   detailSection: {
-    backgroundColor: "#FAFFFF",
-    paddingHorizontal: hp(2.5),
-    paddingVertical: hp(1.5),
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 25,
   },
   detail: {
     fontSize: RFValue(12),
     fontFamily: "PoppinsMedium",
+    color: "#646268",
+    textAlign: "left",
     lineHeight: hp(3),
-    textAlign: "justify",
+  },
+  paragraphGap: {
+    height: 22,
+  },
+  expertsButton: {
+    backgroundColor: "#E6DEFF",
+    borderRadius: 999,
+    marginHorizontal: 16,
+    marginBottom: 30,
+    shadowColor: "#BDB5CE",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  expertsButtonText: {
+    color: "#191719",
   },
 });
 

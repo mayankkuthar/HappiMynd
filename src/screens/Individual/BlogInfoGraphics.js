@@ -42,7 +42,7 @@ const Header = (props) => {
         onPress={() => navigation.pop()}
         style={{ paddingLeft: hp(1.5) }}
       >
-        <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+        <Ionicons name="ios-chevron-back" size={22} color="black" />
       </TouchableOpacity>
       <TouchableOpacity
         activeOpacity={0.7}

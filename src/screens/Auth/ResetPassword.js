@@ -1,20 +1,23 @@
-import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import React, { useState, useContext } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { RFValue } from "react-native-responsive-fontsize";
+import { Feather } from "@expo/vector-icons";
 
-// COnstants
-import { colors } from "../../assets/constants";
+// Context
 import { Hcontext } from "../../context/Hcontext";
 
 // Components
-import Header from "../../components/common/Header";
 import InputField from "../../components/input/InputField";
-import Button from "../../components/buttons/Button";
 
 const ResetPassword = (props) => {
   // Prop Destructuring
@@ -27,11 +30,9 @@ const ResetPassword = (props) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
 
-  // Mounting
-  useEffect(() => {
-    console.log("Reset password mounting - ", props.route.params);
-  }, []);
+  const canSubmit = password.length > 0 && confirmPassword.length > 0;
 
   const submitHandler = async () => {
     setLoading(true);
@@ -46,6 +47,7 @@ const ResetPassword = (props) => {
       }
 
       if (password !== confirmPassword) {
+        setPasswordMismatch(true);
         setLoading(false);
         return snackDispatch({
           type: "SHOW_SNACK",
@@ -53,6 +55,7 @@ const ResetPassword = (props) => {
         });
       }
 
+      setPasswordMismatch(false);
       const { email, mobile } = props.route.params;
       const passRes = await resetPassword({
         email,
@@ -73,56 +76,143 @@ const ResetPassword = (props) => {
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation} showLogo={false} showBack={true} />
-      <KeyboardAwareScrollView style={{ paddingHorizontal: wp(10) }}>
-        <Text style={styles.pageTitle}>Change Password</Text>
-        {/* Sized Box */}
-        <View style={{ height: hp(4) }} />
+      {/* Header */}
+      <View style={styles.headerBlock}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.pop()}
+          style={styles.backButton}
+        >
+          <Feather name="chevron-left" size={22} color="#55545E" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Reset Password</Text>
+      </View>
+
+      {/* Form */}
+      <View style={styles.formSection}>
         <InputField
           title="Enter New Password"
           placeHolder="Enter New Password"
-          password={true}
+          password
+          borderColor="#D8D8DE"
+          iconColor="#999999"
+          titleSpacing={10}
           value={password}
           onChangeText={(text) => setPassword(text)}
         />
-        {/* Sized Box */}
         <View style={{ height: hp(2) }} />
         <InputField
           title="Confirm New Password"
           placeHolder="Confirm New Password"
-          password={true}
+          password
+          borderColor={passwordMismatch ? "#D40000" : "#D8D8DE"}
+          iconColor="#999999"
+          titleSpacing={10}
           value={confirmPassword}
-          onChangeText={(text) => setConfirmPassword(text)}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            if (passwordMismatch) setPasswordMismatch(false);
+          }}
         />
-      </KeyboardAwareScrollView>
-      <View style={styles.buttonContainer}>
-        <Button text="Confirm" loading={loading} pressHandler={submitHandler} />
+        {passwordMismatch ? (
+          <Text style={styles.mismatchText}>
+            New password does not match. Enter new password again
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[
+            styles.submitButton,
+            canSubmit ? styles.submitEnabled : styles.submitDisabled,
+          ]}
+          disabled={!canSubmit || loading}
+          onPress={submitHandler}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#AAA7B3" />
+          ) : (
+            <Text
+              style={[
+                styles.submitText,
+                canSubmit ? styles.submitTextEnabled : styles.submitTextDisabled,
+              ]}
+            >
+              Confirm
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#E3FDFE",
+    flex: 1,
+    backgroundColor: "#F8F7FF",
+    paddingHorizontal: 15,
+    paddingTop: 30,
+    paddingBottom: 30,
+  },
+  headerBlock: {
+    marginBottom: hp(3),
+  },
+  backButton: {
+    marginTop: hp(2.5),
+    marginBottom: hp(1.5),
+    alignSelf: "flex-start",
+  },
+  title: {
+    fontSize: RFValue(24),
+    fontFamily: "PoppinsMedium",
+    color: "#9747FF",
+    alignSelf: "flex-start",
+  },
+  formSection: {
     flex: 1,
   },
-  pageTitle: {
-    fontSize: RFValue(24),
-    fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
+  mismatchText: {
+    fontSize: RFValue(11),
+    fontFamily: "Poppins",
+    color: "#D40000",
+    textAlign: "right",
+    marginTop: hp(0.5),
   },
-  choiceText: {
-    fontSize: RFValue(12),
+  footer: {
+    justifyContent: "flex-end",
+    marginBottom: hp(2),
+  },
+  submitButton: {
+    width: "100%",
+    height: hp(4.8),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 30,
+  },
+  submitDisabled: {
+    backgroundColor: "#E6DFFF",
+  },
+  submitEnabled: {
+    backgroundColor: "#E6DFFF",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  submitText: {
+    fontSize: RFValue(13),
     fontFamily: "PoppinsMedium",
-    color: "#ABB6B6",
-    textAlign: "center",
   },
-  buttonContainer: {
-    // backgroundColor: "red",
-    width: wp(100),
-    paddingHorizontal: wp(10),
-    position: "absolute",
-    bottom: hp(4),
+  submitTextDisabled: {
+    color: "#AAA7B3",
+  },
+  submitTextEnabled: {
+    color: "#000",
   },
 });
 

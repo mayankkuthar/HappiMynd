@@ -26,7 +26,7 @@ import LoginWithCode from "../../screens/Auth/LoginWithCode";
 import PhoneRegistration from "../../screens/Auth/PhoneRegistration";
 import Home from "../../screens/Home/Home";
 import HappiLIFE from "../../screens/HappiLIFE/HappiLIFE";
-import HappiGUIDE from "../../screens/HappiGUIDE/HappiGUIDE";
+import SolvIntro from "../../screens/SOLV/SolvIntro";
 import HappiLEARNDescription from "../../screens/HappiLEARN/HappiLEARNDescription";
 import HappiBUDDY from "../../screens/HappyBUDDY/HappiBUDDY";
 import HappiSELF from "../../screens/HappiSELF/HappiSELF";
@@ -71,7 +71,7 @@ const AuthStackScreen = ({ navigation, route }) => {
       <AuthStack.Screen
         options={{ headerShown: false }}
         name="SOLV"
-        component={HappiGUIDE}
+        component={SolvIntro}
       />
       <AuthStack.Screen
         options={{ headerShown: false }}

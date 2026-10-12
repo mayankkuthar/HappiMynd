@@ -16,8 +16,11 @@ import {
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import { Calendar, CalendarList, Agenda } from "react-native-calendars";
+import { weekDayNames } from "react-native-calendars/src/dateutils";
 import { AntDesign } from "@expo/vector-icons";
 import moment from "moment";
+
+const ACCENT_PURPLE = "#A454FE";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -27,7 +30,93 @@ import { Hcontext } from "../../context/Hcontext";
 import Header from "../../components/common/Header";
 import ConcentModal from "../../components/Modals/ConcentModal";
 import CouponModal from "../../components/Modals/CouponModal";
-import TimeSlot from "../../components/Modals/TimeSlot";
+import { timeSlotList as guideTimeSlots } from "../../components/Modals/TimeSlot";
+
+const CalendarCustomHeader = (props) => {
+  const {
+    month,
+    addMonth,
+    firstDay,
+    onPressArrowLeft,
+    onPressArrowRight,
+    renderArrow,
+  } = props;
+
+  const monthTitle = moment(
+    month && typeof month.toDate === "function" ? month.toDate() : month
+  ).format("MMMM YYYY");
+
+  const dayNames = weekDayNames(firstDay ?? 1);
+
+  const pressLeft = () => {
+    if (typeof onPressArrowLeft === "function") {
+      onPressArrowLeft(() => addMonth?.(-1));
+    } else {
+      addMonth?.(-1);
+    }
+  };
+
+  const pressRight = () => {
+    if (typeof onPressArrowRight === "function") {
+      onPressArrowRight(() => addMonth?.(1));
+    } else {
+      addMonth?.(1);
+    }
+  };
+
+  return (
+    <View>
+      <View style={styles.calendarHeaderRow}>
+        <Text allowFontScaling={false} style={styles.calendarMonthTitle}>
+          {monthTitle}
+        </Text>
+        <View style={styles.calendarArrowGroup}>
+          <TouchableOpacity
+            onPress={pressLeft}
+            hitSlop={{ top: 20, left: 20, bottom: 20, right: 20 }}
+            style={styles.calendarArrow}
+          >
+            {renderArrow ? (
+              renderArrow("left")
+            ) : (
+              <AntDesign
+                name="left"
+                size={hp(2)}
+                color={colors.primaryText}
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={pressRight}
+            hitSlop={{ top: 20, left: 20, bottom: 20, right: 20 }}
+            style={styles.calendarArrow}
+          >
+            {renderArrow ? (
+              renderArrow("right")
+            ) : (
+              <AntDesign
+                name="right"
+                size={hp(2)}
+                color={colors.primaryText}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.calendarDayNames}>
+        {dayNames.map((day, index) => (
+          <Text
+            allowFontScaling={false}
+            key={index}
+            style={styles.calendarDayName}
+          >
+            {day}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+};
 
 const MakeBooking = (props) => {
   // Prop Destructuring
@@ -60,13 +149,11 @@ const MakeBooking = (props) => {
 
   // State Variables
   const [showConcentModal, setShowConcentModal] = useState(false);
-  const [selectedCalendarMonth, setSelectedCalendarMonth] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [psyDates, setPsyDates] = useState([]);
   const [psyTimes, setPsyTimes] = useState([]);
   const [allSlotDatesWithTime, setAllSlotDatesWithTime] = useState(null);
-  const [showTimeModal, setShowTimeModal] = useState(false);
   const [currentPlan, setCurrentPlan] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -106,7 +193,6 @@ const MakeBooking = (props) => {
   useEffect(() => {
     console.log("Chec the selected date - ", selectedDate);
     if (selectedDate) {
-      setSelectedCalendarMonth(moment(selectedDate?.dateString).format("MMMM"));
       const selectedTime = selectedDate?.dateString;
       if (allSlotDatesWithTime)
         setPsyTimes(allSlotDatesWithTime[selectedTime]?.time);
@@ -254,6 +340,37 @@ const MakeBooking = (props) => {
     } catch (err) {
       console.log("Some issue while getting psycologist dates - ", err);
     }
+  };
+
+  const getAllMarkedDates = () => {
+    const base = module === "guide" ? markedDates : psyDates;
+    const result = { ...base };
+
+    const todayStr = moment().format("YYYY-MM-DD");
+    const todayIsSelected = selectedDate?.dateString === todayStr;
+
+    if (!todayIsSelected && result[todayStr]?.disabled !== true) {
+      result[todayStr] = {
+        customStyles: {
+          container: {
+            backgroundColor: "transparent",
+            borderWidth: 1,
+            borderColor: ACCENT_PURPLE,
+          },
+          text: { color: ACCENT_PURPLE },
+        },
+      };
+    }
+
+    if (selectedDate?.dateString) {
+      result[selectedDate.dateString] = {
+        selected: true,
+        selectedColor: ACCENT_PURPLE,
+        selectedTextColor: "#ffffff",
+      };
+    }
+
+    return result;
   };
 
   const bookingConfirmHandler = async (concent) => {
@@ -485,69 +602,13 @@ const MakeBooking = (props) => {
         setValue={setCoupon}
         isCouponApplied={isCouponApplied}
       />
-      <TimeSlot
-        navigation={navigation}
-        showModal={showTimeModal}
-        setShowModal={setShowTimeModal}
-        pressHandler={(time) => {
-          //  console.log("time", time);
-          let validSlot = true;
-          try {
-            // const lastSlot = time.split(" - ");
-            // let selectSlot = lastSlot[0];
-            // console.log("selectSlot ", +selectSlot.toLowerCase());
-            // var beginningTime = moment(selectSlot.toLowerCase(), "hh:mm a");
-            // var currentTimeStr = moment().format("hh:mm a");
-            // console.log("endTime", currentTimeStr);
-            // var currentTime = moment(currentTimeStr, "hh:mm a");
-
-            // console.log("selectTime2", selectedDate?.dateString);
-            let selectDate = `${selectedDate?.dateString} ${time
-              .split("-")[0]
-              .trim()}`;
-            console.log("selectTime1", selectDate.toLowerCase());
-            console.log(
-              "selectTime2",
-              moment(selectDate, "YYYY-MM-DD hh:mm a")
-            );
-
-            console.log(
-              "CURRENT TIME",
-              moment(new Date(), "YYYY-MM-DD hh:mm a")
-            );
-
-            validSlot = moment(
-              selectDate.toLowerCase(),
-              "YYYY-MM-DD hh:mm a"
-            ).isAfter(moment(new Date(), "YYYY-MM-DD hh:mm a"));
-
-            // validSlot = beginningTime.isAfter(currentTime);
-            console.log("validSlot", validSlot);
-          } catch (error) {
-            console.log("split", error);
-          }
-
-          if (validSlot) {
-            setSelectedTimeSlot(time);
-            setShowTimeModal(false);
-          } else {
-            setShowTimeModal(false);
-            setSelectedTimeSlot("");
-            snackDispatch({
-              type: "SHOW_SNACK",
-              payload: "Please select a future time slot.",
-            });
-          }
-        }}
-        loading={loading}
-      />
 
       {/* Top Section */}
       <View>
         <Header navigation={navigation} showLogo={false} showBack={true} />
 
         <View style={{ paddingHorizontal: wp(10) }}>
-          <Text style={styles.pageTitle}>Make a Booking</Text>
+          <Text style={styles.pageTitle}>Schedule Your Session</Text>
         </View>
       </View>
 
@@ -556,15 +617,6 @@ const MakeBooking = (props) => {
 
       {/* Bottom Section */}
       <ScrollView style={styles.bottomContainer}>
-        <View>
-          <Text style={{ ...styles.dateTitle, fontSize: RFValue(18) }}>
-            {moment(selectedDate?.dateString).format("DD MMMM, YYYY")}
-          </Text>
-        </View>
-
-        {/* Sized BOx */}
-        <View style={{ height: hp(2) }} />
-
         <View>
           <Calendar
             // // Initially visible month. Default = now
@@ -575,8 +627,10 @@ const MakeBooking = (props) => {
             // // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
             // maxDate={"2022-10-22"}
             // markingType={"multi-period"}
+            customHeader={CalendarCustomHeader}
+            markingType={"custom"}
             disabledDaysIndexes={[7]}
-            markedDates={module === "guide" ? markedDates : psyDates}
+            markedDates={getAllMarkedDates()}
             // markedDates={psyDates}
             // Handler which gets executed on day press. Default = undefined
             onDayPress={(day) => {
@@ -600,15 +654,13 @@ const MakeBooking = (props) => {
             onDayLongPress={(day) => {
               console.log("selected day", day);
             }}
-            // Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
-            monthFormat={"yyyy MM"}
+            // Month display handled by the custom header. Formatting values: http://arshaw.com/xdate/#Formatting
             // Handler which gets executed when visible month changes in calendar. Default = undefined
             onMonthChange={(month) => {
               // console.log(
               //   "month changed",
               //   moment(month.dateString).format("MMMM")
               // );
-              setSelectedCalendarMonth(moment(month.dateString).format("MMMM"));
               if (module === "guide") {
                 getDisabledDays(
                   month.month - 1,
@@ -617,8 +669,6 @@ const MakeBooking = (props) => {
                 );
               }
             }}
-            // Hide month navigation arrows. Default = false
-            hideArrows={false}
             // Replace default arrows with custom ones (direction can be 'left' or 'right')
             renderArrow={(direction) => (
               <View>
@@ -658,16 +708,8 @@ const MakeBooking = (props) => {
             disableArrowRight={false}
             // Disable all touch events for disabled days. can be override with disableTouchEvent in markedDates
             disableAllTouchEventsForDisabledDays={false}
-            // Replace default month and year title with custom one. the function receive a date as parameter
-            renderHeader={(date) => {
-              /*Return JSX*/
-              console.log("CHekc teh header render - ", date);
-              return (
-                <Text style={styles.dateTitle}>{selectedCalendarMonth}</Text>
-              );
-            }}
             // Enable the option to swipe between months. Default = false
-            enableSwipeMonths={true}
+            enableSwipeMonths={false}
           />
           {/* <Image
             source={require("../../assets/images/calendar.png")}
@@ -678,72 +720,67 @@ const MakeBooking = (props) => {
           {/* Sized BOx */}
           <View style={{ height: hp(2) }} />
 
-          {route?.params?.module === "guide" ? (
-            selectedDate?.dateString ? (
-              <TouchableOpacity
-                style={styles.timeText}
-                activeOpacity={0.7}
-                onPress={() => setShowTimeModal(true)}
-              >
-                {selectedTimeSlot ? (
-                  <Text
-                    style={{
-                      ...styles.slotText,
-                      color: colors.primaryText,
-                      fontFamily: "PoppinsMedium",
-                    }}
-                  >
-                    {selectedTimeSlot}
-                  </Text>
-                ) : (
-                  <Text style={styles.slotText}>Press to select Time Slot</Text>
-                )}
-              </TouchableOpacity>
-            ) : null
-          ) : (
-            <Text style={styles.slotText}>
-              {psyTimes ? "Select Time Slot" : "No Slot Available"}
-            </Text>
-          )}
+          {/* Time Slots Section */}
+          {selectedDate?.dateString
+            ? (() => {
+                const availableSlots = (
+                  module === "guide"
+                    ? guideTimeSlots.map((slot) => slot.time)
+                    : psyTimes || []
+                ).filter(
+                  (timeSlot) =>
+                    moment(
+                      `${selectedDate?.dateString} ${timeSlot
+                        .split("-")[0]
+                        .trim()}`,
+                      "YYYY-MM-DD hh:mm:ss A"
+                    ).isAfter(new Date())
+                );
 
-          {/* Sized BOx */}
-          <View style={{ height: hp(1) }} />
+                return availableSlots.length ? (
+                  <>
+                    {/* Sized BOx */}
+                    <View style={{ height: hp(1) }} />
 
-          {/* Time Capsules */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-            }}
-          >
-            {psyTimes?.map((timeSlot, index) => (
-              <>
-                {/* {console.log("check the time slot - ", timeSlot)} */}
-                {moment(
-                  `${selectedDate?.dateString} ${timeSlot
-                    .split("-")[0]
-                    .trim()}`,
-                  "YYYY-MM-DD hh:mm:ss A"
-                ).isAfter(new Date()) ? (
-                  <TouchableOpacity
-                    key={index}
-                    activeOpacity={0.7}
-                    onPress={() => setSelectedTimeSlot(timeSlot)}
-                    style={{
-                      ...styles.timeCapsule,
-                      borderColor:
-                        selectedTimeSlot === timeSlot
-                          ? colors.pageTitle
-                          : colors.borderDim,
-                    }}
-                  >
-                    <Text style={styles.capsuleText}>{timeSlot}</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </>
-            ))}
-          </View>
+                    <Text style={styles.slotHeading}>Select Time Slot</Text>
+
+                    {/* Time Slot Grid */}
+                    <View style={styles.timeGrid}>
+                      {availableSlots.map((timeSlot, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          activeOpacity={0.7}
+                          onPress={() => setSelectedTimeSlot(timeSlot)}
+                          style={[
+                            styles.timeGridChip,
+                            {
+                              backgroundColor:
+                                selectedTimeSlot === timeSlot
+                                  ? ACCENT_PURPLE
+                                  : "#E9D5FF",
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.timeGridChipText,
+                              {
+                                color:
+                                  selectedTimeSlot === timeSlot
+                                    ? "#FFFFFF"
+                                    : "#191719",
+                              },
+                            ]}
+                          >
+                            {timeSlot}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                ) : null;
+              })()
+            : null}
 
           {/* Sized BOx */}
           <View style={{ height: hp(8) }} />
@@ -863,36 +900,66 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(8),
     paddingVertical: hp(4),
   },
-  dateTitle: {
-    fontSize: RFValue(16),
+  calendarHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingLeft: 10,
+    paddingRight: 10,
+    marginTop: 6,
+  },
+  calendarMonthTitle: {
+    fontSize: RFValue(14),
     fontFamily: "PoppinsMedium",
-    color: colors.pageTitle,
+    color: "#000000",
+  },
+  calendarArrowGroup: {
+    flexDirection: "row",
+  },
+  calendarArrow: {
+    padding: 10,
+  },
+  calendarDayNames: {
+    marginTop: 7,
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  calendarDayName: {
+    flex: 1,
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 7,
+    fontSize: 13,
+    color: "#b6c1cd",
   },
   calendarImage: {
     // backgroundColor: "red",
     width: wp(80),
     height: hp(32),
   },
-  slotText: {
+  slotHeading: {
     fontSize: RFValue(13),
-    fontFamily: "Poppins",
-    color: colors.borderLight,
+    fontFamily: "PoppinsMedium",
+    color: "#191719",
     textAlign: "center",
   },
-  timeCapsule: {
-    backgroundColor: colors.borderDim,
-    height: hp(5),
-    // width: wp(24),
-    borderRadius: hp(100),
+  timeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  timeGridChip: {
+    width: "31%",
+    backgroundColor: "#E9D5FF",
+    borderRadius: hp(2),
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: hp(1),
-    paddingHorizontal: hp(1),
-    borderWidth: hp(0.2),
+    paddingVertical: hp(1.2),
+    marginVertical: hp(0.8),
   },
-  capsuleText: {
+  timeGridChipText: {
     fontSize: RFValue(8),
-    fontFamily: "Poppins",
+    fontFamily: "PoppinsMedium",
   },
   pricingContainer: {
     backgroundColor: colors.background,
@@ -904,14 +971,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
   },
   bookButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#E6DFFF",
     paddingVertical: hp(1),
     paddingHorizontal: hp(2),
     borderRadius: hp(100),
+    shadowColor: "#BDB5CE",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 4,
+    elevation: 4,
   },
   bookButtonText: {
     fontSize: RFValue(10),
     fontFamily: "Poppins",
+    color: "#191719",
   },
   amountTitle: {
     fontSize: RFValue(10),
@@ -920,12 +993,7 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: RFValue(14),
     fontFamily: "PoppinsSemiBold",
-    color: colors.pageTitle,
-  },
-  timeText: {
-    backgroundColor: colors.primary,
-    paddingVertical: hp(1.5),
-    borderRadius: hp(10),
+    color: "#000000",
   },
   amountButtonText: {
     fontSize: RFValue(10),

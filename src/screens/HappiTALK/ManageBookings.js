@@ -548,7 +548,7 @@ const ManageBookings = (props) => {
   return (
     <>
       <ImageBackground
-        source={require("../../assets/images/language_background.png")}
+      source={require("../../assets/images/contact_background.png")}
         resizeMode="cover"
         style={styles.container}
       >

@@ -3,10 +3,8 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -17,7 +15,6 @@ import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 
 // Components
 import Button from "../../../components/buttons/Button";
-import CourseScoreModal from "../../../components/Modals/CourseScoreModal";
 
 // Context
 import { Hcontext } from "../../../context/Hcontext";
@@ -33,7 +30,6 @@ const CourseComplete = (props) => {
     happiSelfState,
     completeCourse,
     happiSelfDispatch,
-    rewardList,
     sendNotification,
   } = useContext(Hcontext);
 
@@ -41,13 +37,10 @@ const CourseComplete = (props) => {
 
   // State Variables
   const [loading, setLoading] = useState(true);
-  const [rewardPoint, setRewardPoint] = useState(0);
-  const [showModal, setShowModal] = useState(false);
 
   // Mounting
   useEffect(() => {
     console.log("Completed task log - ", happiSelfState.currentTask);
-    fetchRewardPoint();
     triggerNotification();
     setTimeout(() => courseCompletionHandler(happiSelfState.currentTask), 2000);
 
@@ -58,25 +51,6 @@ const CourseComplete = (props) => {
       });
     };
   }, []);
-
-  // Getting all the subcourse content
-  const fetchRewardPoint = async () => {
-    try {
-      const rewards = await rewardList();
-      console.log("chek teh rewasrd - ", rewards);
-      if (rewards.status === "success") {
-        const score = rewards.list.find((entry) => entry.id == 9);
-        console.log("check teh scre here - ", Number(score.points_to_be_given));
-        setRewardPoint(Number(score.points_to_be_given));
-        if (Number(score.points_to_be_given)) setShowModal(true);
-      }
-    } catch (err) {
-      console.log(
-        "Some issue while fetching reward-list (CompletedScreen.js) - ",
-        err
-      );
-    }
-  };
 
   const triggerNotification = async () => {
     try {
@@ -107,43 +81,42 @@ const CourseComplete = (props) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <CourseScoreModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        points={rewardPoint}
-      />
-      <Image
-        source={require("../../../assets/images/course_complete.png")}
-        style={styles.image}
-        resizeMode="contain"
-      />
-      <Text style={styles.completeText}>
-        Your module is completed & next module is unlocked
-      </Text>
-
-      {/* Sized Box */}
-      <View style={{ height: hp(2) }} />
-
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => navigation.pop()}
-        style={styles.taskActionButton}
-        disabled={loading}
+    <View style={styles.container}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
       >
-        {loading ? (
-          <ActivityIndicator size="small" color={colors.loaderColor} />
-        ) : (
-          <Text style={styles.taskActionButtonText}>Continue</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        <Image
+          source={require("../../../assets/images/course_complete.png")}
+          style={styles.image}
+          resizeMode="contain"
+        />
+        <Text style={styles.completeText}>
+          Your module is completed & next module is unlocked
+        </Text>
+      </ScrollView>
+
+      {/* Continue Button */}
+      <View style={styles.continueButtonContainer}>
+        <Button
+          text="Continue"
+          pressHandler={() => navigation.pop()}
+          loading={loading}
+          containerStyle={styles.taskActionButton}
+          textStyle={styles.taskActionButtonText}
+        />
+      </View>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: hp(4),
-    // alignItems: "center",
+    alignItems: "center",
+    marginTop: hp(6),
   },
   image: {
     width: wp(80),
@@ -152,22 +125,34 @@ const styles = StyleSheet.create({
     // backgroundColor: "red",
   },
   completeText: {
-    fontSize: RFValue(24),
-    fontFamily: "PoppinsBold",
+    fontSize: RFValue(15),
+    fontFamily: "PoppinsMedium",
     textTransform: "capitalize",
     textAlign: "center",
   },
+  continueButtonContainer: {
+    position: "absolute",
+    bottom: hp(4),
+    left: 14,
+    right: 14,
+  },
   taskActionButton: {
-    backgroundColor: colors.pageTitle,
-    paddingVertical: hp(1.5),
-    width: wp(80),
-    borderRadius: hp(100),
+    backgroundColor: "#E8DEFF",
+    borderRadius: 50,
+    height: hp(6),
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#8E66F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   taskActionButtonText: {
     fontSize: RFValue(14),
-    fontFamily: "PoppinsMedium",
+    fontFamily: "PoppinsSemiBold",
+    color: "#191919",
     textAlign: "center",
-    color: "#fff",
   },
 });
 

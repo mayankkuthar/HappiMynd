@@ -14,6 +14,7 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import { FontAwesome } from "@expo/vector-icons";
 import AppIntroSlider from "react-native-app-intro-slider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Constants
 import { colors } from "../../assets/constants";
@@ -62,6 +63,8 @@ const OnBoarding = (props) => {
   // Prop Destructuring
   const { navigation } = props;
 
+  const insets = useSafeAreaInsets();
+
   const sliderRef = useRef(null);
 
   const _renderItem = ({ item }) => {
@@ -71,13 +74,21 @@ const OnBoarding = (props) => {
         <View style={styles.imageSection}>
           <Image
             source={item.image}
-            style={styles.slideImage}
-            resizeMode="cover"
+            style={[
+              styles.slideImage,
+              item.key >= 2 && styles.slideImageShiftedDown,
+            ]}
+            resizeMode="contain"
           />
         </View>
 
         {/* Text Section */}
-        <View style={styles.textContainer}>
+        <View
+          style={[
+            styles.textContainer,
+            item.key === 4 && styles.textContainerShiftedUp,
+          ]}
+        >
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.descText}>{item.text}</Text>
           {item.trustPoints ? (
@@ -115,7 +126,9 @@ const OnBoarding = (props) => {
   const _renderPagination = (activeIndex) => {
     const isLast = activeIndex === slides.length - 1;
     return (
-      <View style={styles.paginationContainer}>
+      <View
+        style={[styles.paginationContainer, { bottom: 16 + insets.bottom }]}
+      >
         <View style={styles.paginationDots}>
           {slides.map((_, i) => (
             <View
@@ -159,11 +172,22 @@ const styles = StyleSheet.create({
   imageSection: {
     height: hp(60),
     width: wp(100),
+    backgroundColor: "#ECDCFF",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
   slideImage: {
-    height: hp(60),
-    width: wp(100),
+    height: hp(55),
+    width: wp(96),
+    marginTop: hp(1),
+    marginBottom: hp(2),
+  },
+  slideImageShiftedDown: {
+    marginBottom: 0,
+  },
+  textContainerShiftedUp: {
+    paddingTop: hp(1),
   },
   textContainer: {
     backgroundColor: colors.background,
@@ -219,7 +243,6 @@ const styles = StyleSheet.create({
   },
   paginationContainer: {
     position: "absolute",
-    bottom: 16,
     left: 16,
     right: 16,
     flexDirection: "row",

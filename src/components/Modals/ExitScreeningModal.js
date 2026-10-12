@@ -7,9 +7,6 @@ import {
 } from "react-native-responsive-screen";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 
-// Constants
-import { colors } from "../../assets/constants";
-
 const ExitScreeningModal = (props) => {
   // Prop Destructuring
   const { navigation, showModal, setShowModal } = props;
@@ -37,51 +34,46 @@ const ExitScreeningModal = (props) => {
         {/* Sized Box */}
         <View style={{ height: hp(2) }} />
 
-        <TouchableOpacity
-          style={styles.modalButton}
-          onPress={() => {
-            setShowModal(false);
-            // navigation.navigate("HomeScreen");
-          }}
-        >
-          <Text style={styles.modalButtonText}>Continue</Text>
-        </TouchableOpacity>
-        {/* Sized Box */}
-        <View style={{ height: hp(1.2) }} />
-        <TouchableOpacity
-          style={{
-            ...styles.modalButton,
-            backgroundColor: colors.backgroundModal,
-            borderWidth: 1,
-            borderColor: colors.pageTitle,
-          }}
-          onPress={() => {
-            setShowModal(false);
-            navigation.navigate("HomeScreen");
-          }}
-        >
-          <Text style={{ ...styles.modalButtonText, color: colors.pageTitle }}>
-            Save and Exit
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.noButton]}
+            onPress={() => {
+              setShowModal(false);
+              // navigation.navigate("HomeScreen");
+            }}
+          >
+            <Text style={[styles.modalButtonText, styles.noButtonText]}>
+              Continue
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.yesButton]}
+            onPress={() => {
+              setShowModal(false);
+              navigation.navigate("HomeScreen");
+            }}
+          >
+            <Text style={[styles.modalButtonText, styles.yesButtonText]}>
+              Save and Exit
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
 };
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundModal,
+    backgroundColor: "#F2EFFE",
     width: wp(80),
-    // height: hp(20),
     alignSelf: "center",
-    borderRadius: 6,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: hp(2),
     paddingHorizontal: hp(2),
   },
   heroImage: {
-    // backgroundColor: "red",
     width: wp(50),
     height: hp(20),
   },
@@ -90,11 +82,36 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     textAlign: "center",
   },
-  modalButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: hp(1.5),
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     width: "100%",
-    borderRadius: hp(100),
+  },
+  modalButton: {
+    paddingVertical: hp(1.5),
+    width: "48%",
+    borderRadius: 100,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  yesButton: {
+    backgroundColor: "#EEDFFF",
+  },
+  yesButtonText: {
+    color: "#A0A0A0",
+  },
+  noButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#A5A5A5",
+    shadowColor: "rgba(0,0,0,0.16)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  noButtonText: {
+    color: "#000",
   },
   modalButtonText: {
     textAlign: "center",

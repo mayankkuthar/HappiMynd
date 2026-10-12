@@ -67,6 +67,11 @@ const DeleteAccountModal = (props) => {
           Are you sure you really want to delete this account?
         </Text>
 
+        <Text style={styles.subText}>
+          Deleting your account will permanently remove your personal data and
+          previous activity.
+        </Text>
+
         <View style={{ height: hp(2) }} />
 
         <View style={styles.buttonRow}>
@@ -111,13 +116,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: hp(2),
   },
   heroImage: {
-    width: wp(50),
-    height: hp(20),
+    width: wp(40),
+    height: hp(17),
   },
   modalText: {
     fontSize: RFValue(12),
     fontFamily: "Poppins",
     textAlign: "center",
+  },
+  subText: {
+    fontSize: RFValue(10),
+    fontFamily: "Poppins",
+    color: "#A0A0A0",
+    textAlign: "center",
+    marginTop: hp(1),
   },
   buttonRow: {
     flexDirection: "row",
@@ -133,6 +145,11 @@ const styles = StyleSheet.create({
   },
   yesButton: {
     backgroundColor: "#EEDFFF",
+    shadowColor: "rgba(0,0,0,0.16)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   yesButtonText: {
     color: "#A0A0A0",

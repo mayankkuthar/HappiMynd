@@ -28,6 +28,8 @@ import {
   InputToolbar,
   Send,
   Bubble,
+  Composer,
+  Time,
 } from "react-native-gifted-chat";
 import ImageView from "react-native-image-viewing";
 import {
@@ -52,7 +54,6 @@ import { db } from "../../context/Firebase";
 import LanguageModal from "../../components/Modals/LanguageModal";
 import DocumentUploadModal from "../../components/Modals/DocumentUploadModal";
 import {
-  _renderBubbleTime,
   _renderChatBubble,
 } from "../../components/common/Chat";
 import AudioCard from "../../components/cards/AudioCard";
@@ -69,13 +70,9 @@ const activeSoundRef = { current: null, setPlaying: null };
 const ChatNote = () => (
   <View style={styles.noteContainer}>
     <Text style={styles.noteText}>
-      Share your emotions, feelings & thoughts here & let your expert Buddy
-      answer & guide you.
-    </Text>
-    <View style={{ height: hp(1) }} />
-    <Text style={styles.noteSubText}>
-      Note- This is not a real time conversation. You may have to wait for the
-      expert Buddy to get back to you
+      Share your emotions, feelings and thoughts and wait for your expert
+      psychologist to answer all your queries. Note- This is not a real time
+      conversation. You may have to wait for the psychologist to get back to you
     </Text>
   </View>
 );
@@ -92,7 +89,7 @@ const Header = ({ navigation, fetchPsycologist, showLanguageModal, setShowLangua
       />
       <View style={styles.headerBox}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()}>
-          <Ionicons name="ios-chevron-back" size={hp(4)} color="black" />
+          <Ionicons name="chevron-back" size={22} color="#494653" />
         </TouchableOpacity>
         <Text style={styles.chatPersonTitle}>BUDDY</Text>
         <TouchableOpacity activeOpacity={0.7} onPress={() => setShowLanguageModal(true)}>
@@ -262,6 +259,36 @@ const HappiBUDDYChat = (props) => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [groupId, setGroupId] = useState(group);
 
+  // ── Read-receipt on the user's own bubbles ─────────────────────────────────
+  const renderBubbleTime = useCallback(
+    (props) => {
+      const isOwn = props?.currentMessage?.user?._id === senderUser;
+      return (
+        <View style={styles.timeReceiptRow}>
+          <Time
+            {...props}
+            timeTextStyle={{
+              left: { color: "#17151D" },
+              right: { color: "#17151D" },
+            }}
+            containerStyle={{
+              left: { marginLeft: 10, marginRight: 10, marginBottom: 5 },
+              right: { marginLeft: 10, marginRight: 2, marginBottom: 0 },
+            }}
+          />
+          {isOwn && (
+            <Image
+              source={require("../../assets/images/read_recipet.png")}
+              style={styles.readReceipt}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      );
+    },
+    [senderUser],
+  );
+
   // Media state (image or audio pending send)
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState(null);      // "image" | "audio" | null
@@ -356,7 +383,7 @@ const HappiBUDDYChat = (props) => {
             fileName:    data.fileName || null,
           };
         });
-        setMessages(messageList.filter(Boolean));
+        setMessages(messageList.filter(Boolean).reverse());
         setLoading(false);
       },
       (error) => {
@@ -507,7 +534,7 @@ const HappiBUDDYChat = (props) => {
       removeMedia();
     }
 
-    setMessages((prev) => GiftedChat.append(prev, newMessages));
+    setMessages((prev) => GiftedChat.append(prev, newMessages, false));
     const { _id, createdAt, text, user } = newMessages[0];
 
     // Build data URI the same way the web app stores it
@@ -584,6 +611,7 @@ const HappiBUDDYChat = (props) => {
       <InputToolbar
         {...toolbarProps}
         containerStyle={styles.inputToolbar}
+        primaryStyle={styles.inputPrimary}
         renderActions={() => (
           <View style={styles.inputActionsBox}>
             <TouchableOpacity
@@ -596,9 +624,16 @@ const HappiBUDDYChat = (props) => {
             </TouchableOpacity>
           </View>
         )}
-        renderSend={(sendProps) => (
-          <View style={styles.sendRow}>
-            {/* ── Audio mode: show countdown, trash, play preview ── */}
+        renderComposer={(composerProps) => (
+          <View style={styles.inputBox}>
+            <Composer
+              {...composerProps}
+              placeholder="Type a message"
+              placeholderTextColor="#A9A8B0"
+              textInputStyle={styles.textInput}
+            />
+
+            {/* ── Audio mode: trash + ready label ── */}
             {fileType === "audio" ? (
               <>
                 <TouchableOpacity
@@ -606,7 +641,7 @@ const HappiBUDDYChat = (props) => {
                   onPress={removeMedia}
                   style={{ marginRight: wp(2) }}
                 >
-                  <FontAwesome name="trash-o" size={hp(3)} color="red" />
+                  <FontAwesome name="trash-o" size={hp(2.6)} color="red" />
                 </TouchableOpacity>
                 <Text style={styles.audioPreviewLabel}>🎤 Ready</Text>
               </>
@@ -625,39 +660,39 @@ const HappiBUDDYChat = (props) => {
                 onPress={removeMedia}
                 style={{ marginRight: wp(2) }}
               >
-                <FontAwesome name="trash-o" size={hp(3)} color="red" />
+                <FontAwesome name="trash-o" size={hp(2.6)} color="red" />
               </TouchableOpacity>
             ) : (
               // ── Default mic button ──
               <TouchableOpacity activeOpacity={0.7} onPress={audioHandler}>
-                <Ionicons
-                  name="mic-outline"
-                  size={hp(3)}
-                  color={colors.borderLight}
-                  style={{ marginRight: wp(2) }}
-                />
+                <Ionicons name="mic" size={hp(2.6)} color="#6C6877" />
               </TouchableOpacity>
             )}
 
-            {/* Send button */}
-            <Send {...sendProps} disabled={mediaSending}>
+            {/* Send button (inside the input box) */}
+            <Send
+              {...toolbarProps}
+              disabled={mediaSending}
+              containerStyle={styles.sendButton}
+            >
               <View style={styles.chatIconContainer}>
                 {mediaSending ? (
-                  <ActivityIndicator size="small" color={colors.borderLight} />
+                  <ActivityIndicator size="small" color="#6C6877" />
                 ) : (
-                  <Feather name="send" size={hp(2.8)} color={colors.borderLight} />
+                  <Feather name="send" size={hp(2.4)} color="#6C6877" />
                 )}
               </View>
             </Send>
           </View>
         )}
+        renderSend={() => <View />}
       />
     );
   };
 
   return (
     <ImageBackground
-      source={require("../../assets/images/language_background.png")}
+      source={require("../../assets/images/contact_background.png")}
       resizeMode="cover"
       style={styles.container}
     >
@@ -680,9 +715,12 @@ const HappiBUDDYChat = (props) => {
             name: authState?.user?.user?.username,
           }}
           renderBubble={_renderChatBubble}
-          renderTime={_renderBubbleTime}
+          renderTime={renderBubbleTime}
           renderInputToolbar={_renderInputToolbar}
           renderCustomView={renderCustomView}
+          minInputToolbarHeight={hp(10)}
+          messagesContainerStyle={{ paddingBottom: hp(3) }}
+          inverted={false}
           alwaysShowSend
         />
         {loading && (
@@ -715,8 +753,18 @@ const HappiBUDDYChat = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F2F0FF",
     flex: 1,
+  },
+  timeReceiptRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+    marginRight: 4,
+  },
+  readReceipt: {
+    width: 18,
+    height: 11,
   },
   loaderContainer: {
     flex: 1,
@@ -736,47 +784,84 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: "#EDE6FF",
     width: wp(100),
     height: hp(14),
     flexDirection: "row",
     alignItems: "flex-end",
     paddingBottom: hp(2),
     justifyContent: "space-between",
+    borderBottomColor: "#D8D4E5",
+    borderBottomWidth: 1,
+    shadowColor: "#A9A2BD",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   headerBox: {
     width: wp(100),
-    paddingHorizontal: wp(4),
+    paddingHorizontal: wp(5),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   chatPersonTitle: {
     fontSize: RFValue(16),
-    fontFamily: "Poppins",
+    fontFamily: "PoppinsMedium",
+    color: "#17151D",
   },
   chatHeaderAction: {
     width: hp(4),
     height: hp(4),
   },
   inputToolbar: {
-    backgroundColor: "white",
-    borderTopColor: "#E8E8E8",
-    marginHorizontal: wp(3),
+    backgroundColor: "transparent",
+    borderTopWidth: 0,
+    borderTopColor: "transparent",
+    paddingHorizontal: wp(4),
+    paddingTop: hp(1.4),
+    paddingBottom: hp(1.9),
     alignItems: "center",
     justifyContent: "center",
+  },
+  inputPrimary: {
+    alignItems: "center",
+    width: "100%",
+  },
+  inputBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    height: hp(6.4),
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderColor: "#D8D6E1",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: wp(4),
+    marginLeft: wp(3),
+  },
+  textInput: {
+    flex: 1,
+    marginLeft: 0,
+    fontSize: RFValue(13),
+    fontFamily: "Poppins",
+    color: "#17151D",
+  },
+  sendButton: {
+    justifyContent: "center",
+    marginLeft: wp(2),
   },
   inputActionsBox: {
-    backgroundColor: "#E4FDFE",
-    paddingRight: wp(2),
+    backgroundColor: "transparent",
   },
   chatAddButton: {
-    backgroundColor: "#4CA6A8",
-    width: hp(6),
-    height: hp(6),
+    backgroundColor: "#A965F5",
+    width: hp(6.4),
+    height: hp(6.4),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: hp(100),
+    borderRadius: 999,
   },
   sendRow: {
     flexDirection: "row",
@@ -819,22 +904,20 @@ const styles = StyleSheet.create({
     marginRight: wp(2),
   },
   noteContainer: {
-    backgroundColor: "#FBFFE1",
-    width: wp(85),
+    backgroundColor: "#DED4FA80",
+    width: wp(90),
     alignSelf: "center",
-    paddingVertical: hp(2),
-    paddingHorizontal: hp(2),
-    borderRadius: 8,
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(7.5),
+    borderRadius: 12,
+    marginTop: hp(1.2),
+    marginBottom: hp(1.9),
   },
   noteText: {
-    fontSize: RFValue(10),
+    fontSize: RFValue(11),
     fontFamily: "PoppinsMedium",
-    textAlign: "center",
-  },
-  noteSubText: {
-    fontSize: RFValue(8),
-    fontFamily: "PoppinsMedium",
-    color: "#3E3A3A",
+    color: "#17151D",
+    textAlign: "justify",
   },
   // Image in bubble
   imageBubble: {
